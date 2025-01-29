@@ -1,10 +1,16 @@
 const express = require('express');
+const mongoose = require('mongoose')
 const path = require('path');
 const app = express();
 const PORT = 3000;
-
 const guessRoutes = require('./routes/guesses'); // Import the guesses route
 
+// MongoDB URI from Atlas
+const mongoURI = "mongodb+srv://eric:6Kw62qN6hTkCN99p@guess-what-cluster.tv6zt.mongodb.net/?retryWrites=true&w=majority&appName=guess-what-cluster";
+
+mongoose.connect(mongoURI)
+  .then(() => console.log('MongoDB connected!'))
+  .catch(err => console.log('Error connecting to MongoDB:', err));
 
 // Middleware to parse JSON bodies
 app.use(express.json());  // This is the missing piece!
