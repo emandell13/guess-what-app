@@ -4,9 +4,11 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 const guessRoutes = require('./routes/guesses'); // Import the guesses route
+const dotenv = require('dotenv');
+dotenv.config();  // Loads environment variables from .env
 
 // MongoDB URI from Atlas
-const mongoURI = "mongodb+srv://eric:6Kw62qN6hTkCN99p@guess-what-cluster.tv6zt.mongodb.net/?retryWrites=true&w=majority&appName=guess-what-cluster";
+const mongoURI = process.env.MONGODB_URI; // Get the URI from the environment
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected!'))
