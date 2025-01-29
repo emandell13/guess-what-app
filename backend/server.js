@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose')
 const path = require('path');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const guessRoutes = require('./routes/guesses'); // Import the guesses route
 const dotenv = require('dotenv');
 dotenv.config();  // Loads environment variables from .env
@@ -42,5 +42,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
+    console.log(`Server is running at ${PORT}`);
 });
