@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Connect to MongoDB
-require('./config/mongoose');
+const mongoose = require('./config/mongoose');
 
 // Setup middleware
 require('./middleware')(app);
