@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const guessService = require('../services/guessService'); // Import the business logic
 
-router.post('/submit', (req, res) => {
+// Define your guess-related routes here
+router.post('/', (req, res) => {
     const { guess } = req.body;
     const topGuesses = guessService.handleGuess(guess); // Use the guessService to handle the logic
     res.json({ message: `Your guess "${guess}" was received!`, topGuesses });
