@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose')
 const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 const guessRoutes = require('./routes/guesses'); // Import the guesses route
 const dotenv = require('dotenv');
 dotenv.config();  // Loads environment variables from .env
@@ -41,6 +41,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running at ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
