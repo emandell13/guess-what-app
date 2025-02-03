@@ -20,11 +20,13 @@ const mongooseOptions = {
   }
 };
 
+console.log('Mongoose options:', mongooseOptions); // Log the mongoose options
+
 mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
   .then(() => console.log('Connected to database'))
   .catch(error => {
     console.error('Error connecting to MongoDB:', error);
-    // Do not exit the process, just log the error
+    process.exit(1); // Exit the process with failure
   });
 
 module.exports = mongoose;
