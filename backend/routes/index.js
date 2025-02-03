@@ -31,22 +31,28 @@ module.exports = (app) => {
       const result = await mongoose.connection.db.admin().ping();
       res.json({ message: 'MongoDB connection is successful', result });
     } catch (err) {
+      console.error('MongoDB connection failed:', err); // Log the error
       res.status(500).json({ message: 'MongoDB connection failed', error: err });
     }
   });
 
   // Test route to verify proxy connection
   app.get('/test-proxy', async (req, res) => {
+    console.log('Received request for /test-proxy'); // Log when the route is hit
     try {
       const fixieData = process.env.FIXIE_SOCKS_HOST.split(new RegExp('[:/@]+'));
-      const proxyUrl = `socks5://${fixieData[0]}:${fixieData[1]}@${fixieData[2]}:${fixieData[3]}`;
+      const proxyUrl = `socks5://${fixieData[1]}:${fixieData[2]}@${fixieData[3]}:${fixieData[4]}`;
       const proxyAgent = new SocksProxyAgent(proxyUrl);
+
+      console.log('Proxy URL:', proxyUrl); // Log the proxy URL
 
       // Test the proxy connection
       const response = await fetch('https://www.google.com', { agent: proxyAgent });
       const text = await response.text();
+      console.log('Proxy connection successful'); // Log success
       res.json({ message: 'Proxy connection is successful', text });
     } catch (err) {
+      console.error('Proxy connection failed:', err); // Log the error
       res.status(500).json({ message: 'Proxy connection failed', error: err });
     }
   });
