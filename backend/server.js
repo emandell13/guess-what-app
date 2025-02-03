@@ -1,44 +1,42 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const { SocksProxyAgent } = require('socks-proxy-agent'); // Correct import
 const app = express();
 const port = process.env.PORT || 3000;
 const guessRoutes = require('./routes/guesses'); // Import the guesses route
 const dotenv = require('dotenv');
-dotenv.config();  // Loads environment variables from .env
+dotenv.config();  // Loads environment variables from .env file
 
-// MongoDB URI from Atlas
-const mongoURI = process.env.MONGODB_URI + "?ssl=true"; // Ensure SSL is enabled
+const fixieData = process.env.FIXIE_SOCKS_HOST.split(new RegExp('[:/@]+'));
 
-// Use Fixie proxy for MongoDB connection if in production
-let mongooseOptions = {
+// Log the parsed values to verify
+console.log('Parsed FIXIE_SOCKS_HOST values:', fixieData);
+
+const proxyUrl = `socks5://${fixieData[1]}:${fixieData[2]}@${fixieData[3]}:${fixieData[4]}`;
+const proxyAgent = new SocksProxyAgent(proxyUrl);
+
+// Log the proxy URL to verify
+console.log('Proxy URL:', proxyUrl);
+
+const mongooseOptions = {
   serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000
+  socketTimeoutMS: 45000,
+  driverInfo: {
+    name: 'nodejs',
+    version: process.version,
+    platform: process.platform,
+    proxy: proxyAgent
+  }
 };
 
-if (process.env.NODE_ENV === 'production') {
-  const fixieUrl = process.env.FIXIE_URL;
-  console.log('FIXIE_URL:', fixieUrl); // Log the FIXIE_URL value
-  const HttpsProxyAgent = require('https-proxy-agent');
-  const proxyAgent = new HttpsProxyAgent(fixieUrl); // Correct usage
-  mongooseOptions = {
-    ...mongooseOptions,
-    driverInfo: {
-      driver: {
-        name: 'nodejs',
-        version: process.version
-      },
-      platform: process.platform,
-      proxy: proxyAgent
-    }
-  };
-  console.log('Using proxy for MongoDB connection');
-}
+// Log the mongoose options to verify
+console.log('Mongoose connection options:', mongooseOptions);
 
-mongoose.connect(mongoURI, mongooseOptions)
-  .then(() => console.log('MongoDB connected!'))
-  .catch(err => {
-    console.error('Error connecting to MongoDB:', err);
+mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
+  .then(() => console.log('Connected to database'))
+  .catch(error => {
+    console.error('Error connecting to MongoDB:', error);
     process.exit(1); // Exit the process with failure
   });
 
