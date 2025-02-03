@@ -23,7 +23,7 @@ let mongooseOptions = {
 if (process.env.NODE_ENV === 'production') {
   const fixieUrl = process.env.FIXIE_URL;
   const HttpsProxyAgent = require('https-proxy-agent');
-  const proxyAgent = new HttpsProxyAgent(fixieUrl);
+  const proxyAgent = new HttpsProxyAgent(fixieUrl); // Correct usage
   mongooseOptions.proxy = proxyAgent;
 }
 
