@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const guessRoutes = require('./guesses');
+const mongoose = require('mongoose'); // Ensure mongoose is imported
 
 const questions = [
   "What is the most popular fruit?",
