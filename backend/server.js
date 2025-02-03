@@ -15,13 +15,12 @@ let mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  useCreateIndex: true,
-  useFindAndModify: false
+  socketTimeoutMS: 45000
 };
 
 if (process.env.NODE_ENV === 'production') {
   const fixieUrl = process.env.FIXIE_URL;
+  console.log('FIXIE_URL:', fixieUrl); // Log the FIXIE_URL value
   const HttpsProxyAgent = require('https-proxy-agent');
   const proxyAgent = new HttpsProxyAgent(fixieUrl); // Correct usage
   mongooseOptions.proxy = proxyAgent;
