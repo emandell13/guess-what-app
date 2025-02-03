@@ -12,8 +12,6 @@ const mongoURI = process.env.MONGODB_URI + "?ssl=true"; // Ensure SSL is enabled
 
 // Use Fixie proxy for MongoDB connection if in production
 let mongooseOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000
 };
@@ -23,12 +21,26 @@ if (process.env.NODE_ENV === 'production') {
   console.log('FIXIE_URL:', fixieUrl); // Log the FIXIE_URL value
   const HttpsProxyAgent = require('https-proxy-agent');
   const proxyAgent = new HttpsProxyAgent(fixieUrl); // Correct usage
-  mongooseOptions.proxy = proxyAgent;
+  mongooseOptions = {
+    ...mongooseOptions,
+    driverInfo: {
+      driver: {
+        name: 'nodejs',
+        version: process.version
+      },
+      platform: process.platform,
+      proxy: proxyAgent
+    }
+  };
+  console.log('Using proxy for MongoDB connection');
 }
 
 mongoose.connect(mongoURI, mongooseOptions)
   .then(() => console.log('MongoDB connected!'))
-  .catch(err => console.log('Error connecting to MongoDB:', err));
+  .catch(err => {
+    console.error('Error connecting to MongoDB:', err);
+    process.exit(1); // Exit the process with failure
+  });
 
 // Middleware to parse JSON bodies
 app.use(express.json());  // This is the missing piece!
