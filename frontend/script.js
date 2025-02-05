@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("guess-form");
+    const form = document.getElementById("vote-form");
     const responseDiv = document.getElementById("response");
     const questionDiv = document.getElementById("question");
     const topGuessesDiv = document.getElementById("top-guesses");
@@ -24,22 +24,24 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (event) => {
         event.preventDefault(); // Prevent page reload
 
-        const userGuess = form.elements[0].value; // Get the user's guess
+        const userVote = form.elements[0].value; // Get the user's vote
 
         try {
-            const response = await fetch("/guesses/submit", {
+            const response = await fetch("/votes", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ guess: userGuess }), // Send the guess in JSON format
+                body: JSON.stringify({ response: userVote }), // Send the guess in JSON format
             });
 
             const result = await response.json(); // Parse the response from the server
             responseDiv.textContent = `Server Response: ${result.message}`; // Show the server's response
 
-             // Display the top guesses
-             topGuessesDiv.textContent = `Top guesses: ${result.topGuesses.join(", ")}`;
+            // Display the top guesses if available
+            if (result.topGuesses) {
+                topGuessesDiv.textContent = `Top guesses: ${result.topGuesses.join(", ")}`;
+            }
 
         } catch (error) {
             console.error("Error:", error);

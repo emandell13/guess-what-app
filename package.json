@@ -10,10 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "https-proxy-agent": "^5.0.0",
-    "mongoose": "^8.9.5",
-    "socks-proxy-agent": "^8.0.5"
+    "express": "^4.21.2"
   }
 }
