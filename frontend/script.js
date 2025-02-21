@@ -4,27 +4,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const questionDiv = document.getElementById("question");
     const topGuessesDiv = document.getElementById("top-guesses");
 
-    // Define an async function to fetch the question and handle the form submission
-    const fetchQuestion = async () => {
-        try {
-            // Fetch the question from the backend
-            const questionResponse = await fetch("/question");
-            const questionData = await questionResponse.json();
-            questionDiv.textContent = questionData.question; // Display the question on the page
-        } catch (error) {
-            console.error("Error fetching question:", error);
-            responseDiv.textContent = "Failed to load question.";
+   // Get tomorrow's voting question
+   const fetchQuestion = async () => {
+    try {
+        const questionResponse = await fetch("/votes/question");
+        const questionData = await questionResponse.json();
+        
+        if (questionData.question) {
+            questionDiv.textContent = questionData.question.question_text;
+            // Add a label to show this is tomorrow's question
+            const phaseLabel = document.createElement("p");
+            phaseLabel.textContent = "Vote for tomorrow's question!";
+            phaseLabel.className = "text-blue-600 font-bold";
+            questionDiv.parentNode.insertBefore(phaseLabel, questionDiv);
+        } else {
+            responseDiv.textContent = "No question available for voting";
         }
-    };
+    } catch (error) {
+        console.error("Error fetching question:", error);
+        responseDiv.textContent = "Failed to load question.";
+    }
+};
 
-    // Call the async function to fetch the question when the page loads
+    // Call fetchQuestion when page loads
     fetchQuestion();
 
     // Handle form submission
     form.addEventListener("submit", async (event) => {
-        event.preventDefault(); // Prevent page reload
+        event.preventDefault();
 
-        const userVote = form.elements[0].value; // Get the user's vote
+        const userResponse = form.elements[0].value;
 
         try {
             const response = await fetch("/votes", {
@@ -32,22 +41,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ response: userVote }), // Send the guess in JSON format
+                body: JSON.stringify({ response: userResponse }),
             });
 
-            const result = await response.json(); // Parse the response from the server
-            responseDiv.textContent = `Server Response: ${result.message}`; // Show the server's response
+            const result = await response.json();
 
-            // Display the top guesses if available
-            if (result.topGuesses) {
-                topGuessesDiv.textContent = `Top guesses: ${result.topGuesses.join(", ")}`;
+            if (response.ok) {
+                responseDiv.textContent = "Thank you for your vote!";
+                responseDiv.className = "text-green-600";
+            } else {
+                responseDiv.textContent = result.error || "Failed to submit vote";
+                responseDiv.className = "text-red-600";
             }
 
         } catch (error) {
             console.error("Error:", error);
-            responseDiv.textContent = "An error occurred. Please try again."; // Show error message
+            responseDiv.textContent = "An error occurred. Please try again.";
+            responseDiv.className = "text-red-600";
         }
 
-        form.reset(); // Reset the form after submission
+        form.reset();
     });
 });
