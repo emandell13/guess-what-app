@@ -3,17 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guess What - Voting Phase</title>
+    <title>Guess What!</title>
 </head>
 <body>
     <h1>Guess What!</h1>
-    <p>Today's Question: <span id="question"></span></p>
-    <form id="vote-form">
-        <input type="text" placeholder="Enter your response" required>
-        <button type="submit">Submit Vote</button>
-    </form>
-    <div id="response"></div>
-    <div id="top-guesses"></div>
+    
+    <!-- Guessing Section -->
+    <div id="guessing-section">
+        <p>Today's Question: <span id="todays-question"></span></p>
+        <form id="guess-form">
+            <input type="text" placeholder="Enter your guess" required>
+            <button type="submit">Submit Guess</button>
+        </form>
+        <div id="guess-response"></div>
+        <div id="correct-guesses"></div>
+        <div id="remaining-guesses"></div>
+    </div>
+
+    <!-- Voting Section (hidden initially) -->
+    <div id="voting-section" style="display: none;">
+        <p>Tomorrow's Question: <span id="tomorrows-question"></span></p>
+        <form id="vote-form">
+            <input type="text" placeholder="Enter your response" required>
+            <button type="submit">Submit Vote</button>
+        </form>
+        <div id="vote-response"></div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -1,43 +1,52 @@
 const supabase = require('../config/supabase');
 
-async function handleGuess(guess, question) {
-    try {
-        // First try to find an existing guess
-        const { data: existingGuess } = await supabase
-            .from('guesses')
-            .select('*')
-            .eq('guess', guess)
-            .eq('question', question)
-            .single();
+async function getCurrentQuestion() {
+    // Get today's date in ET
+    const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
+    const etDate = new Date(et);
+    const todayDate = etDate.getFullYear() + '-' + 
+        String(etDate.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(etDate.getDate()).padStart(2, '0');
 
-        if (existingGuess) {
-            // If found, increment the count
-            const { data } = await supabase
-                .from('guesses')
-                .update({ count: existingGuess.count + 1 })
-                .eq('id', existingGuess.id)
-                .select();
-        } else {
-            // If not found, insert new guess
-            const { data } = await supabase
-                .from('guesses')
-                .insert([{ guess, question, count: 1 }])
-                .select();
-        }
+    const { data: question, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('active_date', todayDate)
+        .eq('voting_complete', true)
+        .single();
 
-        // Get top guesses for this question
-        const { data: topGuesses } = await supabase
-            .from('guesses')
-            .select('*')
-            .eq('question', question)
-            .order('count', { ascending: false })
-            .limit(5);
-
-        return topGuesses.map(entry => `${entry.guess} (${entry.count})`);
-    } catch (error) {
-        console.error('Error handling guess:', error);
-        return [];
+    if (error || !question) {
+        throw new Error('No question available for guessing');
     }
+
+    return question;
 }
 
-module.exports = { handleGuess };
+async function checkGuess(guess) {
+    const question = await getCurrentQuestion();
+    
+    const { data: topAnswers, error } = await supabase
+        .from('top_answers')
+        .select('*')
+        .eq('question_id', question.id);
+
+    if (error) {
+        throw new Error('Failed to fetch answers');
+    }
+
+    const normalizedGuess = guess.toLowerCase().trim();
+    const matchedAnswer = topAnswers.find(
+        answer => answer.answer.toLowerCase().trim() === normalizedGuess
+    );
+
+    return {
+        isCorrect: !!matchedAnswer,
+        rank: matchedAnswer?.rank || null,
+        totalAnswers: topAnswers.length
+    };
+}
+
+module.exports = {
+    getCurrentQuestion,
+    checkGuess
+};

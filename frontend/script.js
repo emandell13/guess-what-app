@@ -1,39 +1,118 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("vote-form");
-    const responseDiv = document.getElementById("response");
-    const questionDiv = document.getElementById("question");
-    const topGuessesDiv = document.getElementById("top-guesses");
+    // Guessing elements
+    const guessForm = document.getElementById("guess-form");
+    const guessResponse = document.getElementById("guess-response");
+    const todaysQuestion = document.getElementById("todays-question");
+    const correctGuessesDiv = document.getElementById("correct-guesses");
+    const remainingGuessesDiv = document.getElementById("remaining-guesses");
 
-   // Get tomorrow's voting question
-   const fetchQuestion = async () => {
-    try {
-        const questionResponse = await fetch("/votes/question");
-        const questionData = await questionResponse.json();
-        
-        if (questionData.question) {
-            questionDiv.textContent = questionData.question.question_text;
-            // Add a label to show this is tomorrow's question
-            const phaseLabel = document.createElement("p");
-            phaseLabel.textContent = "Vote for tomorrow's question!";
-            phaseLabel.className = "text-blue-600 font-bold";
-            questionDiv.parentNode.insertBefore(phaseLabel, questionDiv);
-        } else {
-            responseDiv.textContent = "No question available for voting";
+    // Voting elements
+    const voteForm = document.getElementById("vote-form");
+    const voteResponse = document.getElementById("vote-response");
+    const tomorrowsQuestion = document.getElementById("tomorrows-question");
+
+    let correctGuesses = [];
+    const MAX_GUESSES = 10;
+    let guessesRemaining = MAX_GUESSES;
+
+    // Get today's question for guessing
+    const fetchTodaysQuestion = async () => {
+        try {
+            const response = await fetch("/guesses/question");
+            const data = await response.json();
+            
+            if (data.question) {
+                todaysQuestion.textContent = data.question;
+                updateRemainingGuesses();
+            } else {
+                guessResponse.textContent = "No question available for guessing yet";
+            }
+        } catch (error) {
+            console.error("Error fetching today's question:", error);
+            guessResponse.textContent = "Failed to load question";
         }
-    } catch (error) {
-        console.error("Error fetching question:", error);
-        responseDiv.textContent = "Failed to load question.";
-    }
-};
+    };
 
-    // Call fetchQuestion when page loads
-    fetchQuestion();
+    // Get tomorrow's question for voting
+    const fetchTomorrowsQuestion = async () => {
+        try {
+            const response = await fetch("/votes/question");
+            const data = await response.json();
+            
+            if (data.question) {
+                tomorrowsQuestion.textContent = data.question.question_text;
+            } else {
+                voteResponse.textContent = "No question available for voting";
+            }
+        } catch (error) {
+            console.error("Error fetching tomorrow's question:", error);
+            voteResponse.textContent = "Failed to load question";
+        }
+    };
 
-    // Handle form submission
-    form.addEventListener("submit", async (event) => {
+    const updateRemainingGuesses = () => {
+        remainingGuessesDiv.textContent = `Guesses remaining: ${guessesRemaining}`;
+    };
+
+    // Handle guess submission
+    guessForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+    
+        if (guessesRemaining <= 0) {
+            guessResponse.textContent = "No more guesses remaining!";
+            // Show voting section when out of guesses
+            document.getElementById("voting-section").style.display = "block";
+            return;
+        }
+    
+        const userGuess = guessForm.elements[0].value;
+    
+        try {
+            const response = await fetch("/guesses", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ guess: userGuess }),
+            });
+    
+            const result = await response.json();
+    
+            if (result.isCorrect) {
+                guessResponse.textContent = `Correct! This was answer #${result.rank}`;
+                correctGuesses.push({ guess: userGuess, rank: result.rank });
+                correctGuesses.sort((a, b) => a.rank - b.rank);
+                correctGuessesDiv.innerHTML = "Correct guesses:<br>" + 
+                    correctGuesses.map(g => `#${g.rank}: ${g.guess}`).join('<br>');
+                
+                // Show voting section if all answers found
+                if (correctGuesses.length === 5) {
+                    document.getElementById("voting-section").style.display = "block";
+                }
+            } else {
+                guessResponse.textContent = "Try again!";
+                guessesRemaining--;
+                updateRemainingGuesses();
+                
+                // Show voting section if out of guesses
+                if (guessesRemaining <= 0) {
+                    document.getElementById("voting-section").style.display = "block";
+                }
+            }
+    
+        } catch (error) {
+            console.error("Error:", error);
+            guessResponse.textContent = "An error occurred. Please try again.";
+        }
+    
+        guessForm.reset();
+    });
+
+    // Handle vote submission
+    voteForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const userResponse = form.elements[0].value;
+        const userResponse = voteForm.elements[0].value;
 
         try {
             const response = await fetch("/votes", {
@@ -47,19 +126,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
 
             if (response.ok) {
-                responseDiv.textContent = "Thank you for your vote!";
-                responseDiv.className = "text-green-600";
+                voteResponse.textContent = "Thank you for your vote!";
+                voteResponse.className = "text-green-600";
             } else {
-                responseDiv.textContent = result.error || "Failed to submit vote";
-                responseDiv.className = "text-red-600";
+                voteResponse.textContent = result.error || "Failed to submit vote";
+                voteResponse.className = "text-red-600";
             }
 
         } catch (error) {
             console.error("Error:", error);
-            responseDiv.textContent = "An error occurred. Please try again.";
-            responseDiv.className = "text-red-600";
+            voteResponse.textContent = "An error occurred. Please try again.";
+            voteResponse.className = "text-red-600";
         }
 
-        form.reset();
+        voteForm.reset();
     });
+
+    // Initialize
+    fetchTodaysQuestion();
+    fetchTomorrowsQuestion();
 });
