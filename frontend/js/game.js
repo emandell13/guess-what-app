@@ -1,11 +1,12 @@
 class Game {
-    constructor() {
+    constructor(ui) {
         // Game state
         this.correctGuesses = [];
         this.maxPoints = 0;
         this.currentScore = 0;
         this.strikes = 0;
         this.MAX_STRIKES = 3;
+        this.ui = ui;  // Store UI reference
 
         // DOM elements
         this.currentScoreSpan = document.getElementById("current-score");
@@ -62,7 +63,7 @@ class Game {
         }
     }
 
-    addStrike() {
+    async addStrike() {
         this.strikes++;
         const strikeIcons = this.strikesDiv.querySelectorAll('i');
         const icon = strikeIcons[this.strikes - 1];
@@ -70,8 +71,17 @@ class Game {
         icon.classList.add('text-danger', 'strike-reveal');
         
         if (this.strikes >= this.MAX_STRIKES) {
-            this.showVotingSection();
+            await this.handleStrikeOut();
         }
+    }
+
+    async handleStrikeOut() {
+        // Show all remaining answers
+        await this.ui.revealAllRemaining(this);
+        // Then show voting section
+        setTimeout(() => {
+            this.showVotingSection();
+        }, 2500 * 5); // Wait for all reveals to complete
     }
 
     showVotingSection() {

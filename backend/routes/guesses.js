@@ -36,12 +36,27 @@ router.get('/question', async (req, res) => {
         const totalVotes = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
         const maxPoints = totalVotes; // Each vote is worth 1 point
 
-        res.json({ 
-            question: question.question_text,
-            totalVotes: totalVotes,
-            maxPoints: maxPoints,
-            answerCount: topAnswers.length
-        });
+        // If includeAnswers flag is true (for strikeout), include all answers
+        if (req.query.includeAnswers === 'true') {
+            res.json({
+                question: question.question_text,
+                totalVotes,
+                maxPoints,
+                answerCount: topAnswers.length,
+                answers: topAnswers.map(answer => ({
+                    rank: answer.rank,
+                    answer: answer.answer,
+                    points: answer.vote_count
+                }))
+            });
+        } else {
+            res.json({ 
+                question: question.question_text,
+                totalVotes,
+                maxPoints,
+                answerCount: topAnswers.length
+            });
+        }
 
     } catch (error) {
         console.error('Error fetching question:', error);
@@ -100,6 +115,8 @@ router.post('/', async (req, res) => {
         console.error('Error processing guess:', error);
         res.status(500).json({ error: 'Failed to process guess' });
     }
+
+    
 });
 
 module.exports = router;

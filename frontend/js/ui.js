@@ -52,6 +52,55 @@ class UI {
             cardBody.classList.remove("answer-reveal");
         }, 2000);
     }
+
+    revealUnguessedAnswer(rank, answer, points, isStrikeout = true) {
+        const answerBox = document.getElementById(`answer-${rank}`);
+        const cardBody = answerBox.querySelector(".card-body");
+        const answerText = answerBox.querySelector(".answer-text");
+        const pointsBadge = answerBox.querySelector(".points");
+        
+        // Start with empty text
+        answerText.textContent = "";
+        
+        // Add strikeout reveal animation
+        cardBody.classList.add("answer-reveal", "strikeout-reveal");
+
+        // Show the text halfway through the flip
+        setTimeout(() => {
+            answerText.textContent = answer;
+            answerText.classList.add('visible');
+            pointsBadge.textContent = `${points} pts`;
+            pointsBadge.classList.remove("d-none");
+            cardBody.classList.remove("bg-light");
+            cardBody.classList.add("bg-danger", "bg-opacity-25"); // Red background for strikeout reveals
+        }, 1000);
+
+        // Remove animation class after completion
+        setTimeout(() => {
+            cardBody.classList.remove("answer-reveal", "strikeout-reveal");
+        }, 2000);
+    }
+
+    async revealAllRemaining(game) {
+        try {
+            const response = await fetch("/guesses/question?includeAnswers=true");
+            const data = await response.json();
+            
+            // Filter out already guessed answers
+            const remainingAnswers = data.answers.filter(answer => 
+                !game.correctGuesses.some(guess => guess.rank === answer.rank)
+            );
+    
+            // Reveal each remaining answer with a delay between each
+            remainingAnswers.forEach((answer, index) => {
+                setTimeout(() => {
+                    this.revealUnguessedAnswer(answer.rank, answer.answer, answer.points);
+                }, index * 2500); // Stagger the reveals
+            });
+        } catch (error) {
+            console.error('Error fetching all answers:', error);
+        }
+    }
 }
 
 export default UI;
