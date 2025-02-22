@@ -1,6 +1,7 @@
 import Game from './game.js';
 import UI from './ui.js';
 import Guessing from './guessing.js';
+import Voting from './voting.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
     const game = new Game();
@@ -13,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     game.fetchTomorrowsQuestion();
 
-    // Initialize guessing
+    // Initialize game modules
     new Guessing(game, ui);
+    new Voting(game);
 });
