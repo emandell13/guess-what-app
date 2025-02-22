@@ -1,7 +1,8 @@
 class Guessing {
-    constructor(game, ui) {
+    constructor(game, ui, modalManager) {
         this.game = game;
         this.ui = ui;
+        this.modalManager = modalManager;
         this.form = document.getElementById("guess-form");
         this.setupEventListeners();
     }
@@ -15,7 +16,7 @@ class Guessing {
 
     async handleGuess(event) {
         if (this.game.strikes >= this.game.MAX_STRIKES) {
-            this.game.showVotingSection();
+            this.modalManager.showGameComplete();  // Show modal instead of voting section
             return;
         }
 
@@ -42,7 +43,7 @@ class Guessing {
                 
                 // Check if all answers found
                 if (this.game.correctGuesses.length === 5) {
-                    this.game.showVotingSection();
+                    this.modalManager.showGameComplete();
                 }
             } else {
                 this.game.addStrike();
