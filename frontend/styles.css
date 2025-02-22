@@ -1,20 +1,35 @@
 /* Card flip animation */
 @keyframes flipReveal {
     0% { 
-        transform: rotateX(0deg);
-        background-color: #f8f9fa;  /* light gray */
+        transform: perspective(1000px) rotateX(0deg);
+        background-color: #f8f9fa;
+    }
+    50% { 
+        transform: perspective(1000px) rotateX(90deg);
+        background-color: #f8f9fa;
+    }
+    50.1% {
+        background-color: rgba(25, 135, 84, 0.25);
     }
     100% { 
-        transform: rotateX(360deg);
-        background-color: rgba(25, 135, 84, 0.25);  /* subtle green */
+        transform: perspective(1000px) rotateX(180deg);
+        background-color: rgba(25, 135, 84, 0.25);
     }
 }
 
 .answer-reveal {
-    animation: flipReveal 1s ease-in-out;
-    transform-origin: center;
-    perspective: 1000px;
-    backface-visibility: hidden;
+    animation: flipReveal 2s ease-in-out;
+    transform-style: preserve-3d;
+}
+
+.answer-text {
+    opacity: 0;
+    transition: opacity 0s;
+}
+
+.answer-text.visible {
+    opacity: 1;
+    transition-delay: 1s;
 }
 
 /* Strike animation */

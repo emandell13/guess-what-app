@@ -43,6 +43,23 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    // Get tomorrow's question for voting
+    const fetchTomorrowsQuestion = async () => {
+        try {
+            const response = await fetch("/votes/question");
+            const data = await response.json();
+            
+            if (data.question) {
+                tomorrowsQuestion.textContent = data.question.question_text;
+            } else {
+                voteResponse.textContent = "No question available for voting";
+            }
+        } catch (error) {
+            console.error("Error fetching tomorrow's question:", error);
+            voteResponse.textContent = "Failed to load question";
+        }
+    };
+
     const createAnswerBoxes = (count) => {
         answerBoxesContainer.innerHTML = '';
         for (let i = 1; i <= count; i++) {
@@ -105,25 +122,30 @@ document.addEventListener("DOMContentLoaded", () => {
             if (result.isCorrect) {
                 const answerBox = document.getElementById(`answer-${result.rank}`);
                 const cardBody = answerBox.querySelector(".card-body");
+                const answerText = answerBox.querySelector(".answer-text");
                 const pointsBadge = answerBox.querySelector(".points");
                 
-                answerBox.querySelector(".answer-text").textContent = userGuess;
-                pointsBadge.textContent = `${result.points} pts`;
-                pointsBadge.classList.remove("d-none");
+                // Start with empty text
+                answerText.textContent = "";
                 
                 // Add animation class
-                console.log("Adding animation class"); // Debug log
                 cardBody.classList.add("answer-reveal");
-                console.log("Card body classes:", cardBody.classList); // Debug log
-
-                cardBody.classList.remove("bg-light");
-                cardBody.classList.add("bg-success", "bg-opacity-25");
-
-                // Remove animation class after it completes
+            
+                // Show the text halfway through the flip
+                setTimeout(() => {
+                    answerText.textContent = userGuess;
+                    answerText.classList.add('visible');
+                    pointsBadge.textContent = `${result.points} pts`;
+                    pointsBadge.classList.remove("d-none");
+                    cardBody.classList.remove("bg-light");
+                    cardBody.classList.add("bg-success", "bg-opacity-25");
+                }, 1000);
+            
+                // Remove animation class after completion
                 setTimeout(() => {
                     cardBody.classList.remove("answer-reveal");
-                }, 500);
-
+                }, 2000);
+            
                 // Update score
                 currentScore += result.points;
                 currentScoreSpan.textContent = currentScore;
@@ -145,10 +167,39 @@ document.addEventListener("DOMContentLoaded", () => {
         guessForm.reset();
     });
 
-    // Keep your existing vote submission handler
-    voteForm.addEventListener("submit", async (event) => {
-        // ... your existing vote submission code ...
-    });
+   // Handle vote submission
+   voteForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const userResponse = voteForm.elements[0].value;
+
+    try {
+        const response = await fetch("/votes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ response: userResponse }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            voteResponse.textContent = "Thank you for your vote!";
+            voteResponse.className = "text-green-600";
+        } else {
+            voteResponse.textContent = result.error || "Failed to submit vote";
+            voteResponse.className = "text-red-600";
+        }
+
+    } catch (error) {
+        console.error("Error:", error);
+        voteResponse.textContent = "An error occurred. Please try again.";
+        voteResponse.className = "text-red-600";
+    }
+
+    voteForm.reset();
+});
 
     // Initialize game
     fetchTodaysQuestion();
