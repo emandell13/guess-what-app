@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 
-// Get today's question for guessing
 router.get('/question', async (req, res) => {
     try {
         // Get today's date in ET
@@ -17,7 +16,7 @@ router.get('/question', async (req, res) => {
             .from('questions')
             .select('*')
             .eq('active_date', todayDate)
-            .eq('voting_complete', true)  // Only get questions where voting is done
+            .eq('voting_complete', true)
             .single();
 
         if (!question) {
@@ -26,17 +25,22 @@ router.get('/question', async (req, res) => {
             });
         }
 
-        // Get top answers for this question
+        // Get top answers with their vote counts
         const { data: topAnswers } = await supabase
             .from('top_answers')
             .select('*')
             .eq('question_id', question.id)
             .order('rank', { ascending: true });
 
-        // Don't send the actual answers to the frontend!
+        // Calculate total votes and points
+        const totalVotes = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
+        const maxPoints = totalVotes; // Each vote is worth 1 point
+
         res.json({ 
             question: question.question_text,
-            totalAnswers: topAnswers?.length || 0
+            totalVotes: totalVotes,
+            maxPoints: maxPoints,
+            answerCount: topAnswers.length
         });
 
     } catch (error) {
@@ -50,7 +54,7 @@ router.post('/', async (req, res) => {
     try {
         const { guess } = req.body;
         
-        // Get today's question and its answers
+        // Get today's question and its answers (same date logic as above)
         const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
         const etDate = new Date(et);
         const todayDate = etDate.getFullYear() + '-' + 
@@ -86,6 +90,7 @@ router.post('/', async (req, res) => {
         res.json({
             isCorrect: !!matchedAnswer,
             rank: matchedAnswer?.rank || null,
+            points: matchedAnswer?.vote_count || 0,
             message: matchedAnswer 
                 ? `Correct! This was answer #${matchedAnswer.rank}` 
                 : 'Try again!'

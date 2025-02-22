@@ -4,32 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guess What!</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for strike icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <h1>Guess What!</h1>
-    
-    <!-- Guessing Section -->
-    <div id="guessing-section">
-        <p>Today's Question: <span id="todays-question"></span></p>
-        <form id="guess-form">
-            <input type="text" placeholder="Enter your guess" required>
-            <button type="submit">Submit Guess</button>
-        </form>
-        <div id="guess-response"></div>
-        <div id="correct-guesses"></div>
-        <div id="remaining-guesses"></div>
+<body class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+    <!-- Logo -->
+    <div class="text-center mb-5">
+        <h1 class="display-2 fw-bold">Guess What!</h1>
     </div>
 
-    <!-- Voting Section (hidden initially) -->
+    <!-- Question with Vote Count -->
+    <h2 class="text-center mb-4"></h2>
+
+    <!-- Score Tracker -->
+    <div class="text-end mb-4">
+        <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span id="max-score">0</span></span></h4>
+    </div>
+
+    <!-- Answer Boxes Container -->
+    <div class="mb-4">
+        <div class="row g-3" id="answer-boxes">
+            <!-- Answer boxes will be added dynamically -->
+        </div>
+    </div>
+
+    <!-- Guessing Module -->
+    <div class="card mb-4 shadow">
+        <div class="card-body p-4">
+            <form id="guess-form">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control form-control-lg" placeholder="Type your guess here..." required>
+                    <button class="btn btn-primary btn-lg px-4">Guess!</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Strike Counter -->
+    <div class="text-center mb-4">
+        <h4 class="text-muted mb-3">Strikes</h4>
+        <div id="strikes" class="fs-1">
+            <i class="far fa-circle me-3 text-danger opacity-75"></i>
+            <i class="far fa-circle me-3 text-danger opacity-75"></i>
+            <i class="far fa-circle text-danger opacity-75"></i>
+        </div>
+    </div>
+
+    <!-- Hidden Voting Section -->
     <div id="voting-section" style="display: none;">
-        <p>Tomorrow's Question: <span id="tomorrows-question"></span></p>
-        <form id="vote-form">
-            <input type="text" placeholder="Enter your response" required>
-            <button type="submit">Submit Vote</button>
-        </form>
-        <div id="vote-response"></div>
+        <hr class="my-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Tomorrow's Question: <span id="tomorrows-question"></span></h3>
+                <form id="vote-form" class="mt-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Enter your response" required>
+                        <button class="btn btn-primary" type="submit">Submit Vote</button>
+                    </div>
+                </form>
+                <div id="vote-response" class="mt-3"></div>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
+</div>
+</div>
 </body>
 </html>
