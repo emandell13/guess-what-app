@@ -5,129 +5,150 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guess What!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/modal.css">
     <!-- Font Awesome for strike icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-    <!-- Logo -->
-    <div class="text-center mb-5">
-        <h1 class="display-2 fw-bold">Guess What!</h1>
-    </div>
+            <!-- Logo -->
+            <div class="text-center mb-5">
+                <h1 class="display-2 fw-bold">Guess What!</h1>
+            </div>
 
-    <!-- Question with Vote Count -->
-    <h2 class="text-center mb-4"></h2>
+            <!-- Question with Vote Count -->
+            <h2 class="text-center mb-4"></h2>
 
-    <!-- Score Tracker -->
-    <div class="text-end mb-4">
-        <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span id="max-score">0</span></span></h4>
-    </div>
+            <!-- Score Tracker -->
+            <div class="text-end mb-4">
+                <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span id="max-score">0</span></span></h4>
+            </div>
 
-    <!-- Answer Boxes Container -->
-    <div class="mb-4">
-        <div class="row g-3" id="answer-boxes">
-            <!-- Answer boxes will be added dynamically -->
-        </div>
-    </div>
-
-    <!-- Guessing Module -->
-    <div class="card mb-4 shadow">
-        <div class="card-body p-4">
-            <form id="guess-form">
-                <div class="input-group input-group-lg">
-                    <input type="text" class="form-control form-control-lg" placeholder="Type your guess here..." required>
-                    <button class="btn btn-primary btn-lg px-4">Guess!</button>
+            <!-- Answer Boxes Container -->
+            <div class="mb-4">
+                <div class="row g-3" id="answer-boxes">
+                    <!-- Answer boxes will be added dynamically -->
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <!-- Strike Counter -->
-    <div class="text-center mb-4">
-        <h4 class="text-muted mb-3">Strikes</h4>
-        <div id="strikes" class="fs-1">
-            <i class="far fa-circle me-3 text-danger opacity-75"></i>
-            <i class="far fa-circle me-3 text-danger opacity-75"></i>
-            <i class="far fa-circle text-danger opacity-75"></i>
-        </div>
-    </div>
+            <!-- Guessing Module -->
+            <div class="card mb-4 shadow">
+                <div class="card-body p-4">
+                    <form id="guess-form">
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control form-control-lg" placeholder="Type your guess here..." required>
+                            <button class="btn btn-primary btn-lg px-4">Guess!</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-    <!-- Hidden Voting Section -->
-    <div id="voting-section" style="display: none;">
-        <hr class="my-4">
-        <div class="card">
-            <div class="card-body">
-                <h3 class="card-title">Tomorrow's Question: <span id="tomorrows-question"></span></h3>
-                <form id="vote-form" class="mt-3">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Enter your response" required>
-                        <button class="btn btn-primary" type="submit">Submit Vote</button>
+            <!-- Strike Counter -->
+            <div class="text-center mb-4">
+                <h4 class="text-muted mb-3">Strikes</h4>
+                <div id="strikes" class="fs-1">
+                    <i class="far fa-circle me-3 text-danger opacity-75"></i>
+                    <i class="far fa-circle me-3 text-danger opacity-75"></i>
+                    <i class="far fa-circle text-danger opacity-75"></i>
+                </div>
+            </div>
+
+            <!-- Hidden Voting Section -->
+            <div id="voting-section" style="display: none;">
+                <hr class="my-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">Tomorrow's Question: <span id="tomorrows-question"></span></h3>
+                        <form id="vote-form" class="mt-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Enter your response" required>
+                                <button class="btn btn-primary" type="submit">Submit Vote</button>
+                            </div>
+                        </form>
+                        <div id="vote-response" class="mt-3"></div>
                     </div>
-                </form>
-                <div id="vote-response" class="mt-3"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Game Completion Modal -->
+   <!-- Game Completion Modal -->
 <div class="modal fade" id="gameCompleteModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <!-- Progress Indicator -->
-            <div class="modal-header border-0">
-                <div class="progress w-100" style="height: 3px;">
+            <!-- Progress Bar -->
+            <div class="modal-header border-0 pb-0">
+                <div class="progress w-100" style="height: 4px;">
                     <div class="progress-bar" role="progressbar" style="width: 33%"></div>
                 </div>
             </div>
 
             <!-- Step 1: Game Summary -->
             <div class="modal-body" id="summaryStep">
-                <h3 class="text-center mb-4">Game Summary</h3>
-                <div class="summary-container">
-                    <div class="final-score text-center mb-4">
-                        <h4>Final Score</h4>
-                        <span class="display-4" id="modalFinalScore">0</span>
-                        <span class="text-muted">points</span>
-                    </div>
-                    <div class="answers-summary mb-4">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                    <div class="strikes-summary text-center">
-                        <h5>Strikes Used</h5>
-                        <div id="modalStrikes"></div>
-                    </div>
+                <h3 class="text-center mb-4">Nice job!</h3>
+                
+                <div class="final-score text-center">
+                    <h4 class="text-muted mb-3">Your Score</h4>
+                    <div class="display-4 mb-2"><span id="modalFinalScore">0</span></div>
+                    <div class="text-muted">points</div>
                 </div>
-                <button class="btn btn-primary w-100 mt-4" onclick="nextStep()">Share Results →</button>
+
+                <div class="answers-summary my-4">
+                    <!-- Will be populated dynamically with answer cards -->
+                </div>
+
+                <div class="strikes-summary text-center mb-4">
+                    <h5 class="text-muted mb-3">Strikes Used</h5>
+                    <div id="modalStrikes" class="fs-4"></div>
+                </div>
+
+                <button class="btn btn-next w-100" onclick="nextStep()">
+                    Share Your Results →
+                </button>
             </div>
 
             <!-- Step 2: Share -->
             <div class="modal-body" id="shareStep" style="display: none;">
                 <h3 class="text-center mb-4">Share Your Results!</h3>
-                <div class="share-container text-center">
-                    <div class="share-preview mb-4">
-                        <!-- Share image preview will go here -->
-                    </div>
-                    <div class="share-buttons">
-                        <button class="btn btn-outline-primary me-2">Twitter</button>
-                        <button class="btn btn-outline-primary">Copy Link</button>
-                    </div>
+                
+                <div class="share-preview mb-4">
+                    <!-- Share image will be generated here -->
                 </div>
-                <button class="btn btn-primary w-100 mt-4" onclick="nextStep()">Vote for Tomorrow →</button>
+
+                <div class="share-buttons">
+                    <button class="btn btn-outline-primary" data-platform="twitter">
+                        <i class="fab fa-twitter me-2"></i>Twitter
+                    </button>
+                    <button class="btn btn-outline-primary" data-action="copy-link">
+                        <i class="fas fa-link me-2"></i>Copy Link
+                    </button>
+                </div>
+
+                <button class="btn btn-next w-100 mt-4" onclick="nextStep()">
+                    Vote for Tomorrow's Question →
+                </button>
             </div>
 
             <!-- Step 3: Vote -->
             <div class="modal-body" id="voteStep" style="display: none;">
                 <h3 class="text-center mb-4">Help Create Tomorrow's Game!</h3>
-                <p class="text-center">What do you think will be the most popular answer?</p>
-                <div id="modalVoteForm">
-                    <!-- Vote form will be moved here by JavaScript -->
+                
+                <div class="vote-container">
+                    <p class="text-center mb-4">What do you think most people will answer?</p>
+                    <div id="modalVoteForm" class="mb-4">
+                        <!-- Vote form will be moved here -->
+                    </div>
+                </div>
+
+                <div class="text-center text-muted">
+                    <small>Come back tomorrow to see if others thought like you!</small>
                 </div>
             </div>
+
         </div>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/main.js"></script>

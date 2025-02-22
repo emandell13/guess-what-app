@@ -1,12 +1,13 @@
 class Game {
-    constructor(ui) {
+    constructor(ui, modalManager) {
         // Game state
         this.correctGuesses = [];
         this.maxPoints = 0;
         this.currentScore = 0;
         this.strikes = 0;
         this.MAX_STRIKES = 3;
-        this.ui = ui;  // Store UI reference
+        this.ui = ui;
+        this.modalManager = modalManager;
 
         // DOM elements
         this.currentScoreSpan = document.getElementById("current-score");
@@ -80,7 +81,7 @@ class Game {
         await this.ui.revealAllRemaining(this);
         // Then show voting section
         setTimeout(() => {
-            this.showVotingSection();
+            this.modalManager.showGameComplete();
         }, 2500 * 5); // Wait for all reveals to complete
     }
 

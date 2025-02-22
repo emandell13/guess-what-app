@@ -1,0 +1,104 @@
+/* Modal animations */
+.modal.fade .modal-dialog {
+    transform: translateY(100px);
+    transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+}
+
+/* Modal styling */
+.modal-content {
+    border-radius: 1rem;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress bar */
+.progress {
+    background-color: #e9ecef;
+    border-radius: 0;
+    position: relative;
+    overflow: visible;
+}
+
+.progress-bar {
+    background-color: #007bff;
+    transition: width 0.5s ease;
+}
+
+/* Summary section */
+.final-score {
+    padding: 2rem;
+    background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
+    border-radius: 1rem;
+    margin: 1rem 0;
+}
+
+.final-score .display-4 {
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* Answers summary */
+.answers-summary {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.answer-card {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.answer-card.correct {
+    background-color: rgba(25, 135, 84, 0.1);
+    border: 1px solid rgba(25, 135, 84, 0.2);
+}
+
+.answer-card.revealed {
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* Step transitions */
+.modal-body {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-body[style*="display: none"] {
+    opacity: 0;
+}
+
+/* Share buttons */
+.share-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.share-buttons .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+}
+
+/* Next step buttons */
+.btn-next {
+    background: linear-gradient(to right, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 2rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-next:hover {
+    transform: translateY(-2px);
+}

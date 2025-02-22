@@ -6,8 +6,9 @@ import ModalManager from './modal-manager.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
     const ui = new UI();
-    const game = new Game(ui);
-    const modalManager = new ModalManager(game, ui);
+    const modalManager = new ModalManager(ui);
+    const game = new Game(ui, modalManager);
+    modalManager.setGame(game);
     
     // Initialize game
     const questionData = await game.fetchTodaysQuestion();
