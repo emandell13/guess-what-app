@@ -86,7 +86,7 @@ class ModalManager {
         [this.summaryStep, this.shareStep, this.voteStep].forEach(step => 
             step.style.display = 'none'
         );
-
+    
         // Show current step
         switch(this.currentStep) {
             case 1:
@@ -97,23 +97,50 @@ class ModalManager {
                 break;
             case 3:
                 this.voteStep.style.display = 'block';
-                // Move vote form into modal
-                const originalForm = document.getElementById('vote-form');
-                const voteForm = originalForm.cloneNode(true);
-                originalForm.style.display = 'none'; // Hide original form
                 
-                const modalVoteForm = document.getElementById('modalVoteForm');
-                modalVoteForm.innerHTML = '';
-                modalVoteForm.appendChild(voteForm);
-
-                // Set up new form submission handler
-                voteForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    // TODO: Handle vote submission
-                });
+                // Debug logs
+                console.log("Tomorrow's question element:", document.getElementById("tomorrows-question"));
+                const tomorrowsQuestion = document.getElementById("tomorrows-question").textContent;
+                console.log("Tomorrow's question text:", tomorrowsQuestion);
+                
+                // Debug log for paragraph
+                const questionHeader = this.voteStep.querySelector(".vote-container p");
+                console.log("Question header paragraph:", questionHeader);
+                
+                if (questionHeader) {
+                    questionHeader.innerHTML = `<strong>${tomorrowsQuestion}</strong><br><br>What do you think most people will answer?`;
+                } else {
+                    console.error("Could not find question paragraph in vote step");
+                }
+                
+                // Debug original form
+                const originalForm = document.getElementById('vote-form');
+                console.log("Original vote form:", originalForm);
+                
+                if (originalForm) {
+                    const voteForm = originalForm.cloneNode(true);
+                    originalForm.style.display = 'none'; // Hide original form
+                    
+                    const modalVoteForm = document.getElementById('modalVoteForm');
+                    console.log("Modal vote form container:", modalVoteForm);
+                    
+                    if (modalVoteForm) {
+                        modalVoteForm.innerHTML = '';
+                        modalVoteForm.appendChild(voteForm);
+                    
+                        // Set up submission handler
+                        voteForm.addEventListener('submit', async (e) => {
+                            // ...submission code...
+                        });
+                    } else {
+                        console.error("Could not find modalVoteForm element");
+                    }
+                } else {
+                    console.error("Could not find original vote form");
+                }
                 break;
         }
-
+    
         this.updateProgress();
     }
 
