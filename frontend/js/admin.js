@@ -364,6 +364,28 @@ function checkExistingAuth() {
     }
 }
 
+// Function to manually trigger daily update
+async function runDailyUpdate() {
+    try {
+        // Show loading state via alert
+        alert('Starting daily update - this may take a moment...');
+        
+        // Call the update endpoint with authentication
+        const response = await fetchWithAuth('/admin/run-update');
+        const result = await response.json();
+        
+        // Show result
+        if (result.success) {
+            alert(`Update completed successfully!\n\nMessage: ${result.message}`);
+        } else {
+            alert(`Update failed.\n\nError: ${result.error || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error running update:', error);
+        alert(`Failed to run update: ${error.message}`);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Setup event listeners
@@ -376,6 +398,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('saveQuestionBtn').addEventListener('click', addQuestion);
     document.getElementById('updateQuestionBtn').addEventListener('click', updateQuestion);
+    const updateBtn = document.getElementById('run-update-btn');
+    if (updateBtn) {
+        updateBtn.addEventListener('click', runDailyUpdate);
+    }
     
     // Check for existing auth
     checkExistingAuth();
@@ -385,4 +411,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showEditModal = showEditModal;
     window.tallyVotes = tallyVotes;
     window.deleteQuestion = deleteQuestion;
+    window.runDailyUpdate = runDailyUpdate;
 });
