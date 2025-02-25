@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const adminAuth = require('../middleware/adminAuth');
+const voteService = require('../services/voteService');
 
 // Apply auth middleware to all admin routes
 router.use(adminAuth);
@@ -49,54 +50,17 @@ router.post('/tally/:questionId', async (req, res) => {
     try {
         const { questionId } = req.params;
         
-        // Get all votes for this question
-        const { data: votes, error: votesError } = await supabase
-            .from('votes')
-            .select('*')
-            .eq('question_id', questionId);
-            
-        if (votesError) throw votesError;
+        // Use the new service function
+        const result = await voteService.tallyVotesForQuestion(questionId);
         
-        // Count votes by response
-        const voteCount = {};
-        votes.forEach(vote => {
-            const response = vote.response.toLowerCase().trim();
-            voteCount[response] = (voteCount[response] || 0) + 1;
-        });
-        
-        // Convert to array and sort by count
-        const sortedVotes = Object.entries(voteCount)
-            .map(([answer, count]) => ({ answer, count }))
-            .sort((a, b) => b.count - a.count);
-        
-        // Take top 5 answers
-        const topAnswers = sortedVotes.slice(0, 5);
-        
-        // Insert into top_answers table
-        for (let i = 0; i < topAnswers.length; i++) {
-            const { answer, count } = topAnswers[i];
-            const rank = i + 1;
-            
-            await supabase
-                .from('top_answers')
-                .insert([{
-                    question_id: questionId,
-                    answer,
-                    vote_count: count,
-                    rank
-                }]);
+        if (result.success) {
+            res.json({ 
+                message: 'Votes tallied successfully', 
+                topAnswers: result.data 
+            });
+        } else {
+            throw new Error(result.error);
         }
-        
-        // Mark question as voting complete
-        await supabase
-            .from('questions')
-            .update({ voting_complete: true })
-            .eq('id', questionId);
-        
-        res.json({ 
-            message: 'Votes tallied successfully', 
-            topAnswers 
-        });
     } catch (error) {
         console.error('Error tallying votes:', error);
         res.status(500).json({ error: 'Failed to tally votes' });
