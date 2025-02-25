@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const adminAuth = require('../middleware/adminAuth');
+
+// Apply auth middleware to all admin routes
+router.use(adminAuth);
 
 // Get all questions
 router.get('/questions', async (req, res) => {

@@ -5,7 +5,15 @@ const guessRoutes = require('./guesses');
 const adminRoutes = require('./admin');
 
 module.exports = (app) => {
-  // Use the votes routes for any routes under "/guesses"
+  // Serve static files first
+  app.use(express.static(path.join(__dirname, '../../frontend')));
+  
+  // HTML route for admin dashboard
+  app.get('/admin-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/admin.html'));
+  });
+  
+  // API routes
   app.use('/votes', voteRoutes);
   app.use('/guesses', guessRoutes);
   app.use('/admin', adminRoutes);
@@ -14,9 +22,4 @@ module.exports = (app) => {
   app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
   });
-
-  // In routes/index.js, add this route
-  app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/admin.html'));
-});
 };
