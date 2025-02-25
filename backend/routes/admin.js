@@ -205,4 +205,23 @@ router.delete('/questions/:id', async (req, res) => {
     }
 });
 
+// Add a route to manually trigger the daily update
+router.get('/run-update', async (req, res) => {
+    try {
+      const dailyUpdate = require('../scripts/dailyUpdate');
+      const result = await dailyUpdate();
+      res.json({ 
+        success: result.success, 
+        message: 'Daily update executed manually',
+        details: result
+      });
+    } catch (error) {
+      console.error('Error running update:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
 module.exports = router;

@@ -64,6 +64,30 @@ class Game {
         }
     }
 
+    async fetchTopAnswers() {
+        try {
+            const response = await fetch("/guesses/top-answers");
+            const data = await response.json();
+            
+            if (data.success && data.data && data.data.length > 0) {
+                return {
+                    success: true,
+                    answers: data.data
+                };
+            } else {
+                console.error("No top answers found");
+                return {
+                    success: false
+                };
+            }
+        } catch (error) {
+            console.error("Error fetching top answers:", error);
+            return {
+                success: false
+            };
+        }
+    }
+
     async addStrike() {
         this.strikes++;
         const strikeIcons = this.strikesDiv.querySelectorAll('i');
@@ -77,8 +101,17 @@ class Game {
     }
 
     async handleStrikeOut() {
+        // Get the top answers first
+        const topAnswersResult = await this.fetchTopAnswers();
+        
         // Show all remaining answers
-        await this.ui.revealAllRemaining(this);
+        if (topAnswersResult.success) {
+            await this.ui.revealAllRemaining(this, topAnswersResult.answers);
+        } else {
+            // Fallback to previous method if fetching fails
+            await this.ui.revealAllRemaining(this);
+        }
+        
         // Then show voting section
         setTimeout(() => {
             this.modalManager.showGameComplete();
