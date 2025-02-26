@@ -4,10 +4,14 @@ import Guessing from './guessing.js';
 import Voting from './voting.js';
 import ModalManager from './modal-manager.js';
 
+// Fix for main.js
 document.addEventListener("DOMContentLoaded", async () => {
     const ui = new UI();
     const modalManager = new ModalManager(ui);
     const game = new Game(ui, modalManager);
+    const voting = new Voting(game);
+    
+    modalManager.voting = voting;
     modalManager.setGame(game);
     
     // Initialize game
@@ -18,6 +22,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     game.fetchTomorrowsQuestion();
 
     // Initialize game modules
-    new Guessing(game, ui, modalManager);  // Pass modalManager to Guessing
-    new Voting(game);
+    new Guessing(game, ui, modalManager);
 });

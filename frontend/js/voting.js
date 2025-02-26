@@ -1,21 +1,12 @@
 class Voting {
     constructor(game) {
         this.game = game;
-        this.form = document.getElementById("vote-form");
-        this.responseDiv = document.getElementById("vote-response");
-        this.setupEventListeners();
+        // We'll keep this class focused on the voting functionality
+        // but remove direct references to specific DOM elements
     }
 
-    setupEventListeners() {
-        this.form.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            await this.handleVote(event);
-        });
-    }
-
-    async handleVote() {
-        const userResponse = this.form.elements[0].value;
-
+    // The main voting function that can be called from anywhere
+    async submitVote(userResponse) {
         try {
             const response = await fetch("/votes", {
                 method: "POST",
@@ -26,22 +17,19 @@ class Voting {
             });
 
             const result = await response.json();
-
-            if (response.ok) {
-                this.responseDiv.textContent = "Thank you for your vote!";
-                this.responseDiv.className = "text-green-600";
-            } else {
-                this.responseDiv.textContent = result.error || "Failed to submit vote";
-                this.responseDiv.className = "text-red-600";
-            }
-
+            
+            return {
+                success: response.ok,
+                message: response.ok ? "Thank you for your vote!" : (result.error || "Failed to submit vote"),
+                data: result
+            };
         } catch (error) {
             console.error("Error:", error);
-            this.responseDiv.textContent = "An error occurred. Please try again.";
-            this.responseDiv.className = "text-red-600";
+            return {
+                success: false,
+                message: "An error occurred. Please try again."
+            };
         }
-
-        this.form.reset();
     }
 }
 
