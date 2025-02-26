@@ -5,17 +5,21 @@ async function dailyUpdate() {
   console.log('Starting daily update process...');
   
   try {
-    // Get the dates in ET timezone
+    // Get dates in ET timezone
     const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
     const etDate = new Date(et);
     
     const todayDate = formatDate(etDate);
     
-    // Step 1: Find yesterday's voting question and tally its votes
-    await tallyVotesForYesterday(etDate);
+    // Step 1: Find TODAY's question that was in voting phase yesterday
+    // (it should have active_date=TODAY and voting_complete=false)
+    await tallyVotesForTodaysQuestion(todayDate);
 
-    // Step 2: Set today's question to active
-    await activateTodaysQuestion(todayDate);
+    // Step 2: Prepare tomorrow's question for voting
+    const tomorrow = new Date(etDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = formatDate(tomorrow);
+    await prepareTomorrowsQuestion(tomorrowDate);
     
     console.log('Daily update completed successfully');
     return { success: true };
@@ -25,19 +29,14 @@ async function dailyUpdate() {
   }
 }
 
-async function tallyVotesForYesterday(etDate) {
-  // Get yesterday's date
-  const yesterday = new Date(etDate);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = formatDate(yesterday);
+async function tallyVotesForTodaysQuestion(todayDate) {
+  console.log(`Finding question to tally for today (${todayDate})`);
   
-  console.log(`Finding voting question for: ${yesterdayDate}`);
-  
-  // Find yesterday's voting question
+  // This is the question that becomes active TODAY but was in voting yesterday
   const { data: question, error: questionError } = await supabase
     .from('questions')
     .select('*')
-    .eq('active_date', yesterdayDate)
+    .eq('active_date', todayDate)
     .eq('voting_complete', false)
     .single();
     
@@ -46,11 +45,11 @@ async function tallyVotesForYesterday(etDate) {
   }
     
   if (!question) {
-    console.log('No voting question found for yesterday');
+    console.log('No question found that needs tallying for today');
     return;
   }
   
-  console.log(`Tallying votes for question: ${question.question_text} (ID: ${question.id})`);
+  console.log(`Tallying votes for today's question: ${question.question_text} (ID: ${question.id})`);
   
   // Get all votes for this question
   const { data: votes, error: votesError } = await supabase
@@ -101,6 +100,16 @@ async function tallyVotesForYesterday(etDate) {
   
   console.log('Top answers to insert:', topAnswers);
   
+  // Clear any existing top answers first
+  const { error: deleteError } = await supabase
+    .from('top_answers')
+    .delete()
+    .eq('question_id', question.id);
+    
+  if (deleteError) {
+    console.error('Error clearing existing top answers:', deleteError);
+  }
+  
   // Insert into top_answers table
   for (let i = 0; i < topAnswers.length; i++) {
     const { answer, count } = topAnswers[i];
@@ -139,24 +148,30 @@ async function tallyVotesForYesterday(etDate) {
     
   console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers`);
 }
-async function activateTodaysQuestion(todayDate) {
-  console.log(`Activating question for: ${todayDate}`);
+
+async function prepareTomorrowsQuestion(tomorrowDate) {
+  console.log(`Checking for tomorrow's question (${tomorrowDate})`);
   
-  // Check if today's question exists and is marked as voting_complete: true
-  const { data: existingActive } = await supabase
+  // Check if tomorrow's question exists
+  const { data: existingTomorrow, error: checkError } = await supabase
     .from('questions')
     .select('*')
-    .eq('active_date', todayDate)
+    .eq('active_date', tomorrowDate)
     .single();
     
-  if (existingActive) {
-    console.log(`Today's question already exists: ${existingActive.question_text}`);
-    // No need to do anything, it's already set up
+  if (checkError && checkError.code !== 'PGRST116') { // Not found is ok
+    console.error('Error checking for tomorrow\'s question:', checkError);
+  }
+    
+  if (existingTomorrow) {
+    console.log(`Tomorrow's question already exists: ${existingTomorrow.question_text}`);
     return;
   }
   
-  console.log('No question found for today');
-  // You could add logic here to create a default question if none exists
+  console.log('No question found for tomorrow');
+  
+  // Here you could add logic to create a default question for tomorrow
+  // or send an alert that a question needs to be created
 }
 
 function formatDate(date) {
