@@ -19,6 +19,7 @@ class ModalManager {
         this.modalFinalScore = document.getElementById('modalFinalScore');
         this.modalStrikes = document.getElementById('modalStrikes');
         this.answersSummary = document.querySelector('.answers-summary');
+        this.modalVoteForm = document.getElementById('modalVoteForm');
 
         // Replace onclick attributes with proper event listeners
         document.querySelectorAll('.btn-next').forEach(button => {
@@ -98,45 +99,71 @@ class ModalManager {
             case 3:
                 this.voteStep.style.display = 'block';
                 
-                // Debug logs
-                console.log("Tomorrow's question element:", document.getElementById("tomorrows-question"));
+                // Set up the voting form with tomorrow's question
                 const tomorrowsQuestion = document.getElementById("tomorrows-question").textContent;
-                console.log("Tomorrow's question text:", tomorrowsQuestion);
                 
-                // Debug log for paragraph
+                // Update the question text
                 const questionHeader = this.voteStep.querySelector(".vote-container p");
-                console.log("Question header paragraph:", questionHeader);
-                
                 if (questionHeader) {
                     questionHeader.innerHTML = `<strong>${tomorrowsQuestion}</strong><br><br>What do you think most people will answer?`;
-                } else {
-                    console.error("Could not find question paragraph in vote step");
                 }
                 
-                // Debug original form
-                const originalForm = document.getElementById('vote-form');
-                console.log("Original vote form:", originalForm);
+                // Create a new voting form
+                this.modalVoteForm.innerHTML = `
+                    <form id="modal-vote-form" class="mt-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Enter your response" required>
+                            <button class="btn btn-primary" type="submit">Submit Vote</button>
+                        </div>
+                    </form>
+                `;
                 
-                if (originalForm) {
-                    const voteForm = originalForm.cloneNode(true);
-                    originalForm.style.display = 'none'; // Hide original form
-                    
-                    const modalVoteForm = document.getElementById('modalVoteForm');
-                    console.log("Modal vote form container:", modalVoteForm);
-                    
-                    if (modalVoteForm) {
-                        modalVoteForm.innerHTML = '';
-                        modalVoteForm.appendChild(voteForm);
-                    
-                        // Set up submission handler
-                        voteForm.addEventListener('submit', async (e) => {
-                            // ...submission code...
-                        });
-                    } else {
-                        console.error("Could not find modalVoteForm element");
-                    }
-                } else {
-                    console.error("Could not find original vote form");
+                // Add event listener to the newly created form
+                const modalVoteForm = document.getElementById("modal-vote-form");
+                if (modalVoteForm) {
+                    modalVoteForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const userResponse = e.target.elements[0].value;
+                        
+                        try {
+                            const response = await fetch("/votes", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ response: userResponse }),
+                            });
+                            
+                            const result = await response.json();
+                            
+                            // Create response message element
+                            const responseMsg = document.createElement('div');
+                            responseMsg.className = response.ok ? 'alert alert-success mt-3' : 'alert alert-danger mt-3';
+                            responseMsg.textContent = response.ok ? 
+                                "Thank you for your vote!" : 
+                                (result.error || "Failed to submit vote");
+                            
+                            // Clear any previous response
+                            const existingResponse = this.modalVoteForm.querySelector('.alert');
+                            if (existingResponse) {
+                                existingResponse.remove();
+                            }
+                            
+                            // Add response message
+                            this.modalVoteForm.appendChild(responseMsg);
+                            
+                            // Hide form on success
+                            if (response.ok) {
+                                modalVoteForm.style.display = 'none';
+                            }
+                        } catch (error) {
+                            console.error("Error:", error);
+                            const errorMsg = document.createElement('div');
+                            errorMsg.className = 'alert alert-danger mt-3';
+                            errorMsg.textContent = "An error occurred. Please try again.";
+                            this.modalVoteForm.appendChild(errorMsg);
+                        }
+                    });
                 }
                 break;
         }
