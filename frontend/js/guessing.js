@@ -48,10 +48,19 @@ class Guessing {
                     }, 1000);
                 }
             } else {
+                // Clear the form immediately for wrong guesses
+                this.form.reset();
+                
                 // Add strike and check if max strikes reached
                 const maxStrikesReached = this.game.addStrike();
                 
                 if (maxStrikesReached) {
+                    // Disable the form to prevent further guesses
+                    const inputElement = this.form.elements[0];
+                    const submitButton = this.form.querySelector('button');
+                    inputElement.disabled = true;
+                    submitButton.disabled = true;
+                    
                     // Reveal all remaining answers first
                     await this.ui.revealAllRemaining(this.game);
                     
