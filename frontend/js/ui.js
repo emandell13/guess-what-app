@@ -91,14 +91,21 @@ class UI {
                 !game.correctGuesses.some(guess => guess.rank === answer.rank)
             );
     
+            // Calculate total reveal time
+            const totalRevealTime = remainingAnswers.length * 2500;
+            
             // Reveal each remaining answer with a delay between each
             remainingAnswers.forEach((answer, index) => {
                 setTimeout(() => {
                     this.revealUnguessedAnswer(answer.rank, answer.answer, answer.points);
                 }, index * 2500); // Stagger the reveals
             });
+            
+            // Return a promise that resolves when all reveals are complete
+            return new Promise(resolve => setTimeout(resolve, totalRevealTime));
         } catch (error) {
             console.error('Error fetching all answers:', error);
+            return Promise.resolve(); // Resolve immediately on error
         }
     }
 }

@@ -1,11 +1,37 @@
 class Voting {
-    constructor(game) {
-        this.game = game;
-        // We'll keep this class focused on the voting functionality
-        // but remove direct references to specific DOM elements
+    constructor() {
+        // Property to store tomorrow's question
+        this.tomorrowsQuestionText = null;
     }
 
-    // The main voting function that can be called from anywhere
+    // Method to fetch tomorrow's question
+    async fetchTomorrowsQuestion() {
+        try {
+            const response = await fetch("/votes/question");
+            const data = await response.json();
+            
+            if (data.question) {
+                this.tomorrowsQuestionText = data.question.question_text;
+                
+                // Update DOM element if it exists (optional)
+                const tomorrowsQuestion = document.getElementById("tomorrows-question");
+                if (tomorrowsQuestion) {
+                    tomorrowsQuestion.textContent = data.question.question_text;
+                }
+                
+                return data.question.question_text;
+            } else {
+                this.tomorrowsQuestionText = "No question available";
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching tomorrow's question:", error);
+            this.tomorrowsQuestionText = "Error loading question";
+            return null;
+        }
+    }
+
+    // The voting function
     async submitVote(userResponse) {
         try {
             const response = await fetch("/votes", {

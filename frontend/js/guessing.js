@@ -15,8 +15,9 @@ class Guessing {
     }
 
     async handleGuess(event) {
-        if (this.game.strikes >= this.game.MAX_STRIKES) {
-            this.modalManager.showGameComplete();  // Show modal instead of voting section
+        // Check if game is already over
+        if (this.game.isGameOver()) {
+            this.modalManager.showGameComplete();
             return;
         }
 
@@ -37,16 +38,26 @@ class Guessing {
                 // Reveal answer with animation
                 this.ui.revealAnswer(result.rank, userGuess, result.points);
                 
-                // Update game state
-                this.game.updateScore(result.points);
-                this.game.correctGuesses.push({ guess: userGuess, rank: result.rank });
+                // Record correct guess and check if all answers found
+                const allAnswersFound = this.game.recordCorrectGuess(userGuess, result.rank, result.points);
                 
-                // Check if all answers found
-                if (this.game.correctGuesses.length === 5) {
-                    this.modalManager.showGameComplete();
+                // If all answers found, show completion modal
+                if (allAnswersFound) {
+                    setTimeout(() => {
+                        this.modalManager.showGameComplete();
+                    }, 1000);
                 }
             } else {
-                this.game.addStrike();
+                // Add strike and check if max strikes reached
+                const maxStrikesReached = this.game.addStrike();
+                
+                if (maxStrikesReached) {
+                    // Reveal all remaining answers first
+                    await this.ui.revealAllRemaining(this.game);
+                    
+                    // Then show the completion modal
+                    this.modalManager.showGameComplete();
+                }
             }
 
         } catch (error) {

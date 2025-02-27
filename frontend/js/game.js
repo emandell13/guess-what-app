@@ -1,5 +1,5 @@
 class Game {
-    constructor(ui, modalManager) {
+    constructor(ui) {
         // Game state
         this.correctGuesses = [];
         this.maxPoints = 0;
@@ -7,7 +7,6 @@ class Game {
         this.strikes = 0;
         this.MAX_STRIKES = 3;
         this.ui = ui;
-        this.modalManager = modalManager;
 
         // DOM elements
         this.currentScoreSpan = document.getElementById("current-score");
@@ -47,23 +46,6 @@ class Game {
         }
     }
 
-    async fetchTomorrowsQuestion() {
-        try {
-            const response = await fetch("/votes/question");
-            const data = await response.json();
-            
-            const tomorrowsQuestion = document.getElementById("tomorrows-question");
-            if (data.question) {
-                tomorrowsQuestion.textContent = data.question.question_text;
-            } else {
-                document.getElementById("vote-response").textContent = "No question available for voting";
-            }
-        } catch (error) {
-            console.error("Error fetching tomorrow's question:", error);
-            document.getElementById("vote-response").textContent = "Failed to load question";
-        }
-    }
-
     async fetchTopAnswers() {
         try {
             const response = await fetch("/guesses/top-answers");
@@ -88,38 +70,28 @@ class Game {
         }
     }
 
-    async addStrike() {
+    // Updated addStrike method - just tracks strikes and updates UI
+    addStrike() {
         this.strikes++;
         const strikeIcons = this.strikesDiv.querySelectorAll('i');
         const icon = strikeIcons[this.strikes - 1];
         icon.classList.replace('far', 'fas');
         icon.classList.add('text-danger', 'strike-reveal');
         
-        if (this.strikes >= this.MAX_STRIKES) {
-            await this.handleStrikeOut();
-        }
+        // We no longer call handleStrikeOut here
+        return this.strikes >= this.MAX_STRIKES;
     }
 
-    async handleStrikeOut() {
-        // Get the top answers first
-        const topAnswersResult = await this.fetchTopAnswers();
-        
-        // Show all remaining answers
-        if (topAnswersResult.success) {
-            await this.ui.revealAllRemaining(this, topAnswersResult.answers);
-        } else {
-            // Fallback to previous method if fetching fails
-            await this.ui.revealAllRemaining(this);
-        }
-        
-        // Then show voting section
-        setTimeout(() => {
-            this.modalManager.showGameComplete();
-        }, 2500 * 5); // Wait for all reveals to complete
+    // New method for checking if the game is over
+    isGameOver() {
+        return this.strikes >= this.MAX_STRIKES || this.correctGuesses.length === 5;
     }
 
-    showVotingSection() {
-        document.getElementById("voting-section").style.display = "block";
+    // New method for handling correct guesses
+    recordCorrectGuess(guess, rank, points) {
+        this.updateScore(points);
+        this.correctGuesses.push({ guess, rank });
+        return this.correctGuesses.length === 5; // Return if all answers found
     }
 
     updateScore(points) {
@@ -128,5 +100,4 @@ class Game {
     }
 }
 
-// Export the Game class
 export default Game;

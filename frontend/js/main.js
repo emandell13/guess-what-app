@@ -4,14 +4,14 @@ import Guessing from './guessing.js';
 import Voting from './voting.js';
 import ModalManager from './modal-manager.js';
 
-// Fix for main.js
 document.addEventListener("DOMContentLoaded", async () => {
+    // Create components with cleaner dependencies
     const ui = new UI();
-    const modalManager = new ModalManager(ui);
-    const game = new Game(ui, modalManager);
-    const voting = new Voting(game);
+    const voting = new Voting();
+    const game = new Game(ui);
+    const modalManager = new ModalManager(ui, voting);
     
-    modalManager.voting = voting;
+    // Set game on modalManager after creation
     modalManager.setGame(game);
     
     // Initialize game
@@ -19,8 +19,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (questionData.success) {
         ui.createAnswerBoxes(questionData.answerCount);
     }
-    game.fetchTomorrowsQuestion();
+    
+    // Fetch tomorrow's question (moved from Game to Voting)
+    await voting.fetchTomorrowsQuestion();
 
-    // Initialize game modules
+    // Initialize guessing with all dependencies
     new Guessing(game, ui, modalManager);
 });
