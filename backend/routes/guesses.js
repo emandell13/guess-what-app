@@ -40,6 +40,7 @@ router.get('/question', async (req, res) => {
         if (req.query.includeAnswers === 'true') {
             res.json({
                 question: question.question_text,
+                guessPrompt: question.guess_prompt,
                 totalVotes,
                 maxPoints,
                 answerCount: topAnswers.length,
@@ -52,6 +53,7 @@ router.get('/question', async (req, res) => {
         } else {
             res.json({ 
                 question: question.question_text,
+                guessPrompt: question.guess_prompt,
                 totalVotes,
                 maxPoints,
                 answerCount: topAnswers.length

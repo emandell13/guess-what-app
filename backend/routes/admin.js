@@ -31,6 +31,7 @@ router.post('/questions', async (req, res) => {
             .from('questions')
             .insert([{ 
                 question_text, 
+                guess_prompt,
                 active_date,
                 voting_complete: false
             }])
@@ -155,6 +156,7 @@ router.put('/questions/:id', async (req, res) => {
             .from('questions')
             .update({ 
                 question_text, 
+                guess_prompt,
                 active_date,
                 voting_complete
             })

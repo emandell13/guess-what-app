@@ -118,6 +118,12 @@
                             <div class="form-text">Use clear, engaging questions that have multiple common answers.</div>
                         </div>
                         <div class="mb-3">
+                            <label for="guessPrompt" class="form-label">Guess Prompt</label>
+                            <input type="text" class="form-control" id="guessPrompt" 
+                                   placeholder="e.g., 'their favorite fruit' (for 'What is your favorite fruit?')">
+                            <div class="form-text">How the question should appear in "Guess what 10 people said was..."</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="activeDate" class="form-label">Active Date</label>
                             <input type="date" class="form-control" id="activeDate" required>
                             <div class="form-text">This is the date when the question will be active for guessing.</div>
@@ -146,6 +152,11 @@
                         <div class="mb-3">
                             <label for="editQuestionText" class="form-label">Question Text</label>
                             <input type="text" class="form-control" id="editQuestionText" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGuessPrompt" class="form-label">Guess Prompt</label>
+                            <input type="text" class="form-control" id="editGuessPrompt">
+                            <div class="form-text">How the question should appear in "Guess what people said was..."</div>
                         </div>
                         <div class="mb-3">
                             <label for="editActiveDate" class="form-label">Active Date</label>

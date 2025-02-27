@@ -127,7 +127,7 @@ class ModalManager {
                 // Update the question text
                 const questionHeader = this.voteStep.querySelector(".vote-container p");
                 if (questionHeader) {
-                    questionHeader.innerHTML = `<strong>${tomorrowsQuestion}</strong><br><br>What do you think most people will answer?`;
+                    questionHeader.innerHTML = `<strong>${tomorrowsQuestion}</strong><br>`;
                 }
                 
                 // Create a new voting form

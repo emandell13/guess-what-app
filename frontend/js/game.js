@@ -22,7 +22,7 @@ class Game {
             if (data.question) {
                 // Set the question text with vote count
                 document.querySelector("h2").textContent = 
-                    `Guess what ${data.totalVotes} people said was ${data.question}!`;
+                    `Guess what ${data.totalVotes} people said was ${data.guessPrompt}!`;
                 
                 // Set max score
                 this.maxPoints = data.maxPoints;

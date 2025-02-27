@@ -195,6 +195,7 @@ function showEditModal(id) {
             if (data.question) {
                 document.getElementById('editQuestionId').value = data.question.id;
                 document.getElementById('editQuestionText').value = data.question.question_text;
+                document.getElementById('editGuessPrompt').value = data.question.guess_prompt || '';
                 document.getElementById('editActiveDate').value = data.question.active_date.split('T')[0];
                 document.getElementById('editVotingComplete').checked = data.question.voting_complete;
                 
@@ -211,10 +212,11 @@ function showEditModal(id) {
 async function updateQuestion() {
     const id = document.getElementById('editQuestionId').value;
     const questionText = document.getElementById('editQuestionText').value.trim();
+    const guessPrompt = document.getElementById('editGuessPrompt').value.trim();
     const activeDate = document.getElementById('editActiveDate').value;
     const votingComplete = document.getElementById('editVotingComplete').checked;
     
-    if (!questionText || !activeDate) {
+    if (!questionText || !activeDate || !guessPrompt) {
         alert('Please fill in all fields');
         return;
     }
@@ -224,6 +226,7 @@ async function updateQuestion() {
             method: 'PUT',
             body: JSON.stringify({ 
                 question_text: questionText, 
+                guess_prompt: guessPrompt,
                 active_date: activeDate,
                 voting_complete: votingComplete
             }),
@@ -246,6 +249,7 @@ async function updateQuestion() {
 // Add new question
 async function addQuestion() {
     const questionText = document.getElementById('questionText').value.trim();
+    const guessPrompt = document.getElementById('guessPrompt').value.trim();
     const activeDate = document.getElementById('activeDate').value;
     
     if (!questionText || !activeDate) {
@@ -257,7 +261,8 @@ async function addQuestion() {
         const response = await fetchWithAuth('/admin/questions', {
             method: 'POST',
             body: JSON.stringify({ 
-                question_text: questionText, 
+                question_text: questionText,
+                guess_prompt: guessPrompt,
                 active_date: activeDate 
             }),
         });
