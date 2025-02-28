@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const adminAuth = require('../middleware/adminAuth');
+const { groupSimilarAnswers } = require('../utils/textUtils');
 
 // Apply auth middleware to all admin routes
 router.use(adminAuth);
@@ -45,7 +46,7 @@ router.post('/questions', async (req, res) => {
     }
 });
 
-// Tally votes and set top answers for a question
+// Update the tally votes route
 router.post('/tally/:questionId', async (req, res) => {
     try {
         const { questionId } = req.params;
@@ -59,20 +60,27 @@ router.post('/tally/:questionId', async (req, res) => {
             
         if (votesError) throw votesError;
         
-        // Count votes by response
-        const voteCount = {};
-        votes.forEach(vote => {
-            const response = vote.response.toLowerCase().trim();
-            voteCount[response] = (voteCount[response] || 0) + 1;
-        });
+        if (!votes || votes.length === 0) {
+            return res.status(400).json({
+                error: 'No votes found for this question'
+            });
+        }
+        
+        // Extract response text from votes
+        const voteTexts = votes.map(vote => vote.response);
+        
+        // Group similar answers
+        const groupedVotes = groupSimilarAnswers(voteTexts);
         
         // Convert to array and sort by count
-        const sortedVotes = Object.entries(voteCount)
+        const sortedVotes = Object.entries(groupedVotes)
             .map(([answer, count]) => ({ answer, count }))
             .sort((a, b) => b.count - a.count);
         
         // Take top N answers (default 10)
         const topAnswers = sortedVotes.slice(0, answerCount);
+        
+        console.log('Tallied votes into these top answers:', topAnswers);
         
         // Clear any existing top answers first
         const { error: deleteError } = await supabase
@@ -112,6 +120,7 @@ router.post('/tally/:questionId', async (req, res) => {
         res.status(500).json({ error: 'Failed to tally votes' });
     }
 });
+
 
 // Get a single question with its top answers
 router.get('/questions/:id', async (req, res) => {

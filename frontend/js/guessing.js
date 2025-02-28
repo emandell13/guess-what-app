@@ -36,10 +36,15 @@ class Guessing {
 
             if (result.isCorrect) {
                 // Reveal answer with animation
-                this.ui.revealAnswer(result.rank, userGuess, result.points);
+                this.ui.revealAnswer(result.rank, userGuess, result.points, result.canonicalAnswer);
                 
                 // Record correct guess and check if all answers found
-                const allAnswersFound = this.game.recordCorrectGuess(userGuess, result.rank, result.points);
+                const allAnswersFound = this.game.recordCorrectGuess(
+                    userGuess,
+                    result.rank,
+                    result.points,
+                    result.canonicalAnswer
+                );
                 
                 // If all answers found, show completion modal
                 if (allAnswersFound) {

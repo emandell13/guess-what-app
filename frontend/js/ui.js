@@ -25,7 +25,7 @@ class UI {
         }
     }
 
-    revealAnswer(rank, answer, points) {
+    revealAnswer(rank, answer, points, canonicalAnswer) {
         const answerBox = document.getElementById(`answer-${rank}`);
         const cardBody = answerBox.querySelector(".card-body");
         const answerText = answerBox.querySelector(".answer-text");
@@ -39,7 +39,7 @@ class UI {
 
         // Show the text halfway through the flip
         setTimeout(() => {
-            answerText.textContent = answer;
+            answerText.textContent = canonicalAnswer || answer;
             answerText.classList.add('visible');
             pointsBadge.textContent = `${points} pts`;
             pointsBadge.classList.remove("d-none");

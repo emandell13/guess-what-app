@@ -88,9 +88,12 @@ class Game {
     }
 
     // New method for handling correct guesses
-    recordCorrectGuess(guess, rank, points) {
+    recordCorrectGuess(guess, rank, points, canonicalAnswer) {
         this.updateScore(points);
-        this.correctGuesses.push({ guess, rank });
+        this.correctGuesses.push({
+            guess: canonicalAnswer || guess,
+            rank
+        });
         return this.correctGuesses.length === 5; // Return if all answers found
     }
 

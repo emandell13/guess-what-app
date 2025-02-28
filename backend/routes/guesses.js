@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const { isFuzzyMatch, normalizeText } = require('../utils/textUtils');
 
 router.get('/question', async (req, res) => {
     try {
@@ -119,14 +120,20 @@ router.post('/', async (req, res) => {
             .lte('rank', 10) // Limit to top 10
             .order('rank', { ascending: true });
 
+        // Normalize the user's guess
+        const normalizedGuess = normalizeText(guess);
+        
+        // Check if guess matches any top 5 answer using fuzzy matching
+        let matchedAnswer = null;
+        for (const answer of top5Answers) {
+            if (isFuzzyMatch(guess, answer.answer, 0.85)) {
+                matchedAnswer = answer;
+                break;
+            }
+        }
+
         // Calculate total votes among the top 10 answers
         const top10Total = top10Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
-
-        // Check if guess matches any top 5 answer
-        const normalizedGuess = guess.toLowerCase().trim();
-        const matchedAnswer = top5Answers.find(
-            answer => answer.answer.toLowerCase().trim() === normalizedGuess
-        );
 
         // Calculate score as percentage of top 10 answers total
         const score = matchedAnswer ? Math.round((matchedAnswer.vote_count / top10Total) * 100) : 0;
@@ -136,6 +143,7 @@ router.post('/', async (req, res) => {
             rank: matchedAnswer?.rank || null,
             points: score,
             rawVotes: matchedAnswer?.vote_count || 0,
+            canonicalAnswer: matchedAnswer?.answer || null,
             message: matchedAnswer 
                 ? `Correct! This was answer #${matchedAnswer.rank}` 
                 : 'Try again!'

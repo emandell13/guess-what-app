@@ -1,5 +1,6 @@
 require('dotenv').config();
 const supabase = require('../config/supabase');
+const { groupSimilarAnswers } = require('../utils/textUtils');
 
 async function dailyUpdate() {
   console.log('Starting daily update process...');
@@ -79,24 +80,21 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   
   console.log(`Found ${votes.length} votes`);
   
-  // Count votes by response
-  const voteCount = {};
-  votes.forEach(vote => {
-    const response = vote.response.toLowerCase().trim();
-    voteCount[response] = (voteCount[response] || 0) + 1;
-  });
+  // Extract response text from votes
+  const voteTexts = votes.map(vote => vote.response);
   
-  console.log('Vote counts:', voteCount);
+  // Group similar answers
+  const groupedVotes = groupSimilarAnswers(voteTexts);
   
   // Convert to array and sort by count
-  const sortedVotes = Object.entries(voteCount)
+  const sortedVotes = Object.entries(groupedVotes)
     .map(([answer, count]) => ({ answer, count }))
     .sort((a, b) => b.count - a.count);
   
-  console.log('Sorted votes:', sortedVotes);
+  console.log('Sorted votes after grouping:', sortedVotes);
   
-  // Take top 5 answers (or fewer if not enough votes)
-  const topAnswers = sortedVotes.slice(0, Math.min(10, sortedVotes.length));
+  // Take top 10 answers
+  const topAnswers = sortedVotes.slice(0, 10);
   
   console.log('Top answers to insert:', topAnswers);
   
