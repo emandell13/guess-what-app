@@ -49,6 +49,7 @@ router.post('/questions', async (req, res) => {
 router.post('/tally/:questionId', async (req, res) => {
     try {
         const { questionId } = req.params;
+        const { answerCount = 10 } = req.body; // Default to 10 answers
         
         // Get all votes for this question
         const { data: votes, error: votesError } = await supabase
@@ -70,8 +71,16 @@ router.post('/tally/:questionId', async (req, res) => {
             .map(([answer, count]) => ({ answer, count }))
             .sort((a, b) => b.count - a.count);
         
-        // Take top 5 answers
-        const topAnswers = sortedVotes.slice(0, 5);
+        // Take top N answers (default 10)
+        const topAnswers = sortedVotes.slice(0, answerCount);
+        
+        // Clear any existing top answers first
+        const { error: deleteError } = await supabase
+            .from('top_answers')
+            .delete()
+            .eq('question_id', questionId);
+            
+        if (deleteError) throw deleteError;
         
         // Insert into top_answers table
         for (let i = 0; i < topAnswers.length; i++) {

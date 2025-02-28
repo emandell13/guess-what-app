@@ -26,15 +26,25 @@ router.get('/question', async (req, res) => {
         }
 
         // Get top answers with their vote counts
-        const { data: topAnswers } = await supabase
+        const { data: allTopAnswers } = await supabase
             .from('top_answers')
             .select('*')
             .eq('question_id', question.id)
             .order('rank', { ascending: true });
 
-        // Calculate total votes and points
-        const totalVotes = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
-        const maxPoints = totalVotes; // Each vote is worth 1 point
+        // Limit to top 5 for display/guessing
+        const topAnswers = allTopAnswers.filter(answer => answer.rank <= 5);
+
+        // Calculate total votes for top 10 answers
+        const top10Total = allTopAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
+        
+        // Calculate total votes (for display purposes)
+        const totalVotes = allTopAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
+
+        // Calculate max possible points (sum of percentages for top 5)
+        const maxPoints = topAnswers.reduce((sum, answer) => {
+            return sum + Math.round((answer.vote_count / top10Total) * 100);
+        }, 0);
 
         // If includeAnswers flag is true (for strikeout), include all answers
         if (req.query.includeAnswers === 'true') {
@@ -43,11 +53,12 @@ router.get('/question', async (req, res) => {
                 guessPrompt: question.guess_prompt,
                 totalVotes,
                 maxPoints,
-                answerCount: topAnswers.length,
+                answerCount: 5, // Explicitly set to 5
                 answers: topAnswers.map(answer => ({
                     rank: answer.rank,
                     answer: answer.answer,
-                    points: answer.vote_count
+                    rawVotes: answer.vote_count,
+                    points: Math.round((answer.vote_count / top10Total) * 100)
                 }))
             });
         } else {
@@ -56,7 +67,7 @@ router.get('/question', async (req, res) => {
                 guessPrompt: question.guess_prompt,
                 totalVotes,
                 maxPoints,
-                answerCount: topAnswers.length
+                answerCount: 5 // Explicitly set to 5
             });
         }
 
@@ -92,22 +103,39 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // Get top answers
-        const { data: topAnswers } = await supabase
+        // Get top 5 answers (these are the ones players are trying to guess)
+        const { data: top5Answers } = await supabase
             .from('top_answers')
             .select('*')
-            .eq('question_id', question.id);
+            .eq('question_id', question.id)
+            .lte('rank', 5) // Limit to top 5
+            .order('rank', { ascending: true });
 
-        // Check if guess matches any top answer
+        // Get all answers for score calculation (up to top 10)
+        const { data: top10Answers } = await supabase
+            .from('top_answers')
+            .select('*')
+            .eq('question_id', question.id)
+            .lte('rank', 10) // Limit to top 10
+            .order('rank', { ascending: true });
+
+        // Calculate total votes among the top 10 answers
+        const top10Total = top10Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
+
+        // Check if guess matches any top 5 answer
         const normalizedGuess = guess.toLowerCase().trim();
-        const matchedAnswer = topAnswers.find(
+        const matchedAnswer = top5Answers.find(
             answer => answer.answer.toLowerCase().trim() === normalizedGuess
         );
+
+        // Calculate score as percentage of top 10 answers total
+        const score = matchedAnswer ? Math.round((matchedAnswer.vote_count / top10Total) * 100) : 0;
 
         res.json({
             isCorrect: !!matchedAnswer,
             rank: matchedAnswer?.rank || null,
-            points: matchedAnswer?.vote_count || 0,
+            points: score,
+            rawVotes: matchedAnswer?.vote_count || 0,
             message: matchedAnswer 
                 ? `Correct! This was answer #${matchedAnswer.rank}` 
                 : 'Try again!'
@@ -117,8 +145,6 @@ router.post('/', async (req, res) => {
         console.error('Error processing guess:', error);
         res.status(500).json({ error: 'Failed to process guess' });
     }
-
-    
 });
 
 module.exports = router;

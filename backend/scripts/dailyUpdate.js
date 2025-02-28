@@ -96,7 +96,7 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   console.log('Sorted votes:', sortedVotes);
   
   // Take top 5 answers (or fewer if not enough votes)
-  const topAnswers = sortedVotes.slice(0, Math.min(5, sortedVotes.length));
+  const topAnswers = sortedVotes.slice(0, Math.min(10, sortedVotes.length));
   
   console.log('Top answers to insert:', topAnswers);
   

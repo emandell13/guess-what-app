@@ -69,6 +69,18 @@ async function login(username, password) {
     }
 }
 
+// Format date in ET timezone
+function formatDate(dateString) {
+    // Create date in ET timezone
+    const etDate = new Date(dateString + 'T00:00:00-05:00');
+    return etDate.toLocaleDateString('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
 // Load all questions
 async function loadQuestions() {
     try {
@@ -87,7 +99,7 @@ async function loadQuestions() {
                    data-id="${question.id}" onclick="loadQuestionDetails('${question.id}'); return false;">
                     <div>
                         <div class="fw-bold">${escapeHtml(question.question_text)}</div>
-                        <small class="text-muted">Date: ${new Date(question.active_date).toLocaleDateString()}</small>
+                        <small class="text-muted">Active Date: ${formatDate(question.active_date)}</small>
                     </div>
                     <span class="badge ${question.voting_complete ? 'bg-success' : 'bg-warning'} rounded-pill">
                         ${question.voting_complete ? 'Complete' : 'Voting'}
@@ -133,7 +145,7 @@ async function loadQuestionDetails(id) {
                 <div class="mb-4">
                     <h3>${escapeHtml(data.question.question_text)}</h3>
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div><strong>Date:</strong> ${new Date(data.question.active_date).toLocaleDateString()}</div>
+                        <div><strong>Active Date:</strong> ${formatDate(data.question.active_date)}</div>
                         <div class="badge ${votingComplete ? 'bg-success' : 'bg-warning'} rounded-pill">
                             ${votingComplete ? 'Complete' : 'Voting'}
                         </div>
@@ -297,6 +309,10 @@ async function tallyVotes(id) {
     try {
         const response = await fetchWithAuth(`/admin/tally/${id}`, {
             method: 'POST',
+            // Optionally pass a parameter to specify we want top 10
+            body: JSON.stringify({ 
+                answerCount: 10 // Store top 10 answers
+            }),
         });
         
         if (!response.ok) {
