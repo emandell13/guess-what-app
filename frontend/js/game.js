@@ -87,14 +87,24 @@ class Game {
         return this.strikes >= this.MAX_STRIKES || this.correctGuesses.length === 5;
     }
 
-    // New method for handling correct guesses
+    // Method for handling correct guesses
     recordCorrectGuess(guess, rank, points, canonicalAnswer) {
-        this.updateScore(points);
-        this.correctGuesses.push({
-            guess: canonicalAnswer || guess,
-            rank
-        });
-        return this.correctGuesses.length === 5; // Return if all answers found
+    
+    // Check if this rank has already been guessed
+    const alreadyGuessed = this.correctGuesses.some(g => g.rank === rank);
+    
+    // If already guessed, return false (not a new correct guess)
+    if (alreadyGuessed) {
+        return false;
+    }
+
+    // Otherwise, update score and record the guess
+    this.updateScore(points);
+    this.correctGuesses.push({
+        guess: canonicalAnswer || guess,
+        rank
+    });
+    return this.correctGuesses.length === 5; // Return if all answers found
     }
 
     updateScore(points) {

@@ -35,6 +35,14 @@ class Guessing {
             const result = await response.json();
 
             if (result.isCorrect) {
+                const alreadyGuessed = this.game.correctGuesses.some(g => g.rank === result.rank);
+                
+                if (alreadyGuessed) {
+                    // Show a message that this was already guessed
+                    // You can create a toast notification or some other UI feedback
+                    this.showAlreadyGuessedMessage(result.canonicalAnswer || userGuess);
+                } else {
+
                 // Reveal answer with animation
                 this.ui.revealAnswer(result.rank, userGuess, result.points, result.canonicalAnswer);
                 
@@ -52,6 +60,7 @@ class Guessing {
                         this.modalManager.showGameComplete();
                     }, 1000);
                 }
+            }
             } else {
                 // Clear the form immediately for wrong guesses
                 this.form.reset();
@@ -80,6 +89,32 @@ class Guessing {
 
         this.form.reset();
     }
-}
+
+    // Add a new method to show a message for already guessed answers
+    showAlreadyGuessedMessage(answer) {
+        // Create a temporary message
+        const messageContainer = document.createElement("div");
+        messageContainer.className = "alert alert-warning already-guessed-alert";
+        messageContainer.style.position = "fixed";
+        messageContainer.style.top = "20px";
+        messageContainer.style.left = "50%";
+        messageContainer.style.transform = "translateX(-50%)";
+        messageContainer.style.zIndex = "1050";
+        messageContainer.style.padding = "10px 20px";
+        messageContainer.style.borderRadius = "5px";
+        messageContainer.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+        messageContainer.textContent = `You've already guessed "${answer}"!`;
+        
+        // Add to the body
+        document.body.appendChild(messageContainer);
+        
+        // Remove after a delay
+        setTimeout(() => {
+            messageContainer.style.opacity = "0";
+            messageContainer.style.transition = "opacity 0.5s ease";
+            setTimeout(() => document.body.removeChild(messageContainer), 500);
+        }, 2000);
+    }
+    }
 
 export default Guessing;
