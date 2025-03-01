@@ -2,15 +2,11 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { isFuzzyMatch, normalizeText } = require('../utils/textUtils');
+const { getTodayDateET } = require('../utils/dateUtils');
 
 router.get('/question', async (req, res) => {
     try {
-        // Get today's date in ET
-        const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
-        const etDate = new Date(et);
-        const todayDate = etDate.getFullYear() + '-' + 
-            String(etDate.getMonth() + 1).padStart(2, '0') + '-' + 
-            String(etDate.getDate()).padStart(2, '0');
+        const todayDate = getTodayDateET();
 
         // Get today's question
         const { data: question } = await supabase

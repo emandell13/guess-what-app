@@ -244,4 +244,25 @@ router.get('/run-update', async (req, res) => {
     }
   });
 
+  // Add test matching functionality for admins
+router.post('/test-matching', async (req, res) => {
+    try {
+        const { text1, text2 } = req.body;
+        
+        if (!text1 || !text2) {
+            return res.status(400).json({ 
+                error: 'Both text values are required' 
+            });
+        }
+        
+        const { testMatching } = require('../utils/textUtils');
+        const result = testMatching(text1, text2);
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error testing text matching:', error);
+        res.status(500).json({ error: 'Failed to test text matching' });
+    }
+});
+
 module.exports = router;

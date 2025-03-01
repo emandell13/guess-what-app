@@ -180,3 +180,65 @@
     <script src="js/admin.js"></script>
 </body>
 </html>
+
+<!-- Text Matching Testing -->
+<div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+        <h3 class="h5 mb-0">Test Text Matching</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Test how the text matching algorithm compares two strings.</p>
+        
+        <form id="text-matching-form">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="text1" class="form-label">Text 1</label>
+                    <input type="text" class="form-control" id="text1" placeholder="e.g., 'drink water'" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="text2" class="form-label">Text 2</label>
+                    <input type="text" class="form-control" id="text2" placeholder="e.g., 'drink some water'" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Test Match</button>
+        </form>
+        
+        <div id="matching-results" class="mt-4 d-none">
+            <h4>Results:</h4>
+            <div class="alert" id="match-result">
+                <!-- Will be populated with match result -->
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">Normalized Text</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Text 1:</strong> <span id="normalized-text1"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Text 2:</strong> <span id="normalized-text2"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">Similarity Metrics</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Levenshtein Distance:</strong> <span id="levenshtein-distance"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Character Similarity:</strong> <span id="character-similarity"></span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Word Similarity:</strong> <span id="word-similarity"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

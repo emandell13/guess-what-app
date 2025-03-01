@@ -1,25 +1,21 @@
 require('dotenv').config();
 const supabase = require('../config/supabase');
 const { groupSimilarAnswers } = require('../utils/textUtils');
+const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
 
 async function dailyUpdate() {
   console.log('Starting daily update process...');
   
   try {
-    // Get dates in ET timezone
-    const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
-    const etDate = new Date(et);
-    
-    const todayDate = formatDate(etDate);
+    // Get dates in ET timezone using date utilities
+    const todayDate = getTodayDateET();
     
     // Step 1: Find TODAY's question that was in voting phase yesterday
     // (it should have active_date=TODAY and voting_complete=false)
     await tallyVotesForTodaysQuestion(todayDate);
 
     // Step 2: Prepare tomorrow's question for voting
-    const tomorrow = new Date(etDate);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDate = formatDate(tomorrow);
+    const tomorrowDate = getTomorrowDateET();
     await prepareTomorrowsQuestion(tomorrowDate);
     
     console.log('Daily update completed successfully');
@@ -170,12 +166,6 @@ async function prepareTomorrowsQuestion(tomorrowDate) {
   
   // Here you could add logic to create a default question for tomorrow
   // or send an alert that a question needs to be created
-}
-
-function formatDate(date) {
-  return date.getFullYear() + '-' + 
-    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-    String(date.getDate()).padStart(2, '0');
 }
 
 module.exports = dailyUpdate;
