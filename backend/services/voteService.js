@@ -1,17 +1,8 @@
 const supabase = require('../config/supabase');
+const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
 
 async function getCurrentQuestion() {
-    // Create date object for Eastern Time
-    const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
-    const etDate = new Date(et);
-    
-    // Add one day for tomorrow
-    etDate.setDate(etDate.getDate() + 1);
-
-    // Format tomorrow's date in YYYY-MM-DD
-    const tomorrowDate = etDate.getFullYear() + '-' + 
-        String(etDate.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(etDate.getDate()).padStart(2, '0');
+    const tomorrowDate = getTomorrowDateET();
 
     const { data: question, error } = await supabase
         .from('questions')
@@ -28,15 +19,7 @@ async function getCurrentQuestion() {
 }
 
 async function submitVote(response) {
-    const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
-    const etDate = new Date(et);
-    
-    // Add one day for tomorrow
-    etDate.setDate(etDate.getDate() + 1);
-    
-    const tomorrowDate = etDate.getFullYear() + '-' + 
-        String(etDate.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(etDate.getDate()).padStart(2, '0');
+    const tomorrowDate = getTomorrowDateET();
 
     const { data: question, error: questionError } = await supabase
         .from('questions')
@@ -187,14 +170,7 @@ async function getTopAnswersForQuestion(questionId) {
 
 async function getTopAnswersForToday() {
     try {
-        // Get today's date in ET timezone
-        const et = new Date().toLocaleString("en-US", {timeZone: "America/New_York"});
-        const etDate = new Date(et);
-        
-        // Format today's date in YYYY-MM-DD
-        const todayDate = etDate.getFullYear() + '-' + 
-            String(etDate.getMonth() + 1).padStart(2, '0') + '-' + 
-            String(etDate.getDate()).padStart(2, '0');
+        const todayDate = getTodayDateET();
         
         // Get today's active question
         const { data: question, error: questionError } = await supabase
