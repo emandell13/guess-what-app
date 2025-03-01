@@ -2,6 +2,19 @@ const express = require('express');
 const router = express.Router();
 const voteService = require('../services/voteService');
 
+// Get the current voting question
+router.get('/question', async (req, res) => {
+    try {
+        const question = await voteService.getCurrentQuestion();
+        res.json({ question });
+    } catch (error) {
+        console.error('Error fetching question:', error);
+        res.status(500).json({ 
+            error: error.message 
+        });
+    }
+});
+
 // Submit a vote for tomorrow's question
 router.post('/', async (req, res) => {
     try {
@@ -13,19 +26,6 @@ router.post('/', async (req, res) => {
         });
     } catch (error) {
         console.error('Error handling vote:', error);
-        res.status(500).json({ 
-            error: error.message 
-        });
-    }
-});
-
-// Get the current voting question
-router.get('/question', async (req, res) => {
-    try {
-        const question = await voteService.getCurrentQuestion();
-        res.json({ question });
-    } catch (error) {
-        console.error('Error fetching question:', error);
         res.status(500).json({ 
             error: error.message 
         });
