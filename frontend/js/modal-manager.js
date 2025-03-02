@@ -20,9 +20,9 @@ class ModalManager {
         this.voteStep = document.getElementById('voteStep');
         this.modalFinalScore = document.getElementById('modalFinalScore');
         this.modalStrikes = document.getElementById('modalStrikes');
-        this.answersSummary = document.querySelector('.answers-summary');
+        this.answersSummary = this.shareStep.querySelector('.answers-summary'); // Updated this line
         this.modalVoteForm = document.getElementById('modalVoteForm');
-
+    
         // Replace onclick attributes with proper event listeners
         document.querySelectorAll('.btn-next').forEach(button => {
             button.addEventListener('click', () => this.nextStep());
@@ -46,15 +46,6 @@ class ModalManager {
 
         // Update final score
         this.modalFinalScore.textContent = this.game.currentScore;
-
-        // Update strikes display
-        this.modalStrikes.innerHTML = Array(3)
-            .fill()
-            .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
-            .join('');
-
-        // Update answers summary
-        this.updateAnswersSummary();
     }
 
     async updateAnswersSummary() {
@@ -93,7 +84,7 @@ class ModalManager {
         this.currentStep++;
         
         // Hide all steps
-        [this.summaryStep, this.shareStep, this.voteStep].forEach(step => 
+        [this.summaryStep, this.voteStep, this.shareStep].forEach(step => 
             step.style.display = 'none'
         );
     
@@ -103,9 +94,6 @@ class ModalManager {
                 this.summaryStep.style.display = 'block';
                 break;
             case 2:
-                this.shareStep.style.display = 'block';
-                break;
-            case 3:
                 this.voteStep.style.display = 'block';
                 
                 // Check if voting is available
@@ -187,6 +175,18 @@ class ModalManager {
                         }
                     });
                 }
+                break;
+            case 3:
+                this.shareStep.style.display = 'block';
+                
+                // Update strikes display
+                this.modalStrikes.innerHTML = Array(3)
+                .fill()
+                .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
+                .join('');
+
+                // Update answers summary
+                this.updateAnswersSummary();
                 break;
         }
     

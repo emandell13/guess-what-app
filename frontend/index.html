@@ -80,43 +80,12 @@
                         <div class="text-muted">points</div>
                     </div>
 
-                    <div class="answers-summary my-4">
-                        <!-- Will be populated dynamically with answer cards -->
-                    </div>
-
-                    <div class="strikes-summary text-center mb-4">
-                        <h5 class="text-muted mb-3">Strikes Used</h5>
-                        <div id="modalStrikes" class="fs-4"></div>
-                    </div>
-
                     <button class="btn btn-next w-100">
-                        Share Your Results →
-                    </button>
-                </div>
-
-                <!-- Step 2: Share -->
-                <div class="modal-body" id="shareStep" style="display: none;">
-                    <h3 class="text-center mb-4">Share Your Results!</h3>
-                    
-                    <div class="share-preview mb-4">
-                        <!-- Share image will be generated here -->
-                    </div>
-
-                    <div class="share-buttons">
-                        <button class="btn btn-outline-primary" data-platform="twitter">
-                            <i class="fab fa-twitter me-2"></i>Twitter
-                        </button>
-                        <button class="btn btn-outline-primary" data-action="copy-link">
-                            <i class="fas fa-link me-2"></i>Copy Link
-                        </button>
-                    </div>
-
-                    <button class="btn btn-next w-100 mt-4">
                         Vote for Tomorrow's Question →
                     </button>
                 </div>
 
-                <!-- Step 3: Vote -->
+                <!-- Step 2: Vote -->
                 <div class="modal-body" id="voteStep" style="display: none;">
                     <h3 class="text-center mb-4">Help Create Tomorrow's Game!</h3>
                     
@@ -129,6 +98,42 @@
 
                     <div class="text-center text-muted">
                         <small>Come back tomorrow to see if others thought like you!</small>
+                    </div>
+                    <button class="btn btn-next w-100 mt-4">
+                        Share Your Results →
+                    </button>
+                </div>
+
+                <!-- Step 3: Share -->
+                <div class="modal-body" id="shareStep" style="display: none;">
+                    <h3 class="text-center mb-4">Share Your Results!</h3>
+                    
+                    <div class="final-score text-center">
+                        <h4 class="text-muted mb-3">Your Score</h4>
+                        <div class="display-4 mb-2"><span id="modalFinalScore">0</span></div>
+                        <div class="text-muted">points</div>
+                    </div>
+
+                    <div class="answers-summary my-4">
+                        <!-- Will be populated dynamically with answer cards -->
+                    </div>
+
+                    <div class="strikes-summary text-center mb-4">
+                        <h5 class="text-muted mb-3">Strikes Used</h5>
+                        <div id="modalStrikes" class="fs-4"></div>
+                    </div>
+
+                    <div class="share-preview mb-4">
+                        <!-- Share image will be generated here -->
+                    </div>
+
+                    <div class="share-buttons">
+                        <button class="btn btn-outline-primary" data-platform="twitter">
+                            <i class="fab fa-twitter me-2"></i>Twitter
+                        </button>
+                        <button class="btn btn-outline-primary" data-action="copy-link">
+                            <i class="fas fa-link me-2"></i>Copy Link
+                        </button>
                     </div>
                 </div>
             </div>
