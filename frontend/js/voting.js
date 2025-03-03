@@ -1,48 +1,41 @@
+import { getSessionId, hasVotedForTomorrow, markTomorrowVoted } from './utils/sessionUtils.js';
+
 class Voting {
     constructor() {
-        // Property to store tomorrow's question
         this.tomorrowsQuestionText = null;
     }
 
-    // Method to fetch tomorrow's question
-    async fetchTomorrowsQuestion() {
-        try {
-            const response = await fetch("/votes/question");
-            const data = await response.json();
-            
-            if (data.question) {
-                this.tomorrowsQuestionText = data.question.question_text;
-                
-                // Update DOM element if it exists (optional)
-                const tomorrowsQuestion = document.getElementById("tomorrows-question");
-                if (tomorrowsQuestion) {
-                    tomorrowsQuestion.textContent = data.question.question_text;
-                }
-                
-                return data.question.question_text;
-            } else {
-                this.tomorrowsQuestionText = "No question available";
-                return null;
-            }
-        } catch (error) {
-            console.error("Error fetching tomorrow's question:", error);
-            this.tomorrowsQuestionText = "Error loading question";
-            return null;
-        }
-    }
-
-    // The voting function
+    // The main voting function that can be called from anywhere
     async submitVote(userResponse) {
         try {
+            // Check if user has already voted for tomorrow
+            if (hasVotedForTomorrow()) {
+                return {
+                    success: false,
+                    message: "You've already voted for tomorrow's question!"
+                };
+            }
+            
+            // Include the session ID with the vote
+            const sessionId = getSessionId();
+            
             const response = await fetch("/votes", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ response: userResponse }),
+                body: JSON.stringify({ 
+                    response: userResponse,
+                    sessionId: sessionId
+                }),
             });
 
             const result = await response.json();
+            
+            // If successful, mark that the user has voted
+            if (response.ok) {
+                markTomorrowVoted();
+            }
             
             return {
                 success: response.ok,
@@ -55,6 +48,26 @@ class Voting {
                 success: false,
                 message: "An error occurred. Please try again."
             };
+        }
+    }
+
+    // Fetch tomorrow's question text
+    async fetchTomorrowsQuestion() {
+        try {
+            const response = await fetch("/votes/question");
+            const data = await response.json();
+            
+            if (data.question) {
+                this.tomorrowsQuestionText = data.question.question_text;
+                return data.question.question_text;
+            } else {
+                this.tomorrowsQuestionText = "No question available";
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching tomorrow's question:", error);
+            this.tomorrowsQuestionText = "Error loading question";
+            return null;
         }
     }
 }

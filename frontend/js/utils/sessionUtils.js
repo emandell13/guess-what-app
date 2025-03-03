@@ -68,14 +68,3 @@ export function getCompletedDates() {
   const datesString = localStorage.getItem('gwCompletedDates');
   return datesString ? JSON.parse(datesString) : [];
 }
-  
-  export {
-    getSessionId,
-    hasVotedForTomorrow,
-    markTomorrowVoted,
-    saveTodayGuesses,
-    getTodayGuesses,
-    hasTodayBeenCompleted,
-    markTodayCompleted,
-    getCompletedDates
-  };

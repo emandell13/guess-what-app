@@ -1,3 +1,5 @@
+import { hasVotedForTomorrow } from './utils/sessionUtils.js';
+
 class ModalManager {
     constructor(ui, voting) {
         this.ui = ui;
@@ -19,8 +21,8 @@ class ModalManager {
         this.shareStep = document.getElementById('shareStep');
         this.voteStep = document.getElementById('voteStep');
         this.modalFinalScore = document.getElementById('modalFinalScore');
-        this.modalStrikes = document.getElementById('modalStrikes');
-        this.answersSummary = this.shareStep.querySelector('.answers-summary'); // Updated this line
+        this.modalStrikes = this.shareStep.querySelector('#modalStrikes');
+        this.answersSummary = this.shareStep.querySelector('.answers-summary');
         this.modalVoteForm = document.getElementById('modalVoteForm');
     
         // Replace onclick attributes with proper event listeners
@@ -118,62 +120,72 @@ class ModalManager {
                     questionHeader.innerHTML = `<strong>${tomorrowsQuestion}</strong><br>`;
                 }
                 
-                // Create a new voting form
-                this.modalVoteForm.innerHTML = `
-                    <form id="modal-vote-form" class="mt-3">
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Enter your response" required>
-                            <button class="btn btn-primary" type="submit">Submit Vote</button>
+                // Check if user has already voted
+                if (hasVotedForTomorrow()) {
+                    // Show already voted message
+                    this.modalVoteForm.innerHTML = `
+                        <div class="alert alert-info">
+                            You've already voted for tomorrow's question. Come back tomorrow to play again!
                         </div>
-                    </form>
-                `;
-
-                // Add event listener to the newly created form
-                const modalVoteForm = document.getElementById("modal-vote-form");
-                if (modalVoteForm) {
-                    modalVoteForm.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-                        const userResponse = e.target.elements[0].value;
-                        
-                        try {
-                            // Use the voting service to submit vote
-                            const result = await this.voting.submitVote(userResponse);
+                    `;
+                } else {
+                    // Create a new voting form
+                    this.modalVoteForm.innerHTML = `
+                        <form id="modal-vote-form" class="mt-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Enter your response" required>
+                                <button class="btn btn-primary" type="submit">Submit Vote</button>
+                            </div>
+                        </form>
+                    `;
+    
+                    // Add event listener to the newly created form
+                    const modalVoteForm = document.getElementById("modal-vote-form");
+                    if (modalVoteForm) {
+                        modalVoteForm.addEventListener('submit', async (e) => {
+                            e.preventDefault();
+                            const userResponse = e.target.elements[0].value;
                             
-                            // Create response message element
-                            const responseMsg = document.createElement('div');
-                            responseMsg.className = result.success ? 'alert alert-success mt-3' : 'alert alert-danger mt-3';
-                            responseMsg.textContent = result.message;
-                            
-                            // Clear any previous response
-                            const existingResponse = this.modalVoteForm.querySelector('.alert');
-                            if (existingResponse) {
-                                existingResponse.remove();
+                            try {
+                                // Use the voting service to submit vote
+                                const result = await this.voting.submitVote(userResponse);
+                                
+                                // Create response message element
+                                const responseMsg = document.createElement('div');
+                                responseMsg.className = result.success ? 'alert alert-success mt-3' : 'alert alert-danger mt-3';
+                                responseMsg.textContent = result.message;
+                                
+                                // Clear any previous response
+                                const existingResponse = this.modalVoteForm.querySelector('.alert');
+                                if (existingResponse) {
+                                    existingResponse.remove();
+                                }
+                                
+                                // Add response message
+                                this.modalVoteForm.appendChild(responseMsg);
+                                
+                                // Hide form on success
+                                if (result.success) {
+                                    modalVoteForm.style.display = 'none';
+                                }
+                            } catch (error) {
+                                console.error("Error submitting vote:", error);
+                                
+                                // Show error message
+                                const errorMsg = document.createElement('div');
+                                errorMsg.className = 'alert alert-danger mt-3';
+                                errorMsg.textContent = "An error occurred while submitting your vote.";
+                                
+                                // Clear any previous response
+                                const existingResponse = this.modalVoteForm.querySelector('.alert');
+                                if (existingResponse) {
+                                    existingResponse.remove();
+                                }
+                                
+                                this.modalVoteForm.appendChild(errorMsg);
                             }
-                            
-                            // Add response message
-                            this.modalVoteForm.appendChild(responseMsg);
-                            
-                            // Hide form on success
-                            if (result.success) {
-                                modalVoteForm.style.display = 'none';
-                            }
-                        } catch (error) {
-                            console.error("Error submitting vote:", error);
-                            
-                            // Show error message
-                            const errorMsg = document.createElement('div');
-                            errorMsg.className = 'alert alert-danger mt-3';
-                            errorMsg.textContent = "An error occurred while submitting your vote.";
-                            
-                            // Clear any previous response
-                            const existingResponse = this.modalVoteForm.querySelector('.alert');
-                            if (existingResponse) {
-                                existingResponse.remove();
-                            }
-                            
-                            this.modalVoteForm.appendChild(errorMsg);
-                        }
-                    });
+                        });
+                    }
                 }
                 break;
             case 3:
@@ -181,10 +193,10 @@ class ModalManager {
                 
                 // Update strikes display
                 this.modalStrikes.innerHTML = Array(3)
-                .fill()
-                .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
-                .join('');
-
+                    .fill()
+                    .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
+                    .join('');
+    
                 // Update answers summary
                 this.updateAnswersSummary();
                 break;

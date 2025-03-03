@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const questionData = await game.fetchTodaysQuestion();
     if (questionData.success) {
         ui.createAnswerBoxes(questionData.answerCount);
+
+        game.loadSavedGuesses();
     }
     
     // Fetch tomorrow's question (moved from Game to Voting)
