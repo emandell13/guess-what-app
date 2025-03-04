@@ -15,14 +15,17 @@ class Guessing {
     }
 
     async handleGuess(event) {
-        // Check if game is already over
+        event.preventDefault();
+        
+        // Check if game is already over before proceeding
         if (this.game.isGameOver()) {
             this.modalManager.showGameComplete();
             return;
         }
-
+    
         const userGuess = this.form.elements[0].value;
-
+        if (!userGuess.trim()) return;  // Don't submit empty guesses
+    
         try {
             const response = await fetch("/guesses", {
                 method: "POST",
@@ -31,63 +34,62 @@ class Guessing {
                 },
                 body: JSON.stringify({ guess: userGuess }),
             });
-
+    
             const result = await response.json();
-
+    
             if (result.isCorrect) {
                 const alreadyGuessed = this.game.correctGuesses.some(g => g.rank === result.rank);
                 
                 if (alreadyGuessed) {
                     // Show a message that this was already guessed
-                    // You can create a toast notification or some other UI feedback
                     this.showAlreadyGuessedMessage(result.canonicalAnswer || userGuess);
                 } else {
-
-                // Reveal answer with animation
-                this.ui.revealAnswer(result.rank, userGuess, result.points, result.canonicalAnswer);
-                
-                // Record correct guess and check if all answers found
-                const allAnswersFound = this.game.recordCorrectGuess(
-                    userGuess,
-                    result.rank,
-                    result.points,
-                    result.canonicalAnswer
-                );
-
-                if (this.game.isGameOver()) {
-                    setTimeout(() => {
-                        this.modalManager.showGameComplete();
-                    }, 1000);
+                    // Reveal answer with animation
+                    this.ui.revealAnswer(result.rank, userGuess, result.points, result.canonicalAnswer);
+                    
+                    // Record correct guess
+                    this.game.recordCorrectGuess(
+                        userGuess,
+                        result.rank,
+                        result.points,
+                        result.canonicalAnswer
+                    );
                 }
-            }
-
             } else {
-                // Clear the form immediately for wrong guesses
-                this.form.reset();
+                // Add strike for incorrect guess
+                this.game.addStrike();
                 
-                // Add strike and check if max strikes reached
-                const maxStrikesReached = this.game.addStrike();
-                
-                if (maxStrikesReached) {
-                    // Disable the form to prevent further guesses
-                    const inputElement = this.form.elements[0];
-                    const submitButton = this.form.querySelector('button');
-                    inputElement.disabled = true;
-                    submitButton.disabled = true;
-                    
-                    // Reveal all remaining answers first
+                // If this strike maxed us out, reveal all remaining answers
+                if (this.game.strikes >= this.game.MAX_STRIKES) {
                     await this.ui.revealAllRemaining(this.game);
-                    
-                    // Then show the completion modal
-                    this.modalManager.showGameComplete();
                 }
             }
-
+    
+            // Check if game is over after this guess (centralized check)
+            if (this.game.isGameOver()) {
+                // Disable form
+                this.disableGuessForm();
+                
+                // Allow time for UI updates, then show completion modal
+                setTimeout(() => {
+                    this.modalManager.showGameComplete();
+                }, 1000);
+            }
+    
         } catch (error) {
             console.error("Error:", error);
         }
-
+    
         this.form.reset();
+    }
+    
+    // Add this helper method to centralize form disabling
+    disableGuessForm() {
+        const inputElement = this.form.elements[0];
+        const submitButton = this.form.querySelector('button');
+        
+        if (inputElement) inputElement.disabled = true;
+        if (submitButton) submitButton.disabled = true;
     }
 
     // Add a new method to show a message for already guessed answers

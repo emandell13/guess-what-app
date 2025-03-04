@@ -27,7 +27,7 @@ router.get('/questions', async (req, res) => {
 // Create a new question
 router.post('/questions', async (req, res) => {
     try {
-        const { question_text, active_date } = req.body;
+        const { question_text, guess_prompt, active_date } = req.body;
         
         const { data, error } = await supabase
             .from('questions')
@@ -185,7 +185,7 @@ router.get('/questions/:id', async (req, res) => {
 router.put('/questions/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { question_text, active_date, voting_complete } = req.body;
+        const { question_text, guess_prompt, active_date, voting_complete } = req.body;
         
         const { data, error } = await supabase
             .from('questions')

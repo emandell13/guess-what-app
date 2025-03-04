@@ -8,6 +8,17 @@ class ModalManager {
         this.currentStep = 1;
         this.modal = new bootstrap.Modal(document.getElementById('gameCompleteModal'));
         this.setupModalElements();
+        this.modal._element.addEventListener('hidden.bs.modal', () => {
+            // Reset the modal to step 1 when closed
+            this.currentStep = 1;
+            this.updateProgress();
+            
+            // Hide all steps except the first one
+            [this.shareStep, this.voteStep].forEach(step => 
+                step.style.display = 'none'
+            );
+            this.summaryStep.style.display = 'block';
+        });
     }
 
     setGame(game) {
