@@ -3,6 +3,7 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 const adminAuth = require('../middleware/adminAuth');
 const { groupSimilarAnswers } = require('../utils/textUtils');
+const { guess_prompt } = require('../utils/textUtils');
 
 // Apply auth middleware to all admin routes
 router.use(adminAuth);
@@ -348,6 +349,62 @@ router.post('/votes/:questionId', async (req, res) => {
     } catch (error) {
         console.error('Error adding votes:', error);
         res.status(500).json({ error: 'Failed to add votes' });
+    }
+});
+
+// Get grouped vote distribution using fuzzy matching
+router.get('/questions/:id/vote-distribution', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Get all votes for this question
+        const { data: votes, error: votesError } = await supabase
+            .from('votes')
+            .select('response')
+            .eq('question_id', id);
+            
+        if (votesError) throw votesError;
+        
+        if (!votes || votes.length === 0) {
+            return res.json({ voteGroups: [] });
+        }
+        
+        // Import the textUtils module that contains the fuzzy matching logic
+        const { groupSimilarAnswers } = require('../utils/textUtils');
+        
+        // Extract all responses
+        const responses = votes.map(vote => vote.response);
+        
+        // Group responses using the same fuzzy matching algorithm used for tallying
+        const groupedResponses = groupSimilarAnswers(responses);
+        
+        // Format the result for display
+        const voteGroups = Object.entries(groupedResponses).map(([canonicalAnswer, count]) => {
+            // Find examples of responses that would be grouped under this canonical answer
+            const examples = responses.filter(response => {
+                // This is a simplified approach - ideally you'd use the same logic from groupSimilarAnswers
+                const normalizedResponse = response.toLowerCase().trim();
+                const normalizedCanonical = canonicalAnswer.toLowerCase().trim();
+                return normalizedResponse === normalizedCanonical || 
+                       normalizedResponse.includes(normalizedCanonical) || 
+                       normalizedCanonical.includes(normalizedResponse);
+            }).slice(0, 5); // Limit to 5 examples
+            
+            return {
+                canonicalAnswer,
+                count,
+                examples: examples.length > 0 ? examples : [canonicalAnswer]
+            };
+        });
+        
+        // Sort by count (highest first)
+        voteGroups.sort((a, b) => b.count - a.count);
+        
+        res.json({ voteGroups });
+        
+    } catch (error) {
+        console.error('Error getting vote distribution:', error);
+        res.status(500).json({ error: 'Failed to get vote distribution' });
     }
 });
 

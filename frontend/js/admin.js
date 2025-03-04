@@ -185,7 +185,7 @@ const QuestionsManager = {
                 
                 // Update vote distribution if available
                 if (data.voteDistribution && data.voteDistribution.length > 0) {
-                    VotingManager.showVoteDistribution(data.voteDistribution, data.voteCount);
+                    VotingManager.showVoteDistribution(id, data.voteCount);
                 } else {
                     document.getElementById('vote-distribution-section').style.display = 'none';
                 }
@@ -512,36 +512,87 @@ const VotingManager = {
         }
     },
 
-    showVoteDistribution: function(voteDistribution, totalVotes) {
+    showVoteDistribution: async function(questionId, totalVotes) {
+        try {
+            // Fetch the grouped vote distribution using fuzzy matching
+            const response = await Auth.fetchWithAuth(`/admin/questions/${questionId}/vote-distribution`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch vote distribution');
+            }
+            
+            const data = await response.json();
+            
+            if (data.voteGroups && data.voteGroups.length > 0) {
+                this.displayVoteGroups(data.voteGroups, totalVotes);
+            } else {
+                document.getElementById('vote-distribution-section').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error fetching vote distribution:', error);
+            document.getElementById('vote-distribution-section').style.display = 'none';
+        }
+    },
+
+    displayVoteGroups: function(voteGroups, totalVotes) {
         const distributionSection = document.getElementById('vote-distribution-section');
         const tableBody = document.getElementById('vote-distribution-table');
         
         // Clear existing rows
         tableBody.innerHTML = '';
         
-        // Add each vote response
-        voteDistribution.forEach(vote => {
+        // Add each vote group
+        voteGroups.forEach(group => {
             const percentage = totalVotes > 0 
-                ? ((vote.count / totalVotes) * 100).toFixed(1) 
+                ? ((group.count / totalVotes) * 100).toFixed(1) 
                 : 0;
             
             const row = document.createElement('tr');
+            
+            // Create examples tooltip if there are variations
+            let examplesText = '';
+            if (group.examples && group.examples.length > 1) {
+                const variations = group.examples
+                    .filter(ex => ex !== group.canonicalAnswer)
+                    .map(ex => `"${QuestionsManager.escapeHtml(ex)}"`)
+                    .join(', ');
+                
+                if (variations) {
+                    examplesText = `
+                        <span class="ms-2 badge bg-secondary rounded-pill" 
+                            data-bs-toggle="tooltip" 
+                            title="Variations: ${variations}">
+                            ${group.examples.length > 2 ? (group.examples.length - 1) + ' variations' : '1 variation'}
+                        </span>
+                    `;
+                }
+            }
+            
             row.innerHTML = `
-                <td>${QuestionsManager.escapeHtml(vote.response)}</td>
-                <td>${vote.count}</td>
+                <td>
+                    ${QuestionsManager.escapeHtml(group.canonicalAnswer)}
+                    ${examplesText}
+                </td>
+                <td>${group.count}</td>
                 <td>
                     <div class="progress" style="height: 20px;">
                         <div class="progress-bar" role="progressbar" 
-                             style="width: ${percentage}%;" 
-                             aria-valuenow="${percentage}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
+                            style="width: ${percentage}%;" 
+                            aria-valuenow="${percentage}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
                             ${percentage}%
                         </div>
                     </div>
                 </td>
             `;
             tableBody.appendChild(row);
+        });
+        
+        // Initialize tooltips
+        const tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltips.map(function (tooltip) {
+            return new bootstrap.Tooltip(tooltip);
         });
         
         // Show the section
