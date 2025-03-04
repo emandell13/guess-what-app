@@ -68,3 +68,16 @@ export function getCompletedDates() {
   const datesString = localStorage.getItem('gwCompletedDates');
   return datesString ? JSON.parse(datesString) : [];
 }
+
+// Save strikes for today
+export function saveTodayStrikes(strikes) {
+  const today = getTodayDateET();
+  localStorage.setItem(`gwStrikes_${today}`, strikes.toString());
+}
+
+// Get strikes for today
+export function getTodayStrikes() {
+  const today = getTodayDateET();
+  const strikesString = localStorage.getItem(`gwStrikes_${today}`);
+  return strikesString ? parseInt(strikesString, 10) : 0;
+}

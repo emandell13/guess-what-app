@@ -1,4 +1,10 @@
-import { saveTodayGuesses, getTodayGuesses, markTodayCompleted, hasTodayBeenCompleted } from './utils/sessionUtils.js';
+import {
+        saveTodayGuesses,
+        getTodayGuesses,
+        markTodayCompleted,
+        saveTodayStrikes,
+        getTodayStrikes
+    } from './utils/sessionUtils.js';
 
 class Game {
     constructor(ui) {
@@ -18,29 +24,50 @@ class Game {
 
     // Load any previously saved guesses for today
     loadSavedGuesses() {
+        // Load saved guesses
         const savedGuesses = getTodayGuesses();
         
         if (savedGuesses && savedGuesses.length > 0) {
-            // Restore saved guesses
-            this.correctGuesses = savedGuesses;
-            
-            // Calculate restored score
-            this.currentScore = savedGuesses.reduce((sum, guess) => sum + (guess.points || 0), 0);
-            
-            // Update UI
-            if (this.currentScoreSpan) {
-                this.currentScoreSpan.textContent = this.currentScore;
-            }
-            
-            // Check if previously loaded guesses need to be visually displayed
-            if (this.ui && this.correctGuesses.length > 0) {
-                // Visually update UI to show already guessed answers
-                this.correctGuesses.forEach(guess => {
-                    this.ui.revealAnswer(guess.rank, guess.guess, guess.points);
-                });
-            }
+          // Restore saved guesses
+          this.correctGuesses = savedGuesses;
+          
+          // Calculate restored score
+          this.currentScore = savedGuesses.reduce((sum, guess) => sum + (guess.points || 0), 0);
+          
+          // Update UI
+          if (this.currentScoreSpan) {
+            this.currentScoreSpan.textContent = this.currentScore;
+          }
         }
-    }
+        
+        // Load saved strikes
+        const savedStrikes = getTodayStrikes();
+        if (savedStrikes > 0) {
+          // Restore strikes count
+          this.strikes = savedStrikes;
+          
+          // Update UI to show strikes
+          for (let i = 0; i < this.strikes; i++) {
+            const strikeIcons = this.strikesDiv.querySelectorAll('i');
+            const icon = strikeIcons[i];
+            if (icon) {
+              icon.classList.replace('far', 'fas');
+              icon.classList.add('text-danger');
+            }
+          }
+        }
+        
+        // Only reveal answers after strike UI is updated
+        if (savedGuesses && savedGuesses.length > 0 && this.ui && this.ui.answerBoxesContainer) {
+          // Make sure answer boxes exist before trying to update them
+          if (this.ui.answerBoxesContainer.children.length > 0) {
+            // Visually update UI to show already guessed answers
+            this.correctGuesses.forEach(guess => {
+              this.ui.revealAnswer(guess.rank, guess.guess, guess.points);
+            });
+          }
+        }
+      }
 
     async fetchTodaysQuestion() {
         try {
@@ -105,6 +132,9 @@ class Game {
         const icon = strikeIcons[this.strikes - 1];
         icon.classList.replace('far', 'fas');
         icon.classList.add('text-danger', 'strike-reveal');
+        
+        // Save strikes to session storage
+        saveTodayStrikes(this.strikes);
         
         const maxStrikesReached = this.strikes >= this.MAX_STRIKES;
         
