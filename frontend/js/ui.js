@@ -5,7 +5,15 @@ class UI {
     }
 
     createAnswerBoxes(count) {
+        // Make sure we have a valid count
+        if (!count || count <= 0) {
+            console.error("Invalid answer count:", count);
+            count = 5; // Fallback to default
+        }
+        
+        console.log(`Creating ${count} answer boxes`);
         this.answerBoxesContainer.innerHTML = '';
+        
         for (let i = 1; i <= count; i++) {
             const answerBox = document.createElement("div");
             answerBox.className = "col-12 mb-2";

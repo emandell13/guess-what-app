@@ -83,9 +83,12 @@ class Game {
                 this.maxPoints = data.maxPoints;
                 this.maxScoreSpan.textContent = this.maxPoints;
                 
+                // Store the answer count for later use
+                this.answerCount = data.answerCount || 5;
+                
                 return {
                     success: true,
-                    answerCount: data.answerCount
+                    answerCount: this.answerCount
                 };
             } else {
                 document.querySelector("h2").textContent = "No question available for guessing yet";
@@ -146,9 +149,15 @@ class Game {
         return maxStrikesReached;
     }
 
-    // New method for checking if the game is over
     isGameOver() {
-        return this.strikes >= this.MAX_STRIKES || this.correctGuesses.length === 5;
+        // Default to 5 if answerCount is not set
+        const totalAnswers = this.answerCount || 5;
+        
+        // Game is over if MAX_STRIKES reached or all answers are found
+        const allAnswersFound = this.correctGuesses.length >= totalAnswers;
+        const struckOut = this.strikes >= this.MAX_STRIKES;
+        
+        return struckOut || allAnswersFound;
     }
 
     // Updated recordCorrectGuess method
@@ -176,12 +185,14 @@ class Game {
         // Save progress
         saveTodayGuesses(this.correctGuesses);
         
-        // Check if game is complete
-        const gameComplete = this.correctGuesses.length === 5;
+        // Check if game is complete based on actual answer count
+        const totalAnswers = this.answerCount || 5;
+        const gameComplete = this.correctGuesses.length >= totalAnswers;
+        
         if (gameComplete) {
             markTodayCompleted();
         }
-        
+            
         return gameComplete;
     }
 

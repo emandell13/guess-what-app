@@ -17,7 +17,7 @@ router.get('/question', async (req, res) => {
             guessPrompt: question.guess_prompt,
             totalVotes,
             maxPoints,
-            answerCount: 5
+            answerCount: topAnswers.filter(answer => answer.rank <= 5).length
         };
 
         if (req.query.includeAnswers === 'true') {

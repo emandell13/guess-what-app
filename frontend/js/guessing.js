@@ -53,14 +53,14 @@ class Guessing {
                     result.points,
                     result.canonicalAnswer
                 );
-                
-                // If all answers found, show completion modal
-                if (allAnswersFound) {
+
+                if (this.game.isGameOver()) {
                     setTimeout(() => {
                         this.modalManager.showGameComplete();
                     }, 1000);
                 }
             }
+
             } else {
                 // Clear the form immediately for wrong guesses
                 this.form.reset();
