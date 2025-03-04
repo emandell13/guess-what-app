@@ -19,7 +19,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (questionData.success) {
         ui.createAnswerBoxes(questionData.answerCount);
 
-        game.loadSavedGuesses();
+        game.restoreGameState();
+
+        // Check if the game is already complete and show modal if needed
+        if (game.isGameOver()) {
+            console.log("Game is already over, showing completion modal");
+            modalManager.showGameComplete();
+        }
     }
     
     // Fetch tomorrow's question (moved from Game to Voting)

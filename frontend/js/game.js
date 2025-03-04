@@ -23,7 +23,7 @@ class Game {
     }
 
     // Load any previously saved guesses for today
-    loadSavedGuesses() {
+    restoreGameState() {
         // Load saved guesses
         const savedGuesses = getTodayGuesses();
         

@@ -48,6 +48,12 @@ class ModalManager {
 
         // Update final score
         this.modalFinalScore.textContent = this.game.currentScore;
+
+        // Also update score in the share step (we'll grab this element now to ensure it exists)
+        const shareStepScore = this.shareStep.querySelector('#modalFinalScoreShare');
+        if (shareStepScore) {
+            shareStepScore.textContent = this.game.currentScore;
+        }
     }
 
     async updateAnswersSummary() {
@@ -188,14 +194,20 @@ class ModalManager {
                     }
                 }
                 break;
-            case 3:
-                this.shareStep.style.display = 'block';
-                
-                // Update strikes display
-                this.modalStrikes.innerHTML = Array(3)
-                    .fill()
-                    .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
-                    .join('');
+                case 3:
+                    this.shareStep.style.display = 'block';
+                    
+                    // Update the share step score
+                    const shareStepScore = this.shareStep.querySelector('#modalFinalScoreShare');
+                    if (shareStepScore) {
+                        shareStepScore.textContent = this.game.currentScore;
+                    }
+                    
+                    // Update strikes display
+                    this.modalStrikes.innerHTML = Array(3)
+                        .fill()
+                        .map((_, i) => `<i class="fa${i < this.game.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.game.strikes ? 'text-danger' : 'text-muted'}"></i>`)
+                        .join('');
     
                 // Update answers summary
                 this.updateAnswersSummary();
