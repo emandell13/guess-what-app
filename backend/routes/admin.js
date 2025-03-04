@@ -145,18 +145,34 @@ router.get('/questions/:id', async (req, res) => {
             
         if (answersError) throw answersError;
         
-        // Get vote count
-        const { count: voteCount, error: countError } = await supabase
+        // Get all votes for this question
+        const { data: votes, error: votesError } = await supabase
             .from('votes')
-            .select('*', { count: 'exact', head: true })
+            .select('response')
             .eq('question_id', id);
             
-        if (countError) throw countError;
+        if (votesError) throw votesError;
+        
+        // Calculate vote distribution
+        const voteDistribution = {};
+        votes.forEach(vote => {
+            const response = vote.response.trim().toLowerCase();
+            voteDistribution[response] = (voteDistribution[response] || 0) + 1;
+        });
+        
+        // Convert to array and sort by count (descending)
+        const sortedVotes = Object.entries(voteDistribution)
+            .map(([response, count]) => ({ response, count }))
+            .sort((a, b) => b.count - a.count);
+        
+        // Get vote count
+        const voteCount = votes.length;
         
         res.json({ 
             question, 
             topAnswers: topAnswers || [],
-            voteCount: voteCount || 0
+            voteCount: voteCount || 0,
+            voteDistribution: sortedVotes
         });
     } catch (error) {
         console.error('Error fetching question:', error);
@@ -262,6 +278,76 @@ router.post('/test-matching', async (req, res) => {
     } catch (error) {
         console.error('Error testing text matching:', error);
         res.status(500).json({ error: 'Failed to test text matching' });
+    }
+});
+
+// Add multiple votes for a question
+router.post('/votes/:questionId', async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const { response, count = 1 } = req.body;
+        
+        if (!response || response.trim() === '') {
+            return res.status(400).json({ error: 'Response is required' });
+        }
+        
+        if (count < 1 || count > 1000) {
+            return res.status(400).json({ error: 'Count must be between 1 and 1000' });
+        }
+        
+        // Normalize the response to lowercase and trim
+        const normalizedResponse = response.toLowerCase().trim();
+        
+        // Check if the question exists
+        const { data: question, error: questionError } = await supabase
+            .from('questions')
+            .select('id')
+            .eq('id', questionId)
+            .single();
+            
+        if (questionError || !question) {
+            return res.status(404).json({ error: 'Question not found' });
+        }
+        
+        // Add the votes one by one
+        const votes = [];
+        for (let i = 0; i < count; i++) {
+            votes.push({
+                question_id: questionId,
+                response: normalizedResponse,
+                created_at: new Date().toISOString()
+            });
+        }
+        
+        // Insert in batches to avoid hitting any limits
+        const BATCH_SIZE = 100;
+        let successCount = 0;
+        
+        for (let i = 0; i < votes.length; i += BATCH_SIZE) {
+            const batch = votes.slice(i, i + BATCH_SIZE);
+            const { data, error } = await supabase
+                .from('votes')
+                .insert(batch);
+                
+            if (error) {
+                console.error('Error adding votes batch:', error);
+                return res.status(500).json({ 
+                    error: 'Failed to add all votes',
+                    successCount
+                });
+            }
+            
+            successCount += batch.length;
+        }
+        
+        res.json({ 
+            message: `Successfully added ${successCount} votes for "${response}"`,
+            successCount
+        });
+        
+    } catch (error) {
+        console.error('Error adding votes:', error);
+        res.status(500).json({ error: 'Failed to add votes' });
     }
 });
 

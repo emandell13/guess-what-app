@@ -25,6 +25,22 @@
             display: flex;
             gap: 0.5rem;
         }
+        /* Styling for vote distribution */
+        .progress {
+            height: 20px;
+            background-color: #f2f2f2;
+        }
+        .progress-bar {
+            background-color: #6c757d;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            transition: width 0.6s ease;
+        }
+        .table-responsive {
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -89,12 +105,134 @@
 
             <!-- Question Details -->
             <div class="col-lg-6">
-                <div class="card">
+                <!-- Basic Question Info -->
+                <div class="card mb-4">
                     <div class="card-header bg-light">
                         <h2 class="h5 mb-0">Question Details</h2>
                     </div>
                     <div class="card-body" id="questionDetails">
                         <p class="text-center text-muted my-4">Select a question to view details</p>
+                    </div>
+                </div>
+
+                <!-- Vote Distribution Section (initially hidden) -->
+                <div class="card mb-4" id="vote-distribution-section" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Vote Distribution</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Response</th>
+                                        <th>Count</th>
+                                        <th>Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vote-distribution-table">
+                                    <!-- Will be populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Answers Section (initially hidden) -->
+                <div class="card mb-4" id="top-answers-section" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Top Answers</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="top-answers-list">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Votes Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Add Votes</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="add-votes-form">
+                            <input type="hidden" id="vote-question-id">
+                            <div class="mb-3">
+                                <label for="vote-response" class="form-label">Response</label>
+                                <input type="text" class="form-control" id="vote-response" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="vote-count" class="form-label">Number of Votes</label>
+                                <input type="number" class="form-control" id="vote-count" min="1" value="5">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="add-votes-btn">
+                                <i class="fas fa-plus-circle me-2"></i>Add Votes
+                            </button>
+                        </form>
+                        <div id="add-votes-response" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Text Matching Testing Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Test Text Matching</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Test how the text matching algorithm compares two strings.</p>
+                        
+                        <form id="text-matching-form">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="text1" class="form-label">Text 1</label>
+                                    <input type="text" class="form-control" id="text1" placeholder="e.g., 'drink water'" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="text2" class="form-label">Text 2</label>
+                                    <input type="text" class="form-control" id="text2" placeholder="e.g., 'drink some water'" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Test Match</button>
+                        </form>
+                        
+                        <div id="matching-results" class="mt-4 d-none">
+                            <h4>Results:</h4>
+                            <div class="alert" id="match-result">
+                                <!-- Will be populated with match result -->
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-header">Normalized Text</div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Text 1:</strong> <span id="normalized-text1"></span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Text 2:</strong> <span id="normalized-text2"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">Similarity Metrics</div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <p><strong>Levenshtein Distance:</strong> <span id="levenshtein-distance"></span></p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>Character Similarity:</strong> <span id="character-similarity"></span></p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>Word Similarity:</strong> <span id="word-similarity"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -180,65 +318,3 @@
     <script src="js/admin.js"></script>
 </body>
 </html>
-
-<!-- Text Matching Testing -->
-<div class="card mt-4">
-    <div class="card-header bg-primary text-white">
-        <h3 class="h5 mb-0">Test Text Matching</h3>
-    </div>
-    <div class="card-body">
-        <p class="text-muted">Test how the text matching algorithm compares two strings.</p>
-        
-        <form id="text-matching-form">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="text1" class="form-label">Text 1</label>
-                    <input type="text" class="form-control" id="text1" placeholder="e.g., 'drink water'" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="text2" class="form-label">Text 2</label>
-                    <input type="text" class="form-control" id="text2" placeholder="e.g., 'drink some water'" required>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Test Match</button>
-        </form>
-        
-        <div id="matching-results" class="mt-4 d-none">
-            <h4>Results:</h4>
-            <div class="alert" id="match-result">
-                <!-- Will be populated with match result -->
-            </div>
-            
-            <div class="card mb-3">
-                <div class="card-header">Normalized Text</div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Text 1:</strong> <span id="normalized-text1"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Text 2:</strong> <span id="normalized-text2"></span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">Similarity Metrics</div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <p><strong>Levenshtein Distance:</strong> <span id="levenshtein-distance"></span></p>
-                        </div>
-                        <div class="col-md-4">
-                            <p><strong>Character Similarity:</strong> <span id="character-similarity"></span></p>
-                        </div>
-                        <div class="col-md-4">
-                            <p><strong>Word Similarity:</strong> <span id="word-similarity"></span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
