@@ -1,3 +1,5 @@
+import { getTodayDateET, getTomorrowDateET } from './utils/dateUtils.js';
+
 // Global variables
 let currentQuestionId = null;
 let authCredentials = null;
@@ -137,8 +139,8 @@ const QuestionsManager = {
                             <div class="fw-bold">${this.escapeHtml(question.question_text)}</div>
                             <small class="text-muted">Active Date: ${this.formatDate(question.active_date)}</small>
                         </div>
-                        <span class="badge ${question.voting_complete ? 'bg-success' : 'bg-warning'} rounded-pill">
-                            ${question.voting_complete ? 'Complete' : 'Voting'}
+                        <span class="badge ${this.getStatusBadgeClass(question.status)} rounded-pill">
+                            ${this.getStatusText(question.status)}
                         </span>
                     </a>
                 `).join('');
@@ -150,6 +152,90 @@ const QuestionsManager = {
             document.getElementById('questionsList').innerHTML = 
                 '<div class="list-group-item text-danger text-center">Failed to load questions</div>';
         }
+    },
+    
+    getStatusBadgeClass: function(status) {
+        switch (status) {
+            case 'active': return 'bg-success';
+            case 'voting': return 'bg-warning';
+            case 'upcoming': return 'bg-info';
+            case 'completed': return 'bg-secondary';
+            default: return 'bg-light';
+        }
+    },
+    
+    getStatusText: function(status) {
+        switch (status) {
+            case 'active': return 'Guessing';
+            case 'voting': return 'Voting';
+            case 'upcoming': return 'Upcoming';
+            case 'completed': return 'Completed';
+            default: return status;
+        }
+    },
+    
+    updateQuestionInfo: function(question, voteCount) {
+        const detailsContainer = document.getElementById('questionDetails');
+        
+        // Get status text and badge class
+        const statusText = this.getStatusText(question.status || 'unknown');
+        const statusClass = this.getStatusBadgeClass(question.status || 'unknown');
+        
+        detailsContainer.innerHTML = `
+            <div class="mb-4">
+                <h3>${this.escapeHtml(question.question_text)}</h3>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div><strong>Active Date:</strong> ${this.formatDate(question.active_date)}</div>
+                    <div class="badge ${statusClass} rounded-pill">
+                        ${statusText}
+                    </div>
+                </div>
+                <div class="mb-3"><strong>Votes received:</strong> ${voteCount}</div>
+                
+                <div class="action-buttons">
+                    ${question.status === 'voting' ? `
+                        <button class="btn btn-primary" onclick="QuestionsManager.tallyVotes('${question.id}')">
+                            <i class="fas fa-calculator me-2"></i>Tally Votes
+                        </button>
+                    ` : ''}
+                    
+                    <button class="btn btn-outline-secondary" onclick="QuestionsManager.showEditModal('${question.id}')">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="QuestionsManager.deleteQuestion('${question.id}')">
+                        <i class="fas fa-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </div>
+            
+            ${question.status === 'voting' ? `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Voting in progress. ${voteCount} votes collected.
+                </div>
+            ` : ''}
+            
+            ${question.status === 'upcoming' ? `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This question is scheduled for the future.
+                </div>
+            ` : ''}
+            
+            ${question.status === 'active' ? `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    This question is active today for guessing.
+                </div>
+            ` : ''}
+            
+            ${question.status === 'completed' ? `
+                <div class="alert alert-secondary">
+                    <i class="fas fa-history me-2"></i>
+                    This is a past question.
+                </div>
+            ` : ''}
+        `;
     },
 
     loadQuestionDetails: async function(id) {
@@ -176,22 +262,35 @@ const QuestionsManager = {
                 // Update basic question info
                 this.updateQuestionInfo(data.question, data.voteCount);
                 
-                // Update/show top answers if available
-                if (data.question.voting_complete && data.topAnswers) {
+                // Show/hide sections based on status
+                const status = data.question.status || 
+                    (data.question.active_date === getTodayDateET() && data.question.voting_complete ? 'active' :
+                     data.question.active_date === getTomorrowDateET() && !data.question.voting_complete ? 'voting' : 'unknown');
+                
+                // Update/show top answers if voting is complete
+                if ((status === 'active' || status === 'completed') && data.topAnswers) {
                     this.showTopAnswers(data.topAnswers);
+                    document.getElementById('top-answers-section').style.display = 'block';
                 } else {
                     document.getElementById('top-answers-section').style.display = 'none';
                 }
                 
-                // Update vote distribution if available
-                if (data.voteDistribution && data.voteDistribution.length > 0) {
+                // Update vote distribution if in voting phase or if there are votes
+                if (status === 'voting' && data.voteDistribution && data.voteDistribution.length > 0) {
                     VotingManager.showVoteDistribution(id, data.voteCount);
+                    document.getElementById('vote-distribution-section').style.display = 'block';
                 } else {
                     document.getElementById('vote-distribution-section').style.display = 'none';
                 }
                 
-                // Update add votes form
-                VotingManager.showAddVotesForm(id);
+                // Show add votes form only for voting phase questions
+                const addVotesForm = document.getElementById('add-votes-form').closest('.card');
+                if (status === 'voting') {
+                    VotingManager.showAddVotesForm(id);
+                    addVotesForm.style.display = 'block';
+                } else {
+                    addVotesForm.style.display = 'none';
+                }
             } else {
                 document.getElementById('questionDetails').innerHTML = 
                     '<div class="alert alert-danger">Failed to load question details</div>';
@@ -673,6 +772,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         Auth.login(username, password);
+    });
+
+    // Store active tab in session storage
+    document.querySelectorAll('#adminTabs .nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            sessionStorage.setItem('activeAdminTab', e.target.id);
+        });
+    });
+
+    // Restore active tab on page load
+    const activeTab = sessionStorage.getItem('activeAdminTab');
+    if (activeTab) {
+        const tabElement = document.getElementById(activeTab);
+        if (tabElement) {
+            new bootstrap.Tab(tabElement).show();
+        }
+    }
+
+    // Update system operation result display
+    document.getElementById('run-update-btn').addEventListener('click', async () => {
+        try {
+            // Show loading
+            const resultEl = document.getElementById('system-operation-result');
+            resultEl.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    Running daily update...
+                </div>
+            `;
+            
+            // Call the update endpoint
+            const result = await QuestionsManager.runDailyUpdate();
+            
+            // Show result
+            if (result && result.success) {
+                resultEl.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${result.message || 'Update completed successfully!'}
+                    </div>
+                `;
+            } else {
+                resultEl.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        ${result?.error || 'Update failed. Please check the logs.'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error running update:', error);
+            document.getElementById('system-operation-result').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error: ${error.message}
+                </div>
+            `;
+        }
     });
     
     document.getElementById('saveQuestionBtn').addEventListener('click', () => QuestionsManager.addQuestion());

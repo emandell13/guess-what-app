@@ -45,16 +45,8 @@
 </head>
 <body>
     <div class="container py-4">
-        <header class="d-flex justify-content-between align-items-center mb-4">
+        <header class="mb-4">
             <h1>Guess What - Admin</h1>
-            <div>
-                <button id="run-update-btn" class="btn btn-warning me-2">
-                    <i class="fas fa-sync-alt me-2"></i>Run Daily Update
-                </button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
-                    <i class="fas fa-plus me-2"></i>Add Question
-                </button>
-            </div>
         </header>
 
         <!-- Login Form (initially shown) -->
@@ -83,158 +75,231 @@
         </div>
 
         <!-- Main Dashboard (initially hidden) -->
-        <div id="dashboard-container" class="row" style="display: none;">
-            <!-- Questions List -->
-            <div class="col-lg-6">
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h2 class="h5 mb-0">Questions</h2>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush" id="questionsList">
-                            <!-- Questions will be loaded here -->
-                            <div class="loading-spinner">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="dashboard-container" style="display: none;">
+            <!-- Tab navigation -->
+            <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions-panel" type="button" role="tab" aria-controls="questions-panel" aria-selected="true">
+                        Questions
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tools-tab" data-bs-toggle="tab" data-bs-target="#tools-panel" type="button" role="tab" aria-controls="tools-panel" aria-selected="false">
+                        Tools
+                    </button>
+                </li>
+            </ul>
 
-            <!-- Question Details -->
-            <div class="col-lg-6">
-                <!-- Basic Question Info -->
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h2 class="h5 mb-0">Question Details</h2>
+            <!-- Tab content -->
+            <div class="tab-content" id="adminTabsContent">
+                <!-- Questions Tab -->
+                <div class="tab-pane fade show active" id="questions-panel" role="tabpanel" aria-labelledby="questions-tab">
+                    <!-- Add question button at top -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Questions Management</h3>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                            <i class="fas fa-plus me-2"></i>Add Question
+                        </button>
                     </div>
-                    <div class="card-body" id="questionDetails">
-                        <p class="text-center text-muted my-4">Select a question to view details</p>
-                    </div>
-                </div>
 
-                <!-- Vote Distribution Section (initially hidden) -->
-                <div class="card mb-4" id="vote-distribution-section" style="display: none;">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Vote Distribution</h5>
-                    </div>
-                    <div class="card-body border-bottom">
-                        <p class="mb-0 small text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Responses are grouped using fuzzy text matching, showing how they'll be tallied. 
-                            Hover over "variations" to see examples of similar responses.
-                        </p>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Grouped Response</th>
-                                        <th>Count</th>
-                                        <th>Percentage</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="vote-distribution-table">
-                                    <!-- Will be populated dynamically -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Top Answers Section (initially hidden) -->
-                <div class="card mb-4" id="top-answers-section" style="display: none;">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Top Answers</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush" id="top-answers-list">
-                            <!-- Will be populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Votes Section -->
-                <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Add Votes</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="add-votes-form">
-                            <input type="hidden" id="vote-question-id">
-                            <div class="mb-3">
-                                <label for="vote-response" class="form-label">Response</label>
-                                <input type="text" class="form-control" id="vote-response" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="vote-count" class="form-label">Number of Votes</label>
-                                <input type="number" class="form-control" id="vote-count" min="1" value="5">
-                            </div>
-                            <button type="button" class="btn btn-primary" id="add-votes-btn">
-                                <i class="fas fa-plus-circle me-2"></i>Add Votes
+                    <div class="mb-3">
+                        <div class="btn-group w-100" role="group" aria-label="Question status filters">
+                            <button type="button" class="btn btn-outline-secondary active" data-filter="all">
+                                All
                             </button>
-                        </form>
-                        <div id="add-votes-response" class="mt-3"></div>
+                            <button type="button" class="btn btn-outline-success" data-filter="active">
+                                Guessing
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" data-filter="voting">
+                                Voting
+                            </button>
+                            <button type="button" class="btn btn-outline-info" data-filter="upcoming">
+                                Upcoming
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="completed">
+                                Completed
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Text Matching Testing Section -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="h5 mb-0">Test Text Matching</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Test how the text matching algorithm compares two strings.</p>
-                        
-                        <form id="text-matching-form">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="text1" class="form-label">Text 1</label>
-                                    <input type="text" class="form-control" id="text1" placeholder="e.g., 'drink water'" required>
+                    
+                    <!-- Two-column layout for questions -->
+                    <div class="row">
+                        <!-- Left: Questions list -->
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h4 class="h5 mb-0">All Questions</h4>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="text2" class="form-label">Text 2</label>
-                                    <input type="text" class="form-control" id="text2" placeholder="e.g., 'drink some water'" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Test Match</button>
-                        </form>
-                        
-                        <div id="matching-results" class="mt-4 d-none">
-                            <h4>Results:</h4>
-                            <div class="alert" id="match-result">
-                                <!-- Will be populated with match result -->
-                            </div>
-                            
-                            <div class="card mb-3">
-                                <div class="card-header">Normalized Text</div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Text 1:</strong> <span id="normalized-text1"></span></p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>Text 2:</strong> <span id="normalized-text2"></span></p>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush" id="questionsList">
+                                        <!-- Questions will be loaded here -->
+                                        <div class="loading-spinner">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="card">
-                                <div class="card-header">Similarity Metrics</div>
+                        </div>
+                        
+                        <!-- Right: Question details -->
+                        <div class="col-md-8">
+                            <!-- Basic Question Info -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h4 class="h5 mb-0">Question Details</h4>
+                                </div>
+                                <div class="card-body" id="questionDetails">
+                                    <p class="text-center text-muted my-4">Select a question to view details</p>
+                                </div>
+                            </div>
+
+                            <!-- Vote Distribution Section (initially hidden) -->
+                            <div class="card mb-4" id="vote-distribution-section" style="display: none;">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Vote Distribution</h5>
+                                </div>
+                                <div class="card-body border-bottom">
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Responses are grouped using fuzzy text matching, showing how they'll be tallied. 
+                                        Hover over "variations" to see examples of similar responses.
+                                    </p>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Grouped Response</th>
+                                                    <th>Count</th>
+                                                    <th>Percentage</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="vote-distribution-table">
+                                                <!-- Will be populated dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Top Answers Section (initially hidden) -->
+                            <div class="card mb-4" id="top-answers-section" style="display: none;">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Top Answers</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush" id="top-answers-list">
+                                        <!-- Will be populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Add Votes Section -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0">Add Votes</h5>
+                                </div>
                                 <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <p><strong>Levenshtein Distance:</strong> <span id="levenshtein-distance"></span></p>
+                                    <form id="add-votes-form">
+                                        <input type="hidden" id="vote-question-id">
+                                        <div class="mb-3">
+                                            <label for="vote-response" class="form-label">Response</label>
+                                            <input type="text" class="form-control" id="vote-response" required>
                                         </div>
-                                        <div class="col-md-4">
-                                            <p><strong>Character Similarity:</strong> <span id="character-similarity"></span></p>
+                                        <div class="mb-3">
+                                            <label for="vote-count" class="form-label">Number of Votes</label>
+                                            <input type="number" class="form-control" id="vote-count" min="1" value="5">
                                         </div>
-                                        <div class="col-md-4">
-                                            <p><strong>Word Similarity:</strong> <span id="word-similarity"></span></p>
+                                        <button type="button" class="btn btn-primary" id="add-votes-btn">
+                                            <i class="fas fa-plus-circle me-2"></i>Add Votes
+                                        </button>
+                                    </form>
+                                    <div id="add-votes-response" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tools Tab -->
+                <div class="tab-pane fade" id="tools-panel" role="tabpanel" aria-labelledby="tools-tab">
+                    <div class="row">
+                        <!-- System operations card -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h4 class="h5 mb-0">System Operations</h4>
+                                </div>
+                                <div class="card-body">
+                                    <button id="run-update-btn" class="btn btn-warning w-100">
+                                        <i class="fas fa-sync-alt me-2"></i>Run Daily Update
+                                    </button>
+                                    <div id="system-operation-result" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text matching tool card -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="h5 mb-0">Test Text Matching</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Test how the text matching algorithm compares two strings.</p>
+                                    
+                                    <form id="text-matching-form">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="text1" class="form-label">Text 1</label>
+                                                <input type="text" class="form-control" id="text1" placeholder="e.g., 'drink water'" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="text2" class="form-label">Text 2</label>
+                                                <input type="text" class="form-control" id="text2" placeholder="e.g., 'drink some water'" required>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Test Match</button>
+                                    </form>
+                                    
+                                    <div id="matching-results" class="mt-4 d-none">
+                                        <h4>Results:</h4>
+                                        <div class="alert" id="match-result">
+                                            <!-- Will be populated with match result -->
+                                        </div>
+                                        
+                                        <div class="card mb-3">
+                                            <div class="card-header">Normalized Text</div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>Text 1:</strong> <span id="normalized-text1"></span></p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>Text 2:</strong> <span id="normalized-text2"></span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="card">
+                                            <div class="card-header">Similarity Metrics</div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <p><strong>Levenshtein Distance:</strong> <span id="levenshtein-distance"></span></p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <p><strong>Character Similarity:</strong> <span id="character-similarity"></span></p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <p><strong>Word Similarity:</strong> <span id="word-similarity"></span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

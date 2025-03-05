@@ -4,11 +4,11 @@ const supabase = require('../config/supabase');
 const adminAuth = require('../middleware/adminAuth');
 const { groupSimilarAnswers } = require('../utils/textUtils');
 const { guess_prompt } = require('../utils/textUtils');
+const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
 
 // Apply auth middleware to all admin routes
 router.use(adminAuth);
 
-// Get all questions
 router.get('/questions', async (req, res) => {
     try {
         const { data: questions, error } = await supabase
@@ -17,7 +17,29 @@ router.get('/questions', async (req, res) => {
             .order('active_date', { ascending: false });
 
         if (error) throw error;
-        res.json({ questions });
+        
+        // Calculate and add status to each question
+        const today = getTodayDateET();
+        const tomorrow = getTomorrowDateET();
+        
+        const questionsWithStatus = questions.map(question => {
+            let status = 'upcoming';
+            
+            if (question.active_date === today && question.voting_complete) {
+                status = 'active'; // Today's question, available for guessing
+            } else if (question.active_date === tomorrow && !question.voting_complete) {
+                status = 'voting'; // Tomorrow's question, currently in voting phase
+            } else if (question.active_date < today && question.voting_complete) {
+                status = 'completed'; // Past question
+            }
+            
+            return {
+                ...question,
+                status
+            };
+        });
+        
+        res.json({ questions: questionsWithStatus });
     } catch (error) {
         console.error('Error fetching questions:', error);
         res.status(500).json({ error: 'Failed to fetch questions' });
