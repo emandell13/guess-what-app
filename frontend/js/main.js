@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const voting = new Voting();
     const game = new Game(ui);
     const modalManager = new ModalManager(ui, voting);
+    const guessing = new Guessing(game, ui, modalManager);
     
     // Set game on modalManager after creation
     modalManager.setGame(game);
@@ -24,6 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Check if the game is already complete and show modal if needed
         if (game.isGameOver()) {
             console.log("Game is already over, showing completion modal");
+            guessing.disableGuessForm();
             modalManager.showGameComplete();
         }
     }
