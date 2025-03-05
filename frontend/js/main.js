@@ -7,7 +7,7 @@ import AnswerGrid from './components/AnswerGrid.js';
 import GuessForm from './components/GuessForm.js';
 import ScoreTracker from './components/ScoreTracker.js';
 import StrikeCounter from './components/StrikeCounter.js';
-import GameModal from './components/Modal/GameModal.js';
+import GameModal from './components/modal/GameModal.js';
 
 /**
  * Main application class
