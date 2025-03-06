@@ -1,8 +1,7 @@
 // questionManager.js - Question management for admin panel
 import Auth from './auth.js';
-import { formatDate } from '../../utils/dateUtils.js';
 import { escapeHtml, getStatusBadgeClass, getStatusText } from '../../utils/adminUtils.js';
-import { getTodayDateET, getTomorrowDateET } from '../../utils/dateUtils.js';
+import { getTodayDateET, getTomorrowDateET, formatDisplayDate } from '../../utils/dateUtils.js';
 
 const QuestionsManager = {
     loadQuestions: async function () {
@@ -22,7 +21,7 @@ const QuestionsManager = {
                        data-id="${question.id}" onclick="window.app.questionManager.loadQuestionDetails('${question.id}'); return false;">
                         <div>
                             <div class="fw-bold">${escapeHtml(question.question_text)}</div>
-                            <small class="text-muted">Active Date: ${formatDate(question.active_date)}</small>
+                            <small class="text-muted">Active Date: ${formatDisplayDate(question.active_date)}</small>
                         </div>
                         <span class="badge ${getStatusBadgeClass(question.status)} rounded-pill">
                             ${getStatusText(question.status)}
@@ -131,7 +130,7 @@ const QuestionsManager = {
             <div class="mb-4">
                 <h3>${escapeHtml(question.question_text)}</h3>
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div><strong>Active Date:</strong> ${formatDate(question.active_date)}</div>
+                    <div><strong>Active Date:</strong> ${formatDisplayDate(question.active_date)}</div>
                     <div class="badge ${statusClass} rounded-pill">
                         ${statusText}
                     </div>
@@ -366,34 +365,6 @@ const QuestionsManager = {
         } catch (error) {
             console.error('Error adding question:', error);
             alert('Failed to add question');
-        }
-    },
-
-    tallyVotes: async function (id) {
-        if (!confirm('Are you sure you want to tally votes? This will finalize the top answers for this question.')) {
-            return;
-        }
-
-        try {
-            const response = await Auth.fetchWithAuth(`/admin/tally/${id}`, {
-                method: 'POST',
-                // Optionally pass a parameter to specify we want top 10
-                body: JSON.stringify({
-                    answerCount: 10 // Store top 10 answers
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to tally votes');
-            }
-
-            alert('Votes tallied successfully!');
-            this.loadQuestions();
-            this.loadQuestionDetails(id);
-
-        } catch (error) {
-            console.error('Error tallying votes:', error);
-            alert('Failed to tally votes');
         }
     },
 
