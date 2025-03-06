@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const voteRoutes = require('./votes');
 const guessRoutes = require('./guesses');
-const adminRoutes = require('./admin');
+const adminRoutes = require('./admin/index');
 
 module.exports = (app) => {
   // Serve static files first
