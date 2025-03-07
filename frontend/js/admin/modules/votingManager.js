@@ -97,7 +97,7 @@ const VotingManager = {
         }
     },
 
-    showVoteDistribution: async function (questionId, totalVotes) {
+    showVoteDistribution: async function (questionId, totalVotesTop10) {
         try {
             // Fetch the grouped vote distribution using fuzzy matching
             const response = await Auth.fetchWithAuth(`/admin/questions/${questionId}/vote-distribution`);
@@ -109,7 +109,7 @@ const VotingManager = {
             const data = await response.json();
 
             if (data.voteGroups && data.voteGroups.length > 0) {
-                this.displayVoteGroups(data.voteGroups, totalVotes);
+                this.displayVoteGroups(data.voteGroups, totalVotesTop10);
             } else {
                 document.getElementById('vote-distribution-section').style.display = 'none';
             }
@@ -119,7 +119,7 @@ const VotingManager = {
         }
     },
 
-    displayVoteGroups: function (voteGroups, totalVotes) {
+    displayVoteGroups: function (voteGroups, totalVotesTop10) {
         const distributionSection = document.getElementById('vote-distribution-section');
         const tableBody = document.getElementById('vote-distribution-table');
 
@@ -128,8 +128,8 @@ const VotingManager = {
 
         // Add each vote group
         voteGroups.forEach(group => {
-            const percentage = totalVotes > 0
-                ? ((group.count / totalVotes) * 100).toFixed(1)
+            const percentage = totalVotesTop10 > 0
+                ? ((group.count / totalVotesTop10) * 100).toFixed(1)
                 : 0;
 
             const row = document.createElement('tr');

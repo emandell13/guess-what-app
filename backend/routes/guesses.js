@@ -1,21 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const guessService = require('../services/guessService');
+const voteService = require('../services/voteService');
 
 router.get('/question', async (req, res) => {
     try {
         const question = await guessService.getCurrentQuestion();
         const topAnswers = await guessService.getTopAnswers(question.id, 10);
-        
-        const totalVotes = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
+
+        const totalVotesTop10 = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
+
+        const totalVotes = await voteService.getTotalVotes(question.id);
+
         const maxPoints = topAnswers
             .filter(answer => answer.rank <= 5)
-            .reduce((sum, answer) => sum + Math.round((answer.vote_count / totalVotes) * 100), 0);
+            .reduce((sum, answer) => sum + Math.round((answer.vote_count / totalVotesTop10) * 100), 0);
 
         const response = {
             question: question.question_text,
             guessPrompt: question.guess_prompt,
             totalVotes,
+            totalVotesTop10,
             maxPoints,
             answerCount: topAnswers.filter(answer => answer.rank <= 5).length
         };
@@ -27,7 +32,7 @@ router.get('/question', async (req, res) => {
                     rank: answer.rank,
                     answer: answer.answer,
                     rawVotes: answer.vote_count,
-                    points: Math.round((answer.vote_count / totalVotes) * 100)
+                    points: Math.round((answer.vote_count / totalVotesTop10) * 100)
                 }));
         }
 

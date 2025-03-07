@@ -139,6 +139,20 @@ async function tallyVotesForQuestion(questionId) {
     }
 }
 
+async function getTotalVotes(questionId) {
+    const { data, error } = await supabase
+        .from('votes')
+        .select('id')
+        .eq('question_id', questionId);
+        
+    if (error) {
+        console.error('Error fetching total votes count:', error);
+        return 0;
+    }
+    
+    return data ? data.length : 0;
+}
+
 async function getTopAnswersForQuestion(questionId) {
     try {
         const { data, error } = await supabase
@@ -201,6 +215,7 @@ module.exports = {
     submitVote,
     getCurrentQuestion,
     tallyVotesForQuestion,
+    getTotalVotes,
     getTopAnswersForQuestion,
     getTopAnswersForToday
 };
