@@ -100,7 +100,7 @@ const VotingManager = {
     showVoteDistribution: async function (questionId, totalVotesTop10) {
         try {
             // Fetch the grouped vote distribution using fuzzy matching
-            const response = await Auth.fetchWithAuth(`/admin/questions/${questionId}/vote-distribution`);
+            const response = await Auth.fetchWithAuth(`/admin/votes/distribution/${questionId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch vote distribution');
