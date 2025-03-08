@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +11,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <!-- Logo -->
-                <div class="text-center mb-5">
-                    <h1 class="display-2 fw-bold">Guess What!</h1>
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <div class="flex-grow-1 text-start">
+                        <!-- This is just to balance the layout -->
+                    </div>
+                    <div class="text-center">
+                        <h1 class="display-2 fw-bold">Guess What!</h1>
+                    </div>
+                    <div class="flex-grow-1 text-end">
+                        <button id="auth-button" class="btn btn-outline-primary">
+                            <i class="fas fa-user me-2"></i>Login
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Question with Vote Count -->
@@ -24,7 +36,8 @@
 
                 <!-- Score Tracker -->
                 <div class="text-end mb-4">
-                    <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span id="max-score">0</span></span></h4>
+                    <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span
+                                id="max-score">0</span></span></h4>
                 </div>
 
                 <!-- Answer Boxes Container -->
@@ -39,7 +52,8 @@
                     <div class="card-body p-4">
                         <form id="guess-form">
                             <div class="input-group input-group-lg">
-                                <input type="text" class="form-control form-control-lg" placeholder="Type your guess here..." required>
+                                <input type="text" class="form-control form-control-lg"
+                                    placeholder="Type your guess here..." required>
                                 <button class="btn btn-primary btn-lg px-4">Guess!</button>
                             </div>
                         </form>
@@ -74,7 +88,7 @@
                 <!-- Step 1: Game Summary -->
                 <div class="modal-body" id="summaryStep">
                     <h3 class="text-center mb-4">Nice job!</h3>
-                    
+
                     <div class="final-score text-center">
                         <h4 class="text-muted mb-3">Your Score</h4>
                         <div class="display-4 mb-2"><span id="modalFinalScore">0</span></div>
@@ -89,7 +103,7 @@
                 <!-- Step 2: Vote -->
                 <div class="modal-body" id="voteStep" style="display: none;">
                     <h3 class="text-center mb-4">Help Create Tomorrow's Game!</h3>
-                    
+
                     <div class="vote-container">
                         <p class="text-center mb-4">What do you think most people will answer?</p>
                         <div id="modalVoteForm" class="mb-4">
@@ -108,7 +122,7 @@
                 <!-- Step 3: Share -->
                 <div class="modal-body" id="shareStep" style="display: none;">
                     <h3 class="text-center mb-4">Share Your Results!</h3>
-                    
+
                     <div class="final-score text-center">
                         <h4 class="text-muted mb-3">Your Score</h4>
                         <div class="display-4 mb-2"><span id="modalFinalScoreShare">0</span></div>
@@ -143,5 +157,96 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/main.js"></script>
+
+    <!-- Authentication Modals -->
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Log In</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="login-error"></div>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="login-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="login-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="login-password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="login-password" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Log In</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Don't have an account? <a href="#" id="switch-to-register">Create one</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registerModalLabel">Create Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="register-error"></div>
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="register-username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="register-username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="register-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="register-password" required>
+                            <div class="form-text">Password must be at least 8 characters long</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="#" id="switch-to-login">Log in</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile/Menu -->
+    <div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userProfileModalLabel">Your Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="user-profile-info">
+                        <!-- Will be populated with profile info -->
+                        <p>Loading profile...</p>
+                    </div>
+                    <div class="d-grid gap-2 mt-3">
+                        <button id="logout-button" class="btn btn-outline-danger">Log Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
+
 </html>
