@@ -17,6 +17,7 @@ router.get('/question', async (req, res) => {
             .reduce((sum, answer) => sum + Math.round((answer.vote_count / totalVotesTop10) * 100), 0);
 
         const response = {
+            id: question.id,
             question: question.question_text,
             guessPrompt: question.guess_prompt,
             totalVotes,

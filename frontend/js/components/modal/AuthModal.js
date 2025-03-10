@@ -1,4 +1,5 @@
 import authService from '../../services/AuthService.js';
+import UserStats from '../UserStats.js';
 
 /**
  * Component for managing authentication modals
@@ -131,11 +132,13 @@ async updateProfileInfo(user) {
         <div class="mb-3">
           <h5>Your Stats</h5>
           <div id="user-stats">
-            <!-- Stats will be loaded from UserStats component -->
-            <p><em>Loading your statistics...</em></p>
+            <!-- Stats will be loaded by UserStats component -->
           </div>
         </div>
       `;
+      
+      // Initialize UserStats component
+      new UserStats('user-stats');
     } else if (profileResult.error === 'token_expired') {
       // Handle expired token - just close this modal and show login
       this.profileModal.hide();

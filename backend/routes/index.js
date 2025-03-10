@@ -4,6 +4,7 @@ const voteRoutes = require('./votes');
 const guessRoutes = require('./guesses');
 const adminRoutes = require('./admin/index');
 const authRoutes = require('./auth');
+const userHistoryRoutes = require('./userHistory'); // Add this line
 
 module.exports = (app) => {
   // Serve static files first
@@ -19,6 +20,7 @@ module.exports = (app) => {
   app.use('/guesses', guessRoutes);
   app.use('/admin', adminRoutes);
   app.use('/auth', authRoutes);
+  app.use('/user', userHistoryRoutes); // Add this line
 
   // Handle GET request for the homepage
   app.get('/', (req, res) => {

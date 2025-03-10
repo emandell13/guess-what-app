@@ -1,4 +1,5 @@
 import { saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes } from '../utils/sessionUtils.js';
+import authService from './AuthService.js';
 
 /**
  * Service that manages game state and logic
@@ -79,71 +80,91 @@ class GameService {
   /**
    * Records a correct guess
    */
-  recordCorrectGuess(guess, rank, points, canonicalAnswer) {
-    // Check if this rank has already been guessed
-    const alreadyGuessed = this.correctGuesses.some(g => g.rank === rank);
-    
-    // If already guessed, return false (not a new correct guess)
-    if (alreadyGuessed) {
-      return { 
-        success: false, 
-        alreadyGuessed: true 
-      };
-    }
-    
-    // Update score
-    this.updateScore(points);
-    
-    // Add the guess with points information
-    const guessInfo = {
-      guess: canonicalAnswer || guess,
-      rank,
-      points
-    };
-    
-    this.correctGuesses.push(guessInfo);
-    
-    // Save progress
-    saveTodayGuesses(this.correctGuesses);
-    
-    // Check if game is complete
-    const gameComplete = this.isGameOver();
-    
-    if (gameComplete) {
-      markTodayCompleted();
-      if (this.onGameComplete) this.onGameComplete();
-    }
-    
+  /**
+ * Records a correct guess
+ */
+recordCorrectGuess(guess, rank, points, canonicalAnswer) {
+  // Check if this rank has already been guessed
+  const alreadyGuessed = this.correctGuesses.some(g => g.rank === rank);
+  
+  // If already guessed, return false (not a new correct guess)
+  if (alreadyGuessed) {
     return { 
-      success: true,
-      gameComplete
+      success: false, 
+      alreadyGuessed: true 
     };
   }
+  
+  // Update score
+  this.updateScore(points);
+  
+  // Add the guess with points information
+  const guessInfo = {
+    guess: canonicalAnswer || guess,
+    rank,
+    points
+  };
+  
+  this.correctGuesses.push(guessInfo);
+  
+  // Save progress locally
+  saveTodayGuesses(this.correctGuesses);
+  
+  // Save progress to server if user is authenticated
+  this.saveUserGameData();
+  
+  // Check if game is complete
+  const gameComplete = this.isGameOver();
+  
+  if (gameComplete) {
+    markTodayCompleted();
+    
+    // Save final game state to server for authenticated users
+    this.saveUserGameData();
+    
+    if (this.onGameComplete) this.onGameComplete();
+  }
+  
+  return { 
+    success: true,
+    gameComplete
+  };
+}
   
   /**
    * Adds a strike to the game
    */
-  addStrike() {
-    this.strikes++;
-    
-    // Save strikes to session storage
-    saveTodayStrikes(this.strikes);
-    
-    // Trigger callback if provided
-    if (this.onStrikeAdded) {
-      this.onStrikeAdded(this.strikes);
-    }
-    
-    const maxStrikesReached = this.strikes >= this.MAX_STRIKES;
-    
-    // Mark game as completed if max strikes reached
-    if (maxStrikesReached) {
-      markTodayCompleted();
-      if (this.onGameComplete) this.onGameComplete();
-    }
-    
-    return maxStrikesReached;
+  /**
+ * Adds a strike to the game
+ */
+addStrike() {
+  this.strikes++;
+  
+  // Save strikes to session storage
+  saveTodayStrikes(this.strikes);
+  
+  // Save progress to server if user is authenticated
+  this.saveUserGameData();
+  
+  // Trigger callback if provided
+  if (this.onStrikeAdded) {
+    this.onStrikeAdded(this.strikes);
   }
+  
+  const maxStrikesReached = this.strikes >= this.MAX_STRIKES;
+  
+  // Mark game as completed if max strikes reached
+  if (maxStrikesReached) {
+    markTodayCompleted();
+    
+    // Save final game state to server for authenticated users
+    this.saveUserGameData();
+    
+    if (this.onGameComplete) this.onGameComplete();
+  }
+  
+  return maxStrikesReached;
+}
   
   /**
    * Updates the current score
@@ -197,6 +218,49 @@ class GameService {
       `Guess what ${this.question.totalVotes} people said was ${this.question.guessPrompt}!` : 
       "No question available for guessing yet";
   }
+
+  /**
+ * Saves the current game data to the server for authenticated users
+ */
+/**
+ * Saves the current game data to the server for authenticated users
+ */
+async saveUserGameData() {
+  // Only proceed if user is authenticated
+  if (!authService.isAuthenticated()) {
+    return;
+  }
+  
+  try {
+    // Make sure we have a question ID
+    if (!this.question || !this.question.id) {
+      console.error("Cannot save game data: missing question ID");
+      return { success: false, message: "Missing question ID" };
+    }
+    
+    const gameData = {
+      question_id: this.question.id,
+      final_score: this.currentScore,
+      strikes: this.strikes,
+      completed: this.isGameOver(),
+      correct_answers: this.correctGuesses
+    };
+    
+    const response = await fetch("/user/save-game", {
+      method: "POST",
+      headers: authService.getAuthHeaders(),
+      body: JSON.stringify(gameData),
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving game data:", error);
+    return { 
+      success: false, 
+      message: "Failed to save game data" 
+    };
+  }
+}
 }
 
 // Create a singleton instance
