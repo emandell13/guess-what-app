@@ -5,30 +5,42 @@ const supabase = require('../config/supabase');
  */
 const authMiddleware = async (req, res, next) => {
   // Get the authorization header
-  const token = req.headers.authorization?.split(' ')[1] || req.cookies?.authToken;
+  const authHeader = req.headers.authorization;
   
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
-      error: 'Authentication required',
-      message: 'You must be logged in to access this resource'
+      error: 'auth_required',
+      message: 'Authentication required'
     });
   }
-
+  
+  const token = authHeader.split(' ')[1];
+  
   try {
-    // Verify the token with Supabase
+    // Use getUser with the token directly
     const { data, error } = await supabase.auth.getUser(token);
     
-    if (error || !data.user) {
-      throw new Error('Invalid or expired token');
+    if (error) {
+      // Check specifically for expired token
+      if (error.message.includes('expired')) {
+        return res.status(401).json({
+          error: 'token_expired',
+          message: 'Your session has expired. Please log in again.'
+        });
+      }
+      throw error;
     }
-
+    
+    if (!data || !data.user) {
+      throw new Error('Invalid authentication token');
+    }
+    
     // Add the user object to the request
     req.user = data.user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
     return res.status(401).json({
-      error: 'Authentication failed',
+      error: 'authentication_failed',
       message: error.message || 'Invalid authentication token'
     });
   }

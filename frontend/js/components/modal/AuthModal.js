@@ -113,45 +113,51 @@ class AuthModals {
     }
   }
   
-  /**
-   * Update the profile modal with user information
-   */
-  async updateProfileInfo(user) {
-    try {
-      const profileResult = await authService.getProfile();
+/**
+ * Update the profile modal with user information
+ */
+async updateProfileInfo(user) {
+  try {
+    const profileResult = await authService.getProfile();
+    
+    if (profileResult.success && profileResult.profile) {
+      const profile = profileResult.profile;
       
-      if (profileResult.success && profileResult.profile) {
-        const profile = profileResult.profile;
-        
-        this.userProfileInfo.innerHTML = `
-          <div class="text-center mb-4">
-            <h4>${profile.username}</h4>
-            <p class="text-muted">${user.email}</p>
-          </div>
-          <div class="mb-3">
-            <h5>Your Stats</h5>
-            <div id="user-stats">
-              <!-- Stats will be loaded from UserStats component -->
-              <p><em>Loading your statistics...</em></p>
-            </div>
-          </div>
-        `;
-      } else {
-        this.userProfileInfo.innerHTML = `
-          <div class="alert alert-warning">
-            Failed to load profile information
-          </div>
-        `;
-      }
-    } catch (error) {
-      console.error('Error updating profile info:', error);
       this.userProfileInfo.innerHTML = `
-        <div class="alert alert-danger">
-          An error occurred while loading your profile
+        <div class="text-center mb-4">
+          <h4>${profile.username}</h4>
+          <p class="text-muted">${user.email}</p>
+        </div>
+        <div class="mb-3">
+          <h5>Your Stats</h5>
+          <div id="user-stats">
+            <!-- Stats will be loaded from UserStats component -->
+            <p><em>Loading your statistics...</em></p>
+          </div>
+        </div>
+      `;
+    } else if (profileResult.error === 'token_expired') {
+      // Handle expired token - just close this modal and show login
+      this.profileModal.hide();
+      setTimeout(() => this.showLogin(), 300);
+    } else {
+      this.userProfileInfo.innerHTML = `
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Unable to load profile information
         </div>
       `;
     }
+  } catch (error) {
+    console.error('Error updating profile info:', error);
+    this.userProfileInfo.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        An error occurred while loading your profile
+      </div>
+    `;
   }
+}
   
   /**
    * Show the login modal
