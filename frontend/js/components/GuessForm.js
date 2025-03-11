@@ -1,5 +1,6 @@
 import gameService from '../services/GameService.js';
 import guessService from '../services/GuessService.js';
+import authService from '../services/AuthService.js';
 
 /**
  * Component representing the form for submitting guesses
@@ -57,6 +58,29 @@ class GuessForm {
           result.canonicalAnswer
         );
         
+        // Only save correct guesses that haven't been guessed before
+        if (!recordResult.alreadyGuessed && authService.isAuthenticated()) {
+          try {
+            const saveResponse = await fetch("/user/save-guess", {
+              method: "POST",
+              headers: authService.getAuthHeaders(),
+              body: JSON.stringify({
+                question_id: gameService.question.id,
+                guess_text: userGuess,
+                is_correct: true,
+                points_earned: result.points,
+                matched_answer_id: result.answerId || null,
+                current_score: gameService.currentScore,
+                strikes: gameService.strikes
+              })
+            });
+            
+            console.log("Save guess response:", await saveResponse.json());
+          } catch (error) {
+            console.error("Error saving guess:", error);
+          }
+        }
+        
         if (recordResult.alreadyGuessed) {
           // This answer was already guessed
           if (this.onAlreadyGuessed) {
@@ -71,6 +95,29 @@ class GuessForm {
       } else {
         // Incorrect guess
         gameService.addStrike();
+        
+        // Always save incorrect guesses
+        if (authService.isAuthenticated()) {
+          try {
+            const saveResponse = await fetch("/user/save-guess", {
+              method: "POST",
+              headers: authService.getAuthHeaders(),
+              body: JSON.stringify({
+                question_id: gameService.question.id,
+                guess_text: userGuess,
+                is_correct: false,
+                points_earned: 0,
+                matched_answer_id: null,
+                current_score: gameService.currentScore,
+                strikes: gameService.strikes
+              })
+            });
+            
+            console.log("Save guess response:", await saveResponse.json());
+          } catch (error) {
+            console.error("Error saving guess:", error);
+          }
+        }
         
         if (this.onIncorrectGuess) {
           this.onIncorrectGuess();

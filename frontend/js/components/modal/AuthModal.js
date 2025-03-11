@@ -133,6 +133,7 @@ async updateProfileInfo(user) {
           <h5>Your Stats</h5>
           <div id="user-stats">
             <!-- Stats will be loaded by UserStats component -->
+            <p><em>Loading your statistics...</em></p>
           </div>
         </div>
       `;

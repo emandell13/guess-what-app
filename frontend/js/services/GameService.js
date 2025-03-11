@@ -225,6 +225,9 @@ addStrike() {
 /**
  * Saves the current game data to the server for authenticated users
  */
+/**
+ * Saves the current game data to the server for authenticated users
+ */
 async saveUserGameData() {
   // Only proceed if user is authenticated
   if (!authService.isAuthenticated()) {
@@ -238,12 +241,16 @@ async saveUserGameData() {
       return { success: false, message: "Missing question ID" };
     }
     
+    // We need to track incorrect guesses as well
+    // This is a simplification - in a real app you'd track each guess with a timestamp
     const gameData = {
       question_id: this.question.id,
       final_score: this.currentScore,
       strikes: this.strikes,
       completed: this.isGameOver(),
-      correct_answers: this.correctGuesses
+      correct_answers: this.correctGuesses,
+      // You would need to add tracking of incorrect guesses for this to work
+      // incorrect_guesses: this.incorrectGuesses 
     };
     
     const response = await fetch("/user/save-game", {
@@ -260,8 +267,7 @@ async saveUserGameData() {
       message: "Failed to save game data" 
     };
   }
-}
-}
+}}
 
 // Create a singleton instance
 const gameService = new GameService();

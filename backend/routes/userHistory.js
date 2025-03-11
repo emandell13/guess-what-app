@@ -3,74 +3,145 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/save-game', authMiddleware, async (req, res) => {
+router.post('/save-guess', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { question_id, final_score, strikes, completed, correct_answers } = req.body;
+    const { question_id, guess_text, is_correct, points_earned, matched_answer_id } = req.body;
     
-    // Check if a record already exists for this user and question
+    // First, get question details to know max answers and max score
+    const { data: questionData } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', question_id)
+      .single();
+    
+    // Get top answers to determine max score
+    const { data: topAnswers } = await supabase
+      .from('top_answers')
+      .select('*')
+      .eq('question_id', question_id)
+      .order('rank', { ascending: true });
+    
+    const MAX_STRIKES = 3; // Define max strikes
+    const answerCount = topAnswers.filter(answer => answer.rank <= 5).length;
+    
+    // Find or create game progress record
+    let gameProgressId;
+    
+    // Check if a game progress record exists
     const { data: existingGame, error: queryError } = await supabase
       .from('user_game_progress')
-      .select('id')
+      .select('id, final_score, strikes')
       .eq('user_id', userId)
       .eq('question_id', question_id)
       .single();
     
-    let result;
+    // Check if this correct guess already exists to avoid duplicate points
+    let isDuplicateGuess = false;
+    let correctGuessCount = 0;
+    
+    if (is_correct && matched_answer_id) {
+      const { data: existingGuess } = await supabase
+        .from('user_guesses')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('question_id', question_id)
+        .eq('matched_answer_id', matched_answer_id)
+        .single();
+      
+      isDuplicateGuess = !!existingGuess;
+      
+      // Count how many unique correct guesses the user has made
+      const { data: correctGuesses } = await supabase
+        .from('user_guesses')
+        .select('matched_answer_id')
+        .eq('user_id', userId)
+        .eq('question_id', question_id)
+        .eq('is_correct', true);
+      
+      if (correctGuesses) {
+        // Get unique answer IDs
+        const uniqueAnswerIds = new Set(correctGuesses.map(g => g.matched_answer_id));
+        correctGuessCount = uniqueAnswerIds.size;
+      }
+    }
+    
+    let newScore, newStrikes;
     
     if (!queryError && existingGame) {
       // Update existing record
-      const { data, error } = await supabase
+      gameProgressId = existingGame.id;
+      
+      // Only add points if it's a correct and non-duplicate guess
+      // Only increment strikes if it's incorrect
+      newScore = is_correct && !isDuplicateGuess 
+        ? existingGame.final_score + points_earned 
+        : existingGame.final_score;
+        
+      newStrikes = !is_correct 
+        ? existingGame.strikes + 1 
+        : existingGame.strikes;
+      
+      // Check if game is completed
+      const allAnswersFound = correctGuessCount >= answerCount || newScore >= 100;
+      const maxStrikesReached = newStrikes >= MAX_STRIKES;
+      const isCompleted = allAnswersFound || maxStrikesReached;
+      
+      await supabase
         .from('user_game_progress')
         .update({
-          final_score,
-          strikes,
-          completed,
+          final_score: newScore,
+          strikes: newStrikes,
+          completed: isCompleted,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existingGame.id)
-        .select();
-      
-      if (error) throw error;
-      result = { success: true, updated: true, data };
+        .eq('id', existingGame.id);
     } else {
-      // Create new record
+      // Create new game progress record
+      newScore = is_correct ? points_earned : 0;
+      newStrikes = is_correct ? 0 : 1;
+      
+      // Check if game is completed with first guess (unlikely but possible)
+      const isCompleted = (is_correct && points_earned >= 100) || newStrikes >= MAX_STRIKES;
+      
       const { data, error } = await supabase
         .from('user_game_progress')
         .insert([{
           user_id: userId,
           question_id,
-          final_score,
-          strikes,
-          completed
+          final_score: newScore,
+          strikes: newStrikes,
+          completed: isCompleted
         }])
         .select();
       
       if (error) throw error;
-      result = { success: true, created: true, data };
-      
-      // If correct_answers provided, save individual guesses
-      if (correct_answers && correct_answers.length > 0 && data[0].id) {
-        const guesses = correct_answers.map(answer => ({
-          user_id: userId,
-          question_id,
-          game_progress_id: data[0].id,
-          guess_text: answer.guess,
-          is_correct: true,
-          points_earned: answer.points,
-          created_at: new Date().toISOString()
-        }));
-        
-        await supabase
-          .from('user_guesses')
-          .insert(guesses);
-      }
+      gameProgressId = data[0].id;
     }
     
-    res.json(result);
+    // Always save the guess for history tracking
+    const { error: guessError } = await supabase
+      .from('user_guesses')
+      .insert([{
+        user_id: userId,
+        question_id,
+        game_progress_id: gameProgressId,
+        guess_text,
+        is_correct,
+        points_earned: is_correct && !isDuplicateGuess ? points_earned : 0,
+        matched_answer_id: is_correct ? matched_answer_id : null,
+        created_at: new Date().toISOString()
+      }]);
+    
+    if (guessError) throw guessError;
+    
+    res.json({
+      success: true,
+      message: 'Guess saved successfully'
+    });
   } catch (error) {
-    console.error('Error saving game data:', error);
-    res.status(500).json({ error: 'Failed to save game data' });
+    console.error('Error saving guess:', error);
+    res.status(500).json({ error: 'Failed to save guess' });
   }
 });
 
@@ -78,7 +149,7 @@ router.post('/save-game', authMiddleware, async (req, res) => {
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     // Get all completed games
     const { data: games, error: gamesError } = await supabase
       .from('user_game_progress')
@@ -86,16 +157,16 @@ router.get('/stats', authMiddleware, async (req, res) => {
       .eq('user_id', userId)
       .eq('completed', true)
       .order('created_at', { ascending: false });
-    
+
     if (gamesError) throw gamesError;
-    
+
     // Calculate statistics
     const totalGames = games.length;
     const totalScore = games.reduce((sum, game) => sum + game.final_score, 0);
     const averageScore = totalGames > 0 ? Math.round(totalScore / totalGames) : 0;
     const highScore = games.length > 0 ? Math.max(...games.map(g => g.final_score)) : 0;
     const perfectGames = games.filter(g => g.strikes === 0).length;
-    
+
     res.json({
       success: true,
       stats: {
