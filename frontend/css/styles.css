@@ -32,6 +32,10 @@
     transition-delay: 0.5s;
 }
 
+.points.badge {
+    color: #000;
+  }
+
 /* Strike animation */
 @keyframes strikeReveal {
     0% { 
