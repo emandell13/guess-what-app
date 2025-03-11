@@ -3,7 +3,6 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Save user's daily game data
 router.post('/save-game', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;

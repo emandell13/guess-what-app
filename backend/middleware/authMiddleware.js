@@ -35,6 +35,13 @@ const authMiddleware = async (req, res, next) => {
       throw new Error('Invalid authentication token');
     }
     
+    // Log the user data for debugging
+    console.log("Authenticated user from Supabase:", {
+      id: data.user.id,
+      email: data.user.email,
+      role: data.user.role
+    });
+    
     // Add the user object to the request
     req.user = data.user;
     next();
