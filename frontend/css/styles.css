@@ -282,3 +282,23 @@ h2, .h2 {
 .text-center.mb-4 h4.text-muted.mb-3 {
     display: none;
 }
+
+/* Icon button styling */
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: #000;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-icon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }

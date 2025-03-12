@@ -8,6 +8,28 @@
     transform: translateY(0);
 }
 
+/* Apply main font variables to modal */
+.modal {
+  font-family: var(--font-family-base);
+}
+
+.modal-title, 
+.modal h3, 
+.modal h4, 
+.modal h5, 
+.modal .btn {
+  font-family: var(--font-family-base);
+}
+
+/* Score and metrics in the modal */
+.modal .display-4,
+.modal .score-value,
+.modal #modalFinalScore,
+.modal #modalFinalScoreShare {
+  font-family: var(--font-family-accent);
+  font-weight: 700;
+}
+
 /* Modal styling */
 .modal-content {
     border-radius: 1rem;
@@ -46,7 +68,7 @@
 }
 
 .progress-bar {
-    background-color: #007bff;
+    background-color: #000;
     transition: width 0.5s ease;
 }
 
@@ -59,7 +81,7 @@
 }
 
 .final-score .display-4 {
-    color: #007bff;
+    color: #000;
     font-weight: bold;
 }
 
@@ -70,13 +92,38 @@
     padding: 1rem;
 }
 
-.answer-card {
-    padding: 1rem;
+.answers-summary .answer-card {
+    padding: 0.75rem 1rem;
     border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
+    font-family: var(--font-family-base);
+  }
+
+  .answer-card .answer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+  }
+
+  .answer-card .answer-text {
+    text-transform: capitalize;
+    text-align: center;
+    opacity: unset;
+    font-weight: 500;
+  }
+
+  .answer-card .points.badge {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    color: #000;
+    background-color: rgba(0, 0, 0, 0.08);
+    margin-left: 1rem;
+  }
 
 .answer-card.correct {
     background-color: rgba(25, 135, 84, 0.1);
@@ -108,19 +155,46 @@
 
 .share-buttons .btn {
     padding: 0.75rem 1.5rem;
-    border-radius: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid #000;
+    color: #000;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.share-buttons .btn:hover {
+    background: #000;
+    color: white;
 }
 
 /* Next step buttons */
 .btn-next {
-    background: linear-gradient(to right, #007bff, #0056b3);
+    background: #000;
     color: white;
     border: none;
     padding: 1rem;
-    border-radius: 2rem;
-    transition: transform 0.2s ease;
+    border-radius: 0.5rem;
+    font-family: var(--font-family-accent);
+    font-weight: 500;
+    transition: background-color 0.2s ease;
 }
 
 .btn-next:hover {
+    background: #333;
+    color: white;
     transform: translateY(-2px);
+}
+
+/* Vote form submit button styling */
+#modal-vote-form .btn-primary {
+    background-color: #000;
+    border-color: #000;
+    color: white;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+#modal-vote-form .btn-primary:hover {
+    background-color: #333;
+    border-color: #333;
 }
