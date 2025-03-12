@@ -12,23 +12,9 @@ body {
     font-family: var(--font-family-base);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6,
-button,
-input,
-select,
-textarea,
-.btn {
+h1, h2, h3, h4, h5, h6, 
+.h1, .h2, .h3, .h4, .h5, .h6, 
+button, input, select, textarea, .btn {
     font-family: var(--font-family-base);
 }
 
@@ -41,80 +27,111 @@ textarea,
     font-family: var(--font-family-accent);
 }
 
+/* Fluid responsive typography for headings */
+h1, .h1 {
+    font-weight: 700;
+    font-size: clamp(1.875rem, 5vw, 3rem);
+}
+
+h2, .h2 {
+    font-weight: 700;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+/* Make score numbers bolder */
+.score-value {
+    font-weight: 700;
+}
+
+/* Keep score label at regular weight */
+.score-label {
+    font-weight: 400;
+}
+
+/* Improved strike counter styling */
+#strikes .fa-circle {
+    font-size: 1rem;
+    margin-left: 0.4rem;
+}
+
+/* For desktop, use slightly larger circles */
+@media (min-width: 768px) {
+    #strikes .fa-circle {
+        font-size: 1.125rem;
+    }
+}
+
+/* Reduce opacity for inactive strikes */
+#strikes .far.fa-circle {
+    opacity: 0.6;
+}
+
 /* Card flip animation */
 @keyframes flipReveal {
-    0% {
+    0% { 
         transform: perspective(1000px) rotateX(0deg);
         background-color: #f8f9fa;
     }
-
-    50% {
+    50% { 
         transform: perspective(1000px) rotateX(90deg);
         background-color: #f8f9fa;
     }
-
     50.1% {
         background-color: rgba(25, 135, 84, 0.25);
     }
-
-    100% {
+    100% { 
         transform: perspective(1000px) rotateX(180deg);
         background-color: rgba(25, 135, 84, 0.25);
     }
 }
 
-/* Fixed guess box for mobile devices */
-@media (max-width: 767.98px) {
-    h2.text-center.mb-4 {
-        margin-bottom: 2rem !important; /* Increase bottom margin on mobile */
-      }
+.answer-reveal {
+    animation: flipReveal 1s ease-in-out;
+    transform-style: preserve-3d;
+}
 
-    /* Create a placeholder to prevent content jump when form becomes fixed */
-    #guess-form-placeholder {
-        display: block;
-        height: 5rem;
-        /* Adjust as needed to match form height */
+/* Strike animation */
+@keyframes strikeReveal {
+    0% { 
+        transform: scale(1);
+        opacity: 0.5;
     }
-
-    #guess-form-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        border-radius: 1.5rem 1.5rem 0 0;
-        padding: 1rem 1rem 1.5rem;
+    60% { 
+        transform: scale(1.4);
+        opacity: 1;
+    }
+    100% { 
+        transform: scale(1);
+        opacity: 1;
     }
 }
 
-/* Input styling to match design */
-#guess-form .form-control {
-    border-top-left-radius: 2rem;
-    border-bottom-left-radius: 2rem;
-    border: 1px solid #e0e0e0;
-    background-color: #f8f8f8;
+.strike-reveal {
+    animation: strikeReveal 0.6s ease-out forwards;
+}
+
+/* Spacing adjustments */
+.container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1rem !important;
+}
+
+.mb-3 {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Answer box styling */
+.card-body {
     padding: 0.75rem 1.25rem;
-    height: 3.5rem;
+    min-height: 60px;
 }
 
-/* Button styling to match design */
-#guess-form .btn {
-    border-top-right-radius: 2rem;
-    border-bottom-right-radius: 2rem;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    background-color: #000;
-    border-color: #000;
-    padding: 0.75rem 1.5rem;
-    font-family: var(--font-family-accent);
-    font-weight: 500;
-}
-
-/* Hide the placeholder on desktop */
-@media (min-width: 768px) {
-    #guess-form-placeholder {
-        display: none;
-    }
+.card-body .d-flex {
+    position: relative;
 }
 
 /* Styling for answer rank numbers inside boxes */
@@ -123,28 +140,6 @@ textarea,
     font-weight: 600;
     min-width: 1.5rem;
     color: #333;
-}
-
-
-/* Make score numbers bolder */
-.score-value {
-    font-weight: 700;
-    /* Bolder than regular text */
-}
-
-/* Keep score label at regular or medium weight */
-.score-label {
-    font-weight: 400;
-    /* Regular weight */
-}
-
-.answer-reveal {
-    animation: flipReveal 1s ease-in-out;
-    transform-style: preserve-3d;
-}
-
-.card-body .d-flex {
-    position: relative;
 }
 
 .answer-text {
@@ -160,90 +155,127 @@ textarea,
     transition-delay: 0.5s;
 }
 
+/* Points styling */
 .points.badge {
     font-size: 1rem;
     font-weight: 700;
     padding: 0.35rem 0.65rem;
     color: #000;
-    /* This keeps the text black as we specified earlier */
 }
 
-/* Ensure card body has appropriate padding */
-.card-body {
-    padding: 0.75rem 1.25rem;
+/* Guess form styling */
+.guess-outer-container {
+    display: flex;
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto; 
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-/* Strike animation */
-@keyframes strikeReveal {
-    0% {
-        transform: scale(1);
-        opacity: 0.5;
-    }
-
-    60% {
-        transform: scale(1.4);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+#guess-form {
+    width: 100%;
 }
 
-.strike-reveal {
-    animation: strikeReveal 0.6s ease-out forwards;
+#guess-form .input-group {
+    width: 100%;
+    display: flex;
+    overflow: hidden;
+    border: none;
+    border-radius: 8px;
+    background: #FFF;
 }
 
-/* Spacing adjustments */
-.card-body {
-    padding: 0.5rem 1rem;
-    min-height: 60px;
+#guess-form .form-control {
+    flex: 1;
+    height: 50px;
+    padding: 9px 20px;
+    border: 1px solid #E0E0E0; /* Add border to input field */
+    border-right: none; /* Remove right border as it connects to button */
+    border-radius: 8px 0 0 8px;
+    background: #FFF;
+    font-family: var(--font-family-accent);
+    box-shadow: none;
+    outline: none;
+  }
+
+#guess-form .form-control:focus {
+    box-shadow: none;
+    border-color: #E0E0E0;
 }
 
-.container {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+/* Button styling - UPDATED with border */
+#guess-form .btn {
+    min-width: 100px;
+    height: 50px;
+    padding: 9px 20px;
+    border: 1px solid #000; /* Add matching border to button */
+    border-radius: 0 8px 8px 0;
+    background-color: #000;
+    color: white;
+    font-family: var(--font-family-accent);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+#guess-form-container {
+    box-shadow: none;
 }
 
-.mb-4 {
-    margin-bottom: 1rem !important;
-}
-
-.mb-3 {
-    margin-bottom: 0.5rem !important;
-}
-
-/* Fluid responsive typography for headings */
-h2,
-.h2 {
-    font-weight: 700;
-    font-size: clamp(1.875rem, 5vw, 3rem);
-    /* Min: 30px, Fluid: 5vw, Max: 48px */
-}
-
-/* Improved strike counter styling */
-#strikes .fa-circle {
-    font-size: 1rem;
-    /* Larger circles */
-    margin-left: 0.4rem;
-    /* Consistent spacing between circles */
-}
-
-/* For desktop, use slightly larger circles */
-@media (min-width: 768px) {
-    #strikes .fa-circle {
-        font-size: 1.125rem;
-        /* Larger on desktop */
-    }
-}
-
-/* Reduce opacity for inactive strikes */
-#strikes .far.fa-circle {
+/* Disabled state styling */
+#guess-form .form-control:disabled,
+#guess-form .form-control[readonly] {
+    background-color: #f8f8f8;
     opacity: 0.6;
+    border: none;
 }
 
-/* Remove the original strikes heading and container since it's now inline */
+#guess-form .btn:disabled,
+#guess-form .btn.disabled {
+    background-color: #000 !important;
+    opacity: 0.8;
+    color: white !important;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+    h2.text-center.mb-4 {
+        margin-bottom: 2rem !important;
+    }
+    
+    #guess-form-placeholder {
+        display: block;
+        height: 70px;
+    }
+    
+    #guess-form-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: white;
+        padding: 1rem;
+        border-top: 1px solid #E0E0E0;
+        display: flex;
+        justify-content: center; /* Center the form container */
+    }
+    
+    .guess-outer-container {
+        max-width: 100%;
+    }
+}
+
+/* Desktop-specific styles */
+@media (min-width: 768px) {
+    #guess-form-placeholder {
+        display: none;
+    }
+}
+
+/* Remove legacy styles */
 .text-center.mb-4 h4.text-muted.mb-3 {
     display: none;
 }
