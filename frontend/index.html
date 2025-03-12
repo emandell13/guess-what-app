@@ -33,10 +33,19 @@
                 <!-- Question with Vote Count -->
                 <h2 class="text-center mb-4"></h2>
 
-                <!-- Score Tracker -->
-                <div class="text-end mb-4">
-                    <h4>Score: <span class="badge bg-primary"><span id="current-score">0</span>/<span
-                                id="max-score">0</span></span></h4>
+                <!-- Score and Strikes Row -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <!-- Score on left -->
+                    <!-- Score on left -->
+                    <div class="text-start">
+                        <h5 class="mb-0"><span class="score-label">Score:</span> <span class="score-value"><span
+                                    id="current-score">0</span>/<span id="max-score">0</span></span></h5>
+                    </div>
+
+                    <!-- Strikes on right -->
+                    <div class="text-end">
+                        <h5 class="mb-0"><span class="strikes-label">Strikes:</span> <span id="strikes"></span></h5>
+                    </div>
                 </div>
 
                 <!-- Answer Boxes Container -->
@@ -46,26 +55,22 @@
                     </div>
                 </div>
 
-                <!-- Guessing Module -->
-                <div class="card mb-4 shadow">
-                    <div class="card-body p-4">
-                        <form id="guess-form">
-                            <div class="input-group input-group-lg">
-                                <input type="text" class="form-control form-control-lg"
-                                    placeholder="Type your guess here..." required>
-                                <button class="btn btn-primary btn-lg px-4">Guess!</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <!-- Placeholder Guessing Div -->
 
-                <!-- Strike Counter -->
-                <div class="text-center mb-4">
-                    <h4 class="text-muted mb-3">Strikes</h4>
-                    <div id="strikes" class="fs-1">
-                        <i class="far fa-circle me-3 text-danger opacity-75"></i>
-                        <i class="far fa-circle me-3 text-danger opacity-75"></i>
-                        <i class="far fa-circle text-danger opacity-75"></i>
+                <div id="guess-form-placeholder" class="d-md-none"></div>
+
+                <!-- Guessing Module -->
+                <div id="guess-form-container">
+                    <div class="card mb-4 shadow d-md-block">
+                        <div id="guess-form-container">
+                            <form id="guess-form">
+                              <div class="input-group">
+                                <input type="text" class="form-control guess-input"
+                                       placeholder="Type your guess here..." required>
+                                <button class="btn btn-dark px-4">Guess</button>
+                              </div>
+                            </form>
+                          </div>
                     </div>
                 </div>
             </div>

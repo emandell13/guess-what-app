@@ -21,9 +21,9 @@ class StrikeCounter {
   initialize() {
     this.strikesContainer.innerHTML = Array(this.maxStrikes)
       .fill()
-      .map(() => `<i class="far fa-circle me-3 text-danger opacity-75"></i>`)
-      .join('');
-  }
+      .map(() => `<i class="far fa-circle text-danger opacity-75"></i>`)
+      .join(' ');
+}
   
   /**
    * Updates the strike display to show a specific number of strikes
