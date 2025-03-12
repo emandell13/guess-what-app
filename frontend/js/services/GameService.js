@@ -215,7 +215,7 @@ addStrike() {
    */
   getQuestionText() {
     return this.question ? 
-      `Guess what ${this.question.totalVotes} people said was ${this.question.guessPrompt}!` : 
+      `What did ${this.question.totalVotes} people say was ${this.question.guessPrompt}` : 
       "No question available for guessing yet";
   }
 
