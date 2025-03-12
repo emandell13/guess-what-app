@@ -65,7 +65,6 @@ textarea,
 
 /* Fixed guess box for mobile devices */
 @media (max-width: 767.98px) {
-
     h2.text-center.mb-4 {
         margin-bottom: 2rem !important; /* Increase bottom margin on mobile */
       }
