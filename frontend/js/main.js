@@ -73,20 +73,18 @@ class App {
   async updateAuthButton() {
     const authButton = document.getElementById('auth-button');
     const isAuthenticated = authService.isAuthenticated();
-
+  
     if (authButton) {
       if (isAuthenticated) {
-        const user = authService.getCurrentUser();
-        const profile = await authService.getProfile();
-        const username = profile.success ? profile.profile.username : 'User';
-
-        authButton.innerHTML = `<i class="fas fa-user me-2"></i>${username}`;
+        // Just show the icon when authenticated
+        authButton.innerHTML = `<i class="fas fa-user"></i>`;
         authButton.classList.remove('btn-outline-primary');
         authButton.classList.add('btn-primary');
       } else {
-        authButton.innerHTML = `<i class="fas fa-user me-2"></i>Login`;
+        // Just show the icon when not authenticated
+        authButton.innerHTML = `<i class="fas fa-user"></i>`;
         authButton.classList.remove('btn-primary');
-        authButton.classList.add('btn-outline-primary');
+        authButton.classList.add('btn-outline-primary');  
       }
     }
   }
