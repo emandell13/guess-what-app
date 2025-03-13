@@ -30,7 +30,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
     
     // Check if a game progress record exists
     const { data: existingGame, error: queryError } = await supabase
-      .from('user_game_progress')
+      .from('game_progress')
       .select('id, final_score, strikes')
       .eq('user_id', userId)
       .eq('question_id', question_id)
@@ -42,7 +42,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
     
     if (is_correct && matched_answer_id) {
       const { data: existingGuess } = await supabase
-        .from('user_guesses')
+        .from('guesses')
         .select('id')
         .eq('user_id', userId)
         .eq('question_id', question_id)
@@ -53,7 +53,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
       
       // Count how many unique correct guesses the user has made
       const { data: correctGuesses } = await supabase
-        .from('user_guesses')
+        .from('guesses')
         .select('matched_answer_id')
         .eq('user_id', userId)
         .eq('question_id', question_id)
@@ -88,7 +88,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
       const isCompleted = allAnswersFound || maxStrikesReached;
       
       await supabase
-        .from('user_game_progress')
+        .from('game_progress')
         .update({
           final_score: newScore,
           strikes: newStrikes,
@@ -105,7 +105,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
       const isCompleted = (is_correct && points_earned >= 100) || newStrikes >= MAX_STRIKES;
       
       const { data, error } = await supabase
-        .from('user_game_progress')
+        .from('game_progress')
         .insert([{
           user_id: userId,
           question_id,
@@ -121,7 +121,7 @@ router.post('/save-guess', authMiddleware, async (req, res) => {
     
     // Always save the guess for history tracking
     const { error: guessError } = await supabase
-      .from('user_guesses')
+      .from('guesses')
       .insert([{
         user_id: userId,
         question_id,
@@ -152,7 +152,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     // Get all completed games
     const { data: games, error: gamesError } = await supabase
-      .from('user_game_progress')
+      .from('game_progress')
       .select('*')
       .eq('user_id', userId)
       .eq('completed', true)

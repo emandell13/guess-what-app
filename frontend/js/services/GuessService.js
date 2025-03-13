@@ -1,9 +1,9 @@
-import { getSessionId } from '../utils/sessionUtils.js';
-import authService from './AuthService.js';
-
 /**
  * Service that handles guess submissions and checking
  */
+import { getVisitorId } from '../utils/visitorUtils.js';
+import authService from './AuthService.js';
+
 class GuessService {
   /**
    * Submits a guess to the API
@@ -12,8 +12,8 @@ class GuessService {
    */
   async submitGuess(guess) {
     try {
-      // Get session ID
-      const sessionId = getSessionId();
+      // Get visitor ID
+      const visitorId = getVisitorId();
       
       // Create headers
       const headers = {
@@ -30,7 +30,7 @@ class GuessService {
         headers: headers,
         body: JSON.stringify({ 
           guess: guess,
-          sessionId: sessionId
+          visitorId: visitorId
         }),
       });
       

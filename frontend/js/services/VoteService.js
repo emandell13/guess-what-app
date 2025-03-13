@@ -1,4 +1,4 @@
-import { getSessionId, hasVotedForTomorrow, markTomorrowVoted } from '../utils/sessionUtils.js';
+import { getVisitorId, hasVotedForTomorrow, markTomorrowVoted } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
 
 /**
@@ -47,8 +47,8 @@ class VoteService {
         };
       }
       
-      // Include the session ID with the vote
-      const sessionId = getSessionId();
+      // Include the visitor ID with the vote
+      const visitorId = getVisitorId();
       
       // Create headers
       const headers = {
@@ -65,7 +65,7 @@ class VoteService {
         headers: headers,
         body: JSON.stringify({ 
           response: userResponse,
-          sessionId: sessionId
+          visitorId: visitorId
         }),
       });
 

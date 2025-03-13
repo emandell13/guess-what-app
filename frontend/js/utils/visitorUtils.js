@@ -1,23 +1,23 @@
 /**
- * Utility functions for managing user sessions in the Guess What game
+ * Utility functions for managing visitors in the Guess What game
  */
 import { getTodayDateET, getTomorrowDateET } from './dateUtils.js';
 
-// Generate a random session ID for new users
-function generateSessionId() {
-  return 'sess_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+// Generate a random visitor ID using UUID
+function generateVisitorId() {
+  return crypto.randomUUID(); // Modern browsers support this natively
 }
 
-// Get the current session ID or create a new one
-export function getSessionId() {
-  let sessionId = localStorage.getItem('gwSessionId');
+// Get the current visitor ID or create a new one
+export function getVisitorId() {
+  let visitorId = localStorage.getItem('gwVisitorId');
   
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    localStorage.setItem('gwSessionId', sessionId);
+  if (!visitorId) {
+    visitorId = generateVisitorId();
+    localStorage.setItem('gwVisitorId', visitorId);
   }
   
-  return sessionId;
+  return visitorId;
 }
 
 // Check if a user has already voted for tomorrow's question
