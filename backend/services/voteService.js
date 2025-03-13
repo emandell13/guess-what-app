@@ -18,7 +18,7 @@ async function getCurrentQuestion() {
     return question;
 }
 
-async function submitVote(response) {
+async function submitVote(response, sessionId = null, userId = null) {
     const tomorrowDate = getTomorrowDateET();
 
     const { data: question, error: questionError } = await supabase
@@ -32,14 +32,31 @@ async function submitVote(response) {
         throw new Error('No active question available for voting');
     }
 
+    // Create vote data object with all identifiers
+    const voteData = { 
+        question_id: question.id,
+        response: response.toLowerCase().trim(),
+        created_at: new Date().toISOString()
+    };
+    
+    // Add identifiers if provided
+    if (sessionId) {
+        voteData.session_id = sessionId;
+    }
+    
+    if (userId) {
+        voteData.user_id = userId;
+    }
+
+    // Debug log
+    console.log('Submitting vote with data:', voteData);
+
     const { data, error } = await supabase
         .from('votes')
-        .insert([{ 
-            question_id: question.id,
-            response: response.toLowerCase().trim()
-        }]);
+        .insert([voteData]);
 
     if (error) {
+        console.error('Error recording vote:', error);
         throw new Error('Failed to record vote');
     }
 

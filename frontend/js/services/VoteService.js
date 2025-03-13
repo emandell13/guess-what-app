@@ -1,4 +1,5 @@
 import { getSessionId, hasVotedForTomorrow, markTomorrowVoted } from '../utils/sessionUtils.js';
+import authService from './AuthService.js';
 
 /**
  * Service that handles voting operations
@@ -49,11 +50,19 @@ class VoteService {
       // Include the session ID with the vote
       const sessionId = getSessionId();
       
+      // Create headers
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      
+      // Add auth token if user is authenticated
+      if (authService.isAuthenticated()) {
+        headers["Authorization"] = `Bearer ${authService.token}`;
+      }
+      
       const response = await fetch("/votes", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify({ 
           response: userResponse,
           sessionId: sessionId

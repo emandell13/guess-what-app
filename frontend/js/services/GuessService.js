@@ -1,3 +1,6 @@
+import { getSessionId } from '../utils/sessionUtils.js';
+import authService from './AuthService.js';
+
 /**
  * Service that handles guess submissions and checking
  */
@@ -9,12 +12,26 @@ class GuessService {
    */
   async submitGuess(guess) {
     try {
+      // Get session ID
+      const sessionId = getSessionId();
+      
+      // Create headers
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      
+      // Add auth token if user is authenticated
+      if (authService.isAuthenticated()) {
+        headers["Authorization"] = `Bearer ${authService.token}`;
+      }
+      
       const response = await fetch("/guesses", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ guess: guess }),
+        headers: headers,
+        body: JSON.stringify({ 
+          guess: guess,
+          sessionId: sessionId
+        }),
       });
       
       return await response.json();

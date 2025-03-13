@@ -46,8 +46,29 @@ router.get('/question', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const { guess } = req.body;
-        const result = await guessService.checkGuess(guess);
+        const { guess, sessionId } = req.body;
+        
+        // Extract user ID from auth header if present
+        let userId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            const token = req.headers.authorization.split(' ')[1];
+            
+            try {
+                const { data, error } = await supabase.auth.getUser(token);
+                
+                if (!error && data && data.user) {
+                    userId = data.user.id;
+                    console.log("Successfully extracted userId for guess:", userId);
+                }
+            } catch (authError) {
+                console.error('Auth error (non-critical):', authError);
+                // Continue without user ID
+            }
+        }
+        
+        console.log(`Processing guess: userId=${userId}, sessionId=${sessionId}, guess=${guess}`);
+        
+        const result = await guessService.checkGuess(guess, userId, sessionId);
         res.json(result);
     } catch (error) {
         console.error('Error processing guess:', error);
