@@ -33,8 +33,8 @@ class App {
   }
 
   /**
- * Set up auth button click handler
- */
+   * Set up auth button click handler
+   */
   setupAuthButton() {
     const authButton = document.getElementById('auth-button');
     if (authButton) {
@@ -51,24 +51,42 @@ class App {
     }
   }
 
+  checkVerificationStatus() {
+    // Only check for our custom verified parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.has('verified') && urlParams.get('verified') === 'success') {
+      console.log("Verification success detected, showing login modal");
+      this.authModal.showLoginWithVerificationSuccess();
+      
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return true;
+    }
+    
+    return false;
+  }
+  
   /**
-  * Update auth button text based on authentication state
-  */
+   * Update auth button text based on authentication state
+   */
   async updateAuthButton() {
     const authButton = document.getElementById('auth-button');
     const isAuthenticated = authService.isAuthenticated();
-  
+
     if (authButton) {
       if (isAuthenticated) {
-        // Just show the icon, no text or name
-        authButton.innerHTML = `<i class="fas fa-user"></i>`;
-        authButton.classList.remove('btn-outline-primary', 'btn-primary');
-        authButton.classList.add('btn-icon');
+        const user = authService.getCurrentUser();
+        const profile = await authService.getProfile();
+        const username = profile.success ? profile.profile.username : 'User';
+
+        authButton.innerHTML = `<i class="fas fa-user me-2"></i>${username}`;
+        authButton.classList.remove('btn-outline-primary');
+        authButton.classList.add('btn-primary');
       } else {
-        // Same icon for logged out state
-        authButton.innerHTML = `<i class="fas fa-user"></i>`;
-        authButton.classList.remove('btn-outline-primary', 'btn-primary');
-        authButton.classList.add('btn-icon');
+        authButton.innerHTML = `<i class="fas fa-user me-2"></i>Login`;
+        authButton.classList.remove('btn-primary');
+        authButton.classList.add('btn-outline-primary');
       }
     }
   }
@@ -107,6 +125,23 @@ class App {
       this.handleIncorrectGuess.bind(this),
       this.handleAlreadyGuessed.bind(this)
     );
+    
+    // Check for verification parameter after everything is initialized
+    this.checkVerificationStatus();
+  }
+
+  /**
+   * Check if the URL contains a verification success parameter
+   */
+  checkVerificationStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('verified') && urlParams.get('verified') === 'success') {
+      console.log("Verification success detected, showing login modal");
+      this.authModal.showLoginWithVerificationSuccess();
+      
+      // Clean up the URL (remove the query parameter)
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
   /**

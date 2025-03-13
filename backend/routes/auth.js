@@ -150,6 +150,41 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+// Resend verification email
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing email',
+        message: 'Email is required'
+      });
+    }
+
+    // Call Supabase to resend the verification email
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      message: 'Verification email resent successfully'
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to resend verification email'
+    });
+  }
+});
+
 // Log out the user
 router.post('/logout', (req, res) => {
   // Clear the auth cookie if it was set

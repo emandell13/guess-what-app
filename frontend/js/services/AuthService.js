@@ -89,6 +89,14 @@ class AuthService {
 
       const data = await response.json();
 
+      if (!data.success && data.message && data.message.includes("email not confirmed")) {
+        return {
+          success: false,
+          message: "Please verify your email before logging in. Check your inbox for a verification link.",
+          isEmailVerificationError: true
+        };
+      }
+
       if (data.success && data.session) {
         // Store auth data
         this.token = data.session.access_token;
@@ -111,6 +119,30 @@ class AuthService {
       };
     }
   }
+/**
+ * Resend verification email to a user
+ * @param {string} email - User's email address
+ * @returns {Promise<Object>} - Result of the resend operation
+ */
+async resendVerificationEmail(email) {
+  try {
+    const response = await fetch("/auth/resend-verification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error resending verification email:", error);
+    return {
+      success: false,
+      message: "An error occurred while resending verification email"
+    };
+  }
+}
 
   /**
    * Logout the current user

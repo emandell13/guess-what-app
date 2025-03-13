@@ -9,12 +9,12 @@ const userHistoryRoutes = require('./userHistory'); // Add this line
 module.exports = (app) => {
   // Serve static files first
   app.use(express.static(path.join(__dirname, '../../frontend')));
-  
+
   // HTML route for admin dashboard
   app.get('/admin-dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/admin.html'));
   });
-  
+
   // API routes
   app.use('/votes', voteRoutes);
   app.use('/guesses', guessRoutes);
@@ -25,5 +25,11 @@ module.exports = (app) => {
   // Handle GET request for the homepage
   app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
+  });
+
+  // Handle email verification redirect
+  app.get('/auth/verify', (req, res) => {
+    // Redirect to main page with a verification success parameter
+    res.redirect('/?verified=success');
   });
 };
