@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const voteService = require('../services/voteService');
+const visitorService = require('../services/visitorService');
 const supabase = require('../config/supabase');
 
 // Get the current voting question
@@ -42,8 +43,10 @@ router.post('/', async (req, res) => {
             }
         }
         
-        // Log for debugging
-        console.log(`Processing vote: userId=${userId}, visitorId=${visitorId}, response=${response}`);
+        // Ensure visitor record exists if visitorId provided
+        if (visitorId) {
+            await visitorService.ensureVisitorExists(visitorId, userId);
+        }
         
         // Pass both identifiers to the service
         const data = await voteService.submitVote(response, visitorId, userId);

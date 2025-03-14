@@ -32,51 +32,11 @@ async function submitVote(response, visitorId = null, userId = null) {
         throw new Error('No active question available for voting');
     }
 
-    // Add a visitor record if this is a new visitor
-    if (visitorId) {
-        try {
-            // Check if visitor exists
-            const { data: existingVisitor } = await supabase
-                .from('visitors')
-                .select('id')
-                .eq('id', visitorId)
-                .single();
-                
-            if (!existingVisitor) {
-                // Create new visitor record
-                await supabase
-                    .from('visitors')
-                    .insert([{
-                        id: visitorId,
-                        first_seen_at: new Date().toISOString(),
-                        last_seen_at: new Date().toISOString(),
-                        user_id: userId || null,
-                        visit_count: 1
-                    }]);
-                console.log(`Created new visitor record for ${visitorId}`);
-            } else {
-                // Update existing visitor
-                await supabase
-                    .from('visitors')
-                    .update({
-                        last_seen_at: new Date().toISOString(),
-                        visit_count: supabase.rpc('increment_counter', { row_id: visitorId }),
-                        user_id: userId || existingVisitor.user_id
-                    })
-                    .eq('id', visitorId);
-                console.log(`Updated visitor record for ${visitorId}`);
-            }
-        } catch (visitorError) {
-            console.error('Error handling visitor record:', visitorError);
-            // Continue even if visitor tracking fails
-        }
-    }
-
     // Create vote data object with all identifiers
     const voteData = { 
         question_id: question.id,
-        response: response.toLowerCase().trim(),
-        created_at: new Date().toISOString()
+        response: response.toLowerCase().trim()
+        // created_at will be set automatically by Supabase
     };
     
     // Add identifiers if provided

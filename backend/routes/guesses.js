@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const guessService = require('../services/guessService');
+const visitorService = require('../services/visitorService');
 const voteService = require('../services/voteService');
 
 router.get('/question', async (req, res) => {
@@ -46,7 +47,7 @@ router.get('/question', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const { guess, sessionId } = req.body;
+        const { guess, visitorId } = req.body;
         
         // Extract user ID from auth header if present
         let userId = null;
@@ -66,9 +67,14 @@ router.post('/', async (req, res) => {
             }
         }
         
-        console.log(`Processing guess: userId=${userId}, sessionId=${sessionId}, guess=${guess}`);
+        // Ensure visitor record exists if visitorId provided
+        if (visitorId) {
+            await visitorService.ensureVisitorExists(visitorId, userId);
+        }
         
-        const result = await guessService.checkGuess(guess, userId, sessionId);
+        console.log(`Processing guess: userId=${userId}, visitorId=${visitorId}, guess=${guess}`);
+        
+        const result = await guessService.checkGuess(guess, userId, visitorId);
         res.json(result);
     } catch (error) {
         console.error('Error processing guess:', error);

@@ -29,7 +29,7 @@ async function getTopAnswers(questionId, limit = 10) {
     return answers;
 }
 
-async function checkGuess(guess, userId = null, sessionId = null) {
+async function checkGuess(guess, userId = null, visitorId = null) {
     const question = await getCurrentQuestion();
     const top10Answers = await getTopAnswers(question.id, 10);
     const top5Answers = top10Answers.filter(answer => answer.rank <= 5);
@@ -48,29 +48,28 @@ async function checkGuess(guess, userId = null, sessionId = null) {
     const score = matchedAnswer ? Math.round((matchedAnswer.vote_count / top10Total) * 100) : 0;
 
     // Record the guess in the database if we have an identifier
-    if (userId || sessionId) {
+    if (userId || visitorId) {
         try {
             const guessData = {
                 question_id: question.id,
                 guess_text: guess,
                 is_correct: !!matchedAnswer,
                 points_earned: matchedAnswer ? score : 0,
-                matched_answer_id: matchedAnswer ? matchedAnswer.id : null,
-                created_at: new Date().toISOString()
+                matched_answer_id: matchedAnswer ? matchedAnswer.id : null
             };
 
             if (userId) {
                 guessData.user_id = userId;
             }
             
-            if (sessionId) {
-                guessData.session_id = sessionId;
+            if (visitorId) {
+                guessData.visitor_id = visitorId;
             }
 
             console.log("Recording guess with data:", guessData);
 
             const { error } = await supabase
-                .from('guesses')  // Make sure to use the new table name
+                .from('guesses')
                 .insert([guessData]);
 
             if (error) {

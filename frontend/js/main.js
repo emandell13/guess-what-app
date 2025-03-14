@@ -2,6 +2,7 @@
 import gameService from './services/GameService.js';
 import voteService from './services/VoteService.js';
 import authService from './services/AuthService.js';
+import visitorService from './services/VisitorService.js';
 
 // Import components
 import AnswerGrid from './components/AnswerGrid.js';
@@ -30,6 +31,21 @@ class App {
 
     // Setup auth button click handler
     this.setupAuthButton();
+    
+    // Register this visitor
+    this.registerVisitor();
+  }
+
+  /**
+   * Register the current visitor
+   */
+  async registerVisitor() {
+    try {
+      await visitorService.registerVisitor();
+    } catch (error) {
+      console.error("Error registering visitor:", error);
+      // Silent failure - don't interrupt the app initialization
+    }
   }
 
   /**
