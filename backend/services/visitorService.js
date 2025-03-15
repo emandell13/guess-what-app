@@ -95,7 +95,21 @@ async function associateVisitorWithUser(visitorId, userId) {
         return false;
     }
     
+    console.log(`Starting visitor association: visitorId=${visitorId}, userId=${userId}`);
+    
     try {
+        // First check if this visitor is already associated with this user
+        const { data: existingVisitor } = await supabase
+            .from('visitors')
+            .select('user_id')
+            .eq('id', visitorId)
+            .single();
+            
+        if (existingVisitor && existingVisitor.user_id === userId) {
+            console.log(`Visitor ${visitorId} is already associated with user ${userId}`);
+            return true;
+        }
+        
         // Update the visitor record
         const { error: visitorError } = await supabase
             .from('visitors')
@@ -107,8 +121,10 @@ async function associateVisitorWithUser(visitorId, userId) {
             return false;
         }
         
+        console.log('Visitor record updated successfully');
+        
         // Update all votes with this visitor_id to also have the user_id
-        const { error: votesError } = await supabase
+        const { data: votesData, error: votesError } = await supabase
             .from('votes')
             .update({ user_id: userId })
             .eq('visitor_id', visitorId)
@@ -116,10 +132,12 @@ async function associateVisitorWithUser(visitorId, userId) {
             
         if (votesError) {
             console.error('Error updating votes:', votesError);
+        } else {
+            console.log(`Updated votes for visitor ${visitorId}`);
         }
         
         // Update all guesses with this visitor_id to also have the user_id
-        const { error: guessesError } = await supabase
+        const { data: guessesData, error: guessesError } = await supabase
             .from('guesses')
             .update({ user_id: userId })
             .eq('visitor_id', visitorId)
@@ -127,20 +145,24 @@ async function associateVisitorWithUser(visitorId, userId) {
             
         if (guessesError) {
             console.error('Error updating guesses:', guessesError);
+        } else {
+            console.log(`Updated guesses for visitor ${visitorId}`);
         }
         
         // Update all game progress records with this visitor_id to also have the user_id
-        const { error: progressError } = await supabase
-            .from('user_game_progress')
+        const { data: progressData, error: progressError } = await supabase
+            .from('game_progress')
             .update({ user_id: userId })
             .eq('visitor_id', visitorId)
             .is('user_id', null);
             
         if (progressError) {
             console.error('Error updating game progress:', progressError);
+        } else {
+            console.log(`Updated game progress for visitor ${visitorId}`);
         }
         
-        console.log(`Associated visitor ${visitorId} with user ${userId}`);
+        console.log(`Associated visitor ${visitorId} with user ${userId} successfully`);
         return true;
     } catch (error) {
         console.error('Error associating visitor with user:', error);

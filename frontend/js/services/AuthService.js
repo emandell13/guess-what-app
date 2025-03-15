@@ -72,11 +72,11 @@ class AuthService {
   }
 
   /**
-   * Login a user
-   * @param {string} email - User email
-   * @param {string} password - User password
-   * @returns {Promise<Object>} - Login result
-   */
+ * Login a user
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<Object>} - Login result
+ */
   async login(email, password) {
     try {
       const response = await fetch("/auth/login", {
@@ -86,9 +86,9 @@ class AuthService {
         },
         body: JSON.stringify({ email, password }),
       });
-
+  
       const data = await response.json();
-
+  
       if (!data.success && data.message && data.message.includes("email not confirmed")) {
         return {
           success: false,
@@ -96,20 +96,46 @@ class AuthService {
           isEmailVerificationError: true
         };
       }
-
+  
       if (data.success && data.session) {
         // Store auth data
         this.token = data.session.access_token;
         this.user = data.user;
-
+  
         localStorage.setItem(this.tokenKey, this.token);
         localStorage.setItem(this.userKey, JSON.stringify(this.user));
-
+  
+        // Import and use the visitor service
+        try {
+          const visitorId = localStorage.getItem('gwVisitorId');
+          if (visitorId) {
+            console.log(`Associating visitor ${visitorId} with user ${this.user.id}`);
+            
+            // Direct API call instead of using the service to avoid circular dependencies
+            const associateResponse = await fetch("/api/visitors/associate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${this.token}`
+              },
+              body: JSON.stringify({ 
+                visitorId: visitorId,
+                userId: this.user.id
+              }),
+            });
+            
+            const associateResult = await associateResponse.json();
+            console.log("Association result:", associateResult);
+          }
+        } catch (error) {
+          console.error("Error associating visitor with user:", error);
+        }
+  
         // Trigger login event for components that need to update
         const loginEvent = new CustomEvent('user-login', { detail: this.user });
         document.dispatchEvent(loginEvent);
       }
-
+  
       return data;
     } catch (error) {
       console.error("Login error:", error);
@@ -119,6 +145,7 @@ class AuthService {
       };
     }
   }
+
 /**
  * Resend verification email to a user
  * @param {string} email - User's email address

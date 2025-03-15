@@ -32,7 +32,7 @@ router.post('/save-game', async (req, res) => {
     
     // Try to find existing game progress record
     let query = supabase
-      .from('user_game_progress')
+      .from('game_progress')
       .select('id, final_score, strikes')
       .eq('question_id', question_id);
       
@@ -53,7 +53,7 @@ router.post('/save-game', async (req, res) => {
       
       // Update existing record
       const { error: updateError } = await supabase
-        .from('user_game_progress')
+        .from('game_progress')
         .update({
           final_score: newScore,
           strikes: newStrikes,
@@ -89,7 +89,7 @@ router.post('/save-game', async (req, res) => {
       }
       
       const { error: insertError } = await supabase
-        .from('user_game_progress')
+        .from('game_progress')
         .insert([gameData]);
         
       if (insertError) {

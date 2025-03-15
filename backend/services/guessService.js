@@ -50,12 +50,64 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     // Record the guess in the database if we have an identifier
     if (userId || visitorId) {
         try {
+            // First, find the game progress record or create one
+            let gameProgressId = null;
+            
+            // Build query to find existing progress
+            let query = supabase
+                .from('game_progress')
+                .select('id')
+                .eq('question_id', question.id);
+                
+            if (userId) {
+                query = query.eq('user_id', userId);
+            } else if (visitorId) {
+                query = query.eq('visitor_id', visitorId);
+            }
+            
+            // Try to get existing progress
+            const { data: existingProgress, error: progressError } = await query.single();
+            
+            if (!progressError && existingProgress) {
+                gameProgressId = existingProgress.id;
+            } else {
+                // Create a new progress record
+                const progressData = {
+                    question_id: question.id,
+                    final_score: matchedAnswer ? score : 0,
+                    strikes: matchedAnswer ? 0 : 1,
+                    completed: false
+                };
+                
+                if (userId) {
+                    progressData.user_id = userId;
+                }
+                
+                if (visitorId) {
+                    progressData.visitor_id = visitorId;
+                }
+                
+                const { data: newProgress, error: createError } = await supabase
+                    .from('game_progress')
+                    .insert([progressData])
+                    .select('id')
+                    .single();
+                    
+                if (!createError && newProgress) {
+                    gameProgressId = newProgress.id;
+                } else {
+                    console.error('Error creating game progress:', createError);
+                }
+            }
+
+            // Now create the guess record with the game progress ID
             const guessData = {
                 question_id: question.id,
                 guess_text: guess,
                 is_correct: !!matchedAnswer,
                 points_earned: matchedAnswer ? score : 0,
-                matched_answer_id: matchedAnswer ? matchedAnswer.id : null
+                matched_answer_id: matchedAnswer ? matchedAnswer.id : null,
+                game_progress_id: gameProgressId
             };
 
             if (userId) {

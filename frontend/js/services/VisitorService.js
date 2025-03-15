@@ -48,43 +48,47 @@ class VisitorService {
   }
   
   /**
-   * Associates the current visitor with a user ID
-   * Should be called when a user logs in
-   * 
-   * @param {string} userId - The user's ID
-   */
-  async associateWithUser(userId) {
-    try {
-      if (!userId) {
-        return {
-          success: false,
-          error: "User ID is required"
-        };
-      }
-      
-      const visitorId = getVisitorId();
-      
-      const response = await fetch("/api/visitors/associate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authService.token}`
-        },
-        body: JSON.stringify({ 
-          visitorId: visitorId,
-          userId: userId
-        }),
-      });
-      
-      return await response.json();
-    } catch (error) {
-      console.error("Error associating visitor with user:", error);
+ * Associates the current visitor with a user ID
+ * Should be called when a user logs in
+ * 
+ * @param {string} userId - The user's ID
+ */
+async associateWithUser(userId) {
+  try {
+    if (!userId) {
       return {
         success: false,
-        error: "Failed to associate visitor with user"
+        error: "User ID is required"
       };
     }
+    
+    const visitorId = getVisitorId();
+    console.log(`Associating visitor ${visitorId} with user ${userId}`);
+    
+    const response = await fetch("/api/visitors/associate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${authService.token}`
+      },
+      body: JSON.stringify({ 
+        visitorId: visitorId,
+        userId: userId
+      }),
+    });
+    
+    const data = await response.json();
+    console.log("Association response:", data);
+    
+    return data;
+  } catch (error) {
+    console.error("Error associating visitor with user:", error);
+    return {
+      success: false,
+      error: "Failed to associate visitor with user"
+    };
   }
+}
 }
 
 // Create a singleton instance

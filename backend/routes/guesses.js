@@ -3,6 +3,7 @@ const router = express.Router();
 const guessService = require('../services/guessService');
 const visitorService = require('../services/visitorService');
 const voteService = require('../services/voteService');
+const supabase = require('../config/supabase');
 
 router.get('/question', async (req, res) => {
     try {
