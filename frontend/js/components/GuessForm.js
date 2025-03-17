@@ -1,5 +1,3 @@
-// frontend/js/components/GuessForm.js
-
 import gameService from '../services/GameService.js';
 import guessService from '../services/GuessService.js';
 import authService from '../services/AuthService.js';
