@@ -25,6 +25,7 @@ cron.schedule('0 5 * * *', () => {
     .catch(err => console.error('Error in daily update:', err));
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
+  console.log(`Access it from your mobile at http://192.168.86.250:${port}`);
 });

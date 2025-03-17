@@ -260,10 +260,18 @@ h2, .h2 {
         right: 0;
         z-index: 1000;
         background-color: white;
-        padding: 1rem;
         border-top: 1px solid #E0E0E0;
+        padding: 1rem;
         display: flex;
-        justify-content: center; /* Center the form container */
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100vw; /* Ensure it's full viewport width */
+        margin: 0; /* Remove any margin */
+    }
+
+    body.keyboard-open #guess-form-container {
+        position: sticky;
+        bottom: 0;
     }
     
     .guess-outer-container {
@@ -302,3 +310,9 @@ h2, .h2 {
   .btn-icon:hover {
     background-color: rgba(0, 0, 0, 0.05);
   }
+
+  .vh-100 {
+    height: 100vh;
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+}
