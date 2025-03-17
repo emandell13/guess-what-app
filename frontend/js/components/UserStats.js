@@ -1,4 +1,7 @@
+// frontend/js/components/UserStats.js
+
 import authService from '../services/AuthService.js';
+import eventService from '../services/EventService.js';
 
 /**
  * Component for displaying user statistics
@@ -10,7 +13,15 @@ class UserStats {
    */
   constructor(containerId) {
     this.container = document.getElementById(containerId);
+    
+    // Load stats when created
     this.loadStats();
+    
+    // Set up event listeners for auth state changes
+    eventService.on('auth:login', () => this.loadStats());
+    eventService.on('auth:logout', () => {
+      this.container.innerHTML = '<p>Please log in to view your statistics.</p>';
+    });
   }
   
   /**
@@ -44,14 +55,31 @@ class UserStats {
       
       // Display stats
       this.displayStats(data.stats);
+      
+      // Emit an event when stats are loaded
+      eventService.emit('stats:loaded', {
+        stats: data.stats
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
+      
+      // Check if token expired
+      if (error.message && error.message.includes('token expired')) {
+        // Token expiration is now handled by the AuthService
+        return;
+      }
+      
       this.container.innerHTML = `
         <div class="alert alert-warning">
           <i class="fas fa-exclamation-triangle me-2"></i>
           Unable to load your statistics
         </div>
       `;
+      
+      // Emit error event
+      eventService.emit('stats:error', {
+        error: error.message
+      });
     }
   }
   

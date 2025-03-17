@@ -1,5 +1,6 @@
 import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
+import eventService from './EventService.js';
 
 /**
  * Service that manages game state and logic
@@ -14,11 +15,6 @@ class GameService {
     this.MAX_STRIKES = 3;
     this.question = null;
     this.answerCount = 5; // Default
-    
-    // Event callback storage
-    this.onScoreChange = null;
-    this.onStrikeAdded = null;
-    this.onGameComplete = null;
   }
   
   /**
@@ -27,6 +23,17 @@ class GameService {
   async initialize() {
     await this.fetchTodaysQuestion();
     this.restoreGameState();
+    
+    // Emit initialization event
+    eventService.emit('game:initialized', {
+      question: this.question,
+      correctGuesses: this.correctGuesses,
+      currentScore: this.currentScore,
+      maxPoints: this.maxPoints,
+      strikes: this.strikes,
+      answerCount: this.answerCount
+    });
+    
     return {
       success: !!this.question,
       answerCount: this.answerCount
@@ -86,6 +93,13 @@ class GameService {
     
     // If already guessed, return false (not a new correct guess)
     if (alreadyGuessed) {
+      // Emit already guessed event
+      eventService.emit('game:already-guessed', {
+        guess: canonicalAnswer || guess,
+        rank,
+        points
+      });
+      
       return { 
         success: false, 
         alreadyGuessed: true 
@@ -110,6 +124,14 @@ class GameService {
     // Save progress to server
     this.saveUserGameData();
     
+    // Emit answer revealed event
+    eventService.emit('game:answer-revealed', {
+      guess: canonicalAnswer || guess,
+      rank,
+      points,
+      canonicalAnswer
+    });
+    
     // Check if game is complete
     const gameComplete = this.isGameOver();
     
@@ -119,7 +141,13 @@ class GameService {
       // Save final game state to server
       this.saveUserGameData();
       
-      if (this.onGameComplete) this.onGameComplete();
+      // Emit game completed event
+      eventService.emit('game:completed', {
+        currentScore: this.currentScore,
+        maxPoints: this.maxPoints,
+        strikes: this.strikes,
+        correctGuesses: this.correctGuesses
+      });
     }
     
     return { 
@@ -140,10 +168,11 @@ class GameService {
     // Save progress to server
     this.saveUserGameData();
     
-    // Trigger callback if provided
-    if (this.onStrikeAdded) {
-      this.onStrikeAdded(this.strikes);
-    }
+    // Emit strike added event
+    eventService.emit('game:strike-added', {
+      strikes: this.strikes,
+      maxStrikes: this.MAX_STRIKES
+    });
     
     const maxStrikesReached = this.strikes >= this.MAX_STRIKES;
     
@@ -154,7 +183,13 @@ class GameService {
       // Save final game state to server
       this.saveUserGameData();
       
-      if (this.onGameComplete) this.onGameComplete();
+      // Emit game completed event
+      eventService.emit('game:completed', {
+        currentScore: this.currentScore,
+        maxPoints: this.maxPoints,
+        strikes: this.strikes,
+        correctGuesses: this.correctGuesses
+      });
     }
     
     return maxStrikesReached;
@@ -166,10 +201,11 @@ class GameService {
   updateScore(points) {
     this.currentScore += points;
     
-    // Trigger callback if provided
-    if (this.onScoreChange) {
-      this.onScoreChange(this.currentScore, this.maxPoints);
-    }
+    // Emit score change event
+    eventService.emit('game:score-change', {
+      currentScore: this.currentScore,
+      maxPoints: this.maxPoints
+    });
   }
   
   /**
@@ -181,27 +217,6 @@ class GameService {
     const struckOut = this.strikes >= this.MAX_STRIKES;
     
     return struckOut || allAnswersFound;
-  }
-  
-  /**
-   * Registers a callback for when the score changes
-   */
-  registerScoreChangeCallback(callback) {
-    this.onScoreChange = callback;
-  }
-  
-  /**
-   * Registers a callback for when a strike is added
-   */
-  registerStrikeAddedCallback(callback) {
-    this.onStrikeAdded = callback;
-  }
-  
-  /**
-   * Registers a callback for when the game is completed
-   */
-  registerGameCompleteCallback(callback) {
-    this.onGameComplete = callback;
   }
   
   /**

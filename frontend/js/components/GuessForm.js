@@ -1,3 +1,5 @@
+// frontend/js/components/GuessForm.js
+
 import gameService from '../services/GameService.js';
 import guessService from '../services/GuessService.js';
 import authService from '../services/AuthService.js';
@@ -9,18 +11,11 @@ class GuessForm {
   /**
    * Creates a new GuessForm
    * @param {string} formId - The ID of the form element
-   * @param {function} onCorrectGuess - Callback for when a correct guess is made
-   * @param {function} onIncorrectGuess - Callback for when an incorrect guess is made
-   * @param {function} onAlreadyGuessed - Callback for when an already guessed answer is submitted
    */
-  constructor(formId, onCorrectGuess, onIncorrectGuess, onAlreadyGuessed) {
+  constructor(formId) {
     this.form = document.getElementById(formId);
     this.input = this.form.querySelector('input');
     this.submitButton = this.form.querySelector('button');
-    
-    this.onCorrectGuess = onCorrectGuess;
-    this.onIncorrectGuess = onIncorrectGuess;
-    this.onAlreadyGuessed = onAlreadyGuessed;
     
     this.setupEventListeners();
   }
@@ -80,20 +75,8 @@ class GuessForm {
             console.error("Error saving guess:", error);
           }
         }
-        
-        if (recordResult.alreadyGuessed) {
-          // This answer was already guessed
-          if (this.onAlreadyGuessed) {
-            this.onAlreadyGuessed(result.canonicalAnswer || userGuess);
-          }
-        } else {
-          // New correct guess
-          if (this.onCorrectGuess) {
-            this.onCorrectGuess(result.rank, userGuess, result.points, result.canonicalAnswer);
-          }
-        }
       } else {
-        // Incorrect guess
+        // Incorrect guess - addStrike will emit the event
         gameService.addStrike();
         
         // Always save incorrect guesses
@@ -117,10 +100,6 @@ class GuessForm {
           } catch (error) {
             console.error("Error saving guess:", error);
           }
-        }
-        
-        if (this.onIncorrectGuess) {
-          this.onIncorrectGuess();
         }
       }
     } catch (error) {

@@ -1,5 +1,6 @@
 import authService from '../../services/AuthService.js';
 import UserStats from '../UserStats.js';
+import eventService from '../../services/EventService.js';
 
 /**
  * Component for managing authentication modals
@@ -23,8 +24,15 @@ class AuthModal {
     this.updateAuthState();
 
     // Subscribe to auth events
-    document.addEventListener('user-login', this.updateAuthState.bind(this));
-    document.addEventListener('user-logout', this.updateAuthState.bind(this));
+    eventService.on('auth:login', this.updateAuthState.bind(this));
+    eventService.on('auth:logout', this.updateAuthState.bind(this));
+    eventService.on('auth:token-expired', (event) => {
+      // Handle expired token - close this modal and show login
+      if (this.profileModal._isShown) {
+        this.profileModal.hide();
+        setTimeout(() => this.showLogin(), 300);
+      }
+    });
   }
 
   /**
@@ -42,11 +50,7 @@ class AuthModal {
 
       const result = await authService.login(email, password);
 
-      // In the loginForm event listener
-      if (result.success) {
-        this.loginModal.hide();
-        this.loginForm.reset();
-      } else {
+      if (!result.success) {
         // Special handling for email verification errors
         if (result.isEmailVerificationError) {
           this.loginError.innerHTML = `
@@ -104,6 +108,7 @@ class AuthModal {
 
         this.loginError.classList.remove('d-none');
       }
+      // Note: On success, the hide/reset is now handled by the auth:login event
     });
 
     // Register form submission
@@ -183,7 +188,7 @@ class AuthModal {
     // Logout button
     document.getElementById('logout-button').addEventListener('click', async () => {
       await authService.logout();
-      this.profileModal.hide();
+      // Note: The modal hide is now handled by the auth:logout event
     });
   }
 
@@ -195,7 +200,21 @@ class AuthModal {
     const user = authService.getCurrentUser();
 
     if (isAuthenticated && user) {
-      this.updateProfileInfo(user);
+      // If user is logged in and profile modal is shown, update info
+      if (this.profileModal._isShown) {
+        this.updateProfileInfo(user);
+      }
+      
+      // If login modal is shown, hide it
+      if (this.loginModal._isShown) {
+        this.loginModal.hide();
+        this.loginForm.reset();
+      }
+    } else {
+      // If user is logged out and profile modal is shown, hide it
+      if (this.profileModal._isShown) {
+        this.profileModal.hide();
+      }
     }
   }
 
@@ -226,9 +245,7 @@ class AuthModal {
         // Initialize UserStats component
         new UserStats('user-stats');
       } else if (profileResult.error === 'token_expired') {
-        // Handle expired token - just close this modal and show login
-        this.profileModal.hide();
-        setTimeout(() => this.showLogin(), 300);
+        // Token expired is now handled via the event listener
       } else {
         this.userProfileInfo.innerHTML = `
         <div class="alert alert-warning">
@@ -271,41 +288,41 @@ class AuthModal {
   }
 
   /**
- * Shows the login modal with an email verification success message
- */
-showLoginWithVerificationSuccess() {
-  // First hide any existing modals
-  if (this.registerModal._isShown) {
-    this.registerModal.hide();
-  }
-  
-  // Clear any previous errors or messages
-  this.loginError.classList.add('d-none');
-  
-  // Create verification success message
-  const successMessage = document.createElement('div');
-  successMessage.className = 'alert alert-success';
-  successMessage.innerHTML = `
-    <div class="d-flex align-items-center">
-      <i class="fas fa-check-circle text-success me-3" style="font-size: 24px;"></i>
-      <div>
-        <strong>Email verified successfully!</strong>
-        <p class="mb-0">Your account is now active. Please log in below.</p>
+   * Shows the login modal with an email verification success message
+   */
+  showLoginWithVerificationSuccess() {
+    // First hide any existing modals
+    if (this.registerModal._isShown) {
+      this.registerModal.hide();
+    }
+    
+    // Clear any previous errors or messages
+    this.loginError.classList.add('d-none');
+    
+    // Create verification success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'alert alert-success';
+    successMessage.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="fas fa-check-circle text-success me-3" style="font-size: 24px;"></i>
+        <div>
+          <strong>Email verified successfully!</strong>
+          <p class="mb-0">Your account is now active. Please log in below.</p>
+        </div>
       </div>
-    </div>
-  `;
-  
-  // Add the success message at the top of the login form
-  this.loginForm.insertAdjacentElement('beforebegin', successMessage);
-  
-  // Show the login modal
-  this.loginModal.show();
-  
-  // Focus on the email input for convenience
-  setTimeout(() => {
-    document.getElementById('login-email').focus();
-  }, 400);
-}
+    `;
+    
+    // Add the success message at the top of the login form
+    this.loginForm.insertAdjacentElement('beforebegin', successMessage);
+    
+    // Show the login modal
+    this.loginModal.show();
+    
+    // Focus on the email input for convenience
+    setTimeout(() => {
+      document.getElementById('login-email').focus();
+    }, 400);
+  }
 
   /**
    * Show the registration modal

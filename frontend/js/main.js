@@ -3,6 +3,7 @@ import gameService from './services/GameService.js';
 import voteService from './services/VoteService.js';
 import authService from './services/AuthService.js';
 import visitorService from './services/VisitorService.js';
+import eventService from './services/EventService.js';
 
 // Import components
 import AnswerGrid from './components/AnswerGrid.js';
@@ -11,7 +12,6 @@ import ScoreTracker from './components/ScoreTracker.js';
 import StrikeCounter from './components/StrikeCounter.js';
 import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
-
 
 /**
  * Main application class
@@ -26,12 +26,12 @@ class App {
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
 
-    // Initialize game service event handlers
-    this.setupGameServiceCallbacks();
+    // Setup event listeners
+    this.setupEventListeners();
 
     // Setup auth button click handler
     this.setupAuthButton();
-    
+
     // Register this visitor
     this.registerVisitor();
   }
@@ -62,34 +62,79 @@ class App {
       this.updateAuthButton();
 
       // Listen for auth state changes
-      document.addEventListener('user-login', () => this.updateAuthButton());
-      document.addEventListener('user-logout', () => this.updateAuthButton());
+      eventService.on('auth:login', () => this.updateAuthButton());
+      eventService.on('auth:logout', () => this.updateAuthButton());
     }
+  }
+
+  /**
+   * Set up event listeners for game events
+   */
+  setupEventListeners() {
+    // Score change events
+    eventService.on('game:score-change', (event) => {
+      const { currentScore, maxPoints } = event.detail;
+      this.scoreTracker.updateScore(currentScore, maxPoints);
+    });
+
+    // Strike added events
+    eventService.on('game:strike-added', (event) => {
+      const { strikes } = event.detail;
+      this.strikeCounter.updateStrikes(strikes, true);
+
+      // If max strikes reached, reveal all remaining answers
+      if (strikes >= 3) {
+        this.revealAllRemainingAnswers();
+      }
+    });
+
+    // Game completed events
+    eventService.on('game:completed', (event) => {
+      const { currentScore } = event.detail;
+
+      // Show game complete modal
+      this.gameModal.show(currentScore);
+
+      // Disable guess form
+      if (this.guessForm) this.guessForm.disable();
+    });
+
+    // Answer revealed events
+    eventService.on('game:answer-revealed', (event) => {
+      const { guess, rank, points, canonicalAnswer } = event.detail;
+      this.answerGrid.revealAnswer(rank, guess, points, canonicalAnswer);
+    });
+
+    // Already guessed events
+    eventService.on('game:already-guessed', (event) => {
+      const { guess } = event.detail;
+      this.showAlreadyGuessedMessage(guess);
+    });
   }
 
   checkVerificationStatus() {
     // Only check for our custom verified parameter
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     if (urlParams.has('verified') && urlParams.get('verified') === 'success') {
       console.log("Verification success detected, showing login modal");
       this.authModal.showLoginWithVerificationSuccess();
-      
+
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
       return true;
     }
-    
+
     return false;
   }
-  
+
   /**
    * Update auth button text based on authentication state
    */
   async updateAuthButton() {
     const authButton = document.getElementById('auth-button');
     const isAuthenticated = authService.isAuthenticated();
-  
+
     if (authButton) {
       if (isAuthenticated) {
         // Just show the icon when authenticated
@@ -100,18 +145,9 @@ class App {
         // Just show the icon when not authenticated
         authButton.innerHTML = `<i class="fas fa-user"></i>`;
         authButton.classList.remove('btn-primary');
-        authButton.classList.add('btn-outline-primary');  
+        authButton.classList.add('btn-outline-primary');
       }
     }
-  }
-  
-  /**
-   * Set up callbacks for game service events
-   */
-  setupGameServiceCallbacks() {
-    gameService.registerScoreChangeCallback(this.handleScoreChange.bind(this));
-    gameService.registerStrikeAddedCallback(this.handleStrikeAdded.bind(this));
-    gameService.registerGameCompleteCallback(this.handleGameComplete.bind(this));
   }
 
   /**
@@ -132,30 +168,11 @@ class App {
     // Fetch tomorrow's question for voting
     await voteService.fetchTomorrowsQuestion();
 
-    // Initialize guess form
-    this.guessForm = new GuessForm(
-      "guess-form",
-      this.handleCorrectGuess.bind(this),
-      this.handleIncorrectGuess.bind(this),
-      this.handleAlreadyGuessed.bind(this)
-    );
-    
+    // Initialize guess form - using the new event-based system
+    this.guessForm = new GuessForm("guess-form");
+
     // Check for verification parameter after everything is initialized
     this.checkVerificationStatus();
-  }
-
-  /**
-   * Check if the URL contains a verification success parameter
-   */
-  checkVerificationStatus() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('verified') && urlParams.get('verified') === 'success') {
-      console.log("Verification success detected, showing login modal");
-      this.authModal.showLoginWithVerificationSuccess();
-      
-      // Clean up the URL (remove the query parameter)
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
   }
 
   /**
@@ -195,43 +212,6 @@ class App {
       this.answerGrid.revealAnswer(guess.rank, guess.guess, guess.points, guess.guess);
     });
   }
-
-  // Event handlers
-
-  handleScoreChange(currentScore, maxScore) {
-    this.scoreTracker.updateScore(currentScore, maxScore);
-  }
-
-  handleStrikeAdded(strikes) {
-    this.strikeCounter.updateStrikes(strikes, true);
-
-    // If max strikes reached, reveal all remaining answers
-    if (strikes >= 3) {
-      this.revealAllRemainingAnswers();
-    }
-  }
-
-  handleGameComplete() {
-    // Show game complete modal
-    this.gameModal.show(gameService.currentScore);
-
-    // Disable guess form
-    if (this.guessForm) this.guessForm.disable();
-  }
-
-  handleCorrectGuess(rank, guess, points, canonicalAnswer) {
-    this.answerGrid.revealAnswer(rank, guess, points, canonicalAnswer);
-  }
-
-  handleIncorrectGuess() {
-    // No additional action needed as strike is already added via GameService
-  }
-
-  handleAlreadyGuessed(answer) {
-    this.showAlreadyGuessedMessage(answer);
-  }
-
-  // Helper methods
 
   /**
    * Shows a temporary message when an answer was already guessed

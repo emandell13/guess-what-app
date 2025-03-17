@@ -1,3 +1,7 @@
+// frontend/js/services/AuthService.js
+
+import eventService from './EventService.js';
+
 /**
  * Service for handling user authentication
  */
@@ -11,11 +15,8 @@ class AuthService {
   }
 
   /**
-   * Load user data from local storage
+   * Load user data from local storage and check token validity
    */
-  /**
- * Load user data from local storage and check token validity
- */
   async loadUserFromStorage() {
     try {
       const token = localStorage.getItem(this.tokenKey);
@@ -72,11 +73,11 @@ class AuthService {
   }
 
   /**
- * Login a user
- * @param {string} email - User email
- * @param {string} password - User password
- * @returns {Promise<Object>} - Login result
- */
+   * Login a user
+   * @param {string} email - User email
+   * @param {string} password - User password
+   * @returns {Promise<Object>} - Login result
+   */
   async login(email, password) {
     try {
       const response = await fetch("/auth/login", {
@@ -131,9 +132,8 @@ class AuthService {
           console.error("Error associating visitor with user:", error);
         }
   
-        // Trigger login event for components that need to update
-        const loginEvent = new CustomEvent('user-login', { detail: this.user });
-        document.dispatchEvent(loginEvent);
+        // Emit login event using EventService
+        eventService.emit('auth:login', { user: this.user });
       }
   
       return data;
@@ -146,30 +146,30 @@ class AuthService {
     }
   }
 
-/**
- * Resend verification email to a user
- * @param {string} email - User's email address
- * @returns {Promise<Object>} - Result of the resend operation
- */
-async resendVerificationEmail(email) {
-  try {
-    const response = await fetch("/auth/resend-verification", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-    
-    return await response.json();
-  } catch (error) {
-    console.error("Error resending verification email:", error);
-    return {
-      success: false,
-      message: "An error occurred while resending verification email"
-    };
+  /**
+   * Resend verification email to a user
+   * @param {string} email - User's email address
+   * @returns {Promise<Object>} - Result of the resend operation
+   */
+  async resendVerificationEmail(email) {
+    try {
+      const response = await fetch("/auth/resend-verification", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+      return {
+        success: false,
+        message: "An error occurred while resending verification email"
+      };
+    }
   }
-}
 
   /**
    * Logout the current user
@@ -188,9 +188,8 @@ async resendVerificationEmail(email) {
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
 
-      // Trigger logout event for components that need to update
-      const logoutEvent = new CustomEvent('user-logout');
-      document.dispatchEvent(logoutEvent);
+      // Emit logout event using EventService
+      eventService.emit('auth:logout');
 
       return { success: true };
     } catch (error) {
@@ -267,11 +266,10 @@ async resendVerificationEmail(email) {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
 
-    // Dispatch event to update UI
-    const logoutEvent = new CustomEvent('user-logout', {
-      detail: { reason: 'token_expired' }
+    // Emit token expired event using EventService
+    eventService.emit('auth:token-expired', { 
+      message: "Your session has expired. Please log in again." 
     });
-    document.dispatchEvent(logoutEvent);
 
     // Optionally show a message
     const message = "Your session has expired. Please log in again.";
@@ -283,9 +281,9 @@ async resendVerificationEmail(email) {
   }
 
   /**
- * Get the user profile data
- * @returns {Promise<Object>} - Profile data
- */
+   * Get the user profile data
+   * @returns {Promise<Object>} - Profile data
+   */
   async getProfile() {
     if (!this.isAuthenticated()) {
       return {
@@ -309,6 +307,11 @@ async resendVerificationEmail(email) {
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.userKey);
 
+        // Emit token expired event
+        eventService.emit('auth:token-expired', {
+          message: "Your session has expired. Please log in again."
+        });
+
         return {
           success: false,
           error: 'token_expired',
@@ -327,36 +330,36 @@ async resendVerificationEmail(email) {
   }
 
   /**
- * Refresh the authentication token if needed
- * @returns {Promise<boolean>} - Whether the token was refreshed successfully
- */
-async refreshTokenIfNeeded() {
-  if (!this.token || !this.user) return false;
-  
-  try {
-    // Call Supabase's token refresh endpoint
-    const response = await fetch("/auth/refresh", {
-      method: "POST",
-      headers: this.getAuthHeaders()
-    });
+   * Refresh the authentication token if needed
+   * @returns {Promise<boolean>} - Whether the token was refreshed successfully
+   */
+  async refreshTokenIfNeeded() {
+    if (!this.token || !this.user) return false;
     
-    if (!response.ok) return false;
-    
-    const data = await response.json();
-    
-    if (data.success && data.session) {
-      // Store the new tokens
-      this.token = data.session.access_token;
-      localStorage.setItem(this.tokenKey, this.token);
-      return true;
+    try {
+      // Call Supabase's token refresh endpoint
+      const response = await fetch("/auth/refresh", {
+        method: "POST",
+        headers: this.getAuthHeaders()
+      });
+      
+      if (!response.ok) return false;
+      
+      const data = await response.json();
+      
+      if (data.success && data.session) {
+        // Store the new tokens
+        this.token = data.session.access_token;
+        localStorage.setItem(this.tokenKey, this.token);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      return false;
     }
-    
-    return false;
-  } catch (error) {
-    console.error("Token refresh error:", error);
-    return false;
   }
-}
 }
 
 // Create a singleton instance
