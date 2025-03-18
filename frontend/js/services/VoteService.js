@@ -1,12 +1,21 @@
+// frontend/js/services/VoteService.js
+
 import { getVisitorId, hasVotedForTomorrow, markTomorrowVoted } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
 import eventService from './EventService.js';
 
+/**
+ * Service that handles voting operations
+ */
 class VoteService {
   constructor() {
     this.tomorrowsQuestionText = null;
   }
   
+  /**
+   * Fetches tomorrow's question text
+   * @returns {Promise<string|null>} - The question text or null
+   */
   async fetchTomorrowsQuestion() {
     try {
       const response = await fetch("/votes/question");
@@ -37,6 +46,11 @@ class VoteService {
     }
   }
   
+  /**
+   * Submits a vote for tomorrow's question
+   * @param {string} userResponse - The user's response
+   * @returns {Promise<Object>} - The result of the vote
+   */
   async submitVote(userResponse) {
     try {
       // Check if user has already voted for tomorrow
@@ -96,14 +110,23 @@ class VoteService {
     }
   }
   
+  /**
+   * Checks if the user has already voted for tomorrow
+   * @returns {boolean} - Whether the user has voted
+   */
   hasAlreadyVoted() {
     return hasVotedForTomorrow();
   }
   
+  /**
+   * Gets the text for tomorrow's question
+   * @returns {string} - The question text
+   */
   getTomorrowsQuestionText() {
     return this.tomorrowsQuestionText || "Tomorrow's question";
   }
 }
 
+// Create a singleton instance
 const voteService = new VoteService();
 export default voteService;

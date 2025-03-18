@@ -1,4 +1,5 @@
 import voteService from '../../services/VoteService.js';
+import eventService from '../../services/EventService.js';
 
 /**
  * Component representing the voting step of the game completion modal
@@ -7,9 +8,8 @@ class VoteStep {
   /**
    * Creates a new VoteStep
    * @param {string} stepId - The ID of the step element
-   * @param {function} onNext - Callback for when the next button is clicked
    */
-  constructor(stepId, onNext) {
+  constructor(stepId) {
     this.stepElement = document.getElementById(stepId);
     this.questionElement = this.stepElement.querySelector('.vote-container p');
     this.formContainer = document.getElementById('modalVoteForm');
@@ -17,8 +17,45 @@ class VoteStep {
     
     // Set up event listener for next button
     this.nextButton.addEventListener('click', () => {
-      if (onNext) onNext();
+      eventService.emit('modal:next-step', {
+        currentStep: 'vote',
+        nextStep: 'share'
+      });
     });
+    
+    // Set up event listeners for vote events
+    this.setupEventListeners();
+  }
+  
+  /**
+   * Sets up event listeners
+   */
+  setupEventListeners() {
+    // Listen for vote submission events
+    eventService.on('vote:submitted', (event) => {
+      this.showSuccessMessage(event.detail.message || "Vote recorded successfully!");
+    });
+    
+    eventService.on('vote:error', (event) => {
+      this.showErrorMessage(event.detail.error || "Failed to submit vote");
+    });
+    
+    eventService.on('vote:already-voted', () => {
+      this.showAlreadyVotedMessage();
+    });
+    
+    // Listen for question loaded events
+    eventService.on('vote:question-loaded', (event) => {
+      const { questionText } = event.detail;
+      this.updateQuestionText(questionText);
+    });
+  }
+  
+  /**
+   * Updates the question text display
+   */
+  updateQuestionText(questionText) {
+    this.questionElement.innerHTML = `<strong>${questionText}</strong><br>`;
   }
   
   /**
@@ -94,44 +131,56 @@ class VoteStep {
    */
   async handleVoteSubmission(userResponse) {
     try {
-      const result = await voteService.submitVote(userResponse);
-      
-      // Create response message element
-      const responseMsg = document.createElement('div');
-      responseMsg.className = result.success ? 'alert alert-success mt-3' : 'alert alert-danger mt-3';
-      responseMsg.textContent = result.message;
-      
-      // Clear any previous response
-      const existingResponse = this.formContainer.querySelector('.alert');
-      if (existingResponse) {
-        existingResponse.remove();
-      }
-      
-      // Add response message
-      this.formContainer.appendChild(responseMsg);
-      
-      // Hide form on success
-      if (result.success) {
-        const modalVoteForm = document.getElementById("modal-vote-form");
-        if (modalVoteForm) {
-          modalVoteForm.style.display = 'none';
-        }
-      }
+      await voteService.submitVote(userResponse);
+      // The vote events are now handled by the event listeners
     } catch (error) {
       console.error("Error submitting vote:", error);
-      
-      // Show error message
-      const errorMsg = document.createElement('div');
-      errorMsg.className = 'alert alert-danger mt-3';
-      errorMsg.textContent = "An error occurred while submitting your vote.";
-      
-      // Clear any previous response
-      const existingResponse = this.formContainer.querySelector('.alert');
-      if (existingResponse) {
-        existingResponse.remove();
-      }
-      
-      this.formContainer.appendChild(errorMsg);
+      this.showErrorMessage("An error occurred while submitting your vote.");
+    }
+  }
+  
+  /**
+   * Shows a success message
+   * @param {string} message - The message to display
+   */
+  showSuccessMessage(message) {
+    // Create response message element
+    const responseMsg = document.createElement('div');
+    responseMsg.className = 'alert alert-success mt-3';
+    responseMsg.textContent = message;
+    
+    this.clearPreviousMessages();
+    this.formContainer.appendChild(responseMsg);
+    
+    // Hide form on success
+    const modalVoteForm = document.getElementById("modal-vote-form");
+    if (modalVoteForm) {
+      modalVoteForm.style.display = 'none';
+    }
+  }
+  
+  /**
+   * Shows an error message
+   * @param {string} message - The error message to display
+   */
+  showErrorMessage(message) {
+    // Show error message
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'alert alert-danger mt-3';
+    errorMsg.textContent = message;
+    
+    this.clearPreviousMessages();
+    this.formContainer.appendChild(errorMsg);
+  }
+  
+  /**
+   * Clears any previous response messages
+   */
+  clearPreviousMessages() {
+    // Clear any previous response
+    const existingResponse = this.formContainer.querySelector('.alert');
+    if (existingResponse) {
+      existingResponse.remove();
     }
   }
 }

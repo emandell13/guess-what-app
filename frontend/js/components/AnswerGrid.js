@@ -1,5 +1,8 @@
+// AnswerGrid.js
+
 import AnswerBox from './AnswerBox.js';
 import { staggerAnimations } from '../utils/animationUtils.js';
+import eventService from '../services/EventService.js';
 
 /**
  * Component representing the grid of answer boxes
@@ -12,6 +15,18 @@ class AnswerGrid {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.answerBoxes = [];
+    
+    // Listen for answer events
+    eventService.on('game:answer-revealed', (event) => {
+      const { rank, guess, points, canonicalAnswer } = event.detail;
+      this.revealAnswer(rank, guess, points, canonicalAnswer);
+    });
+    
+    // Listen for already guessed events
+    eventService.on('game:already-guessed', (event) => {
+      const { rank } = event.detail;
+      this.highlightAnswer(rank);
+    });
   }
   
   /**
@@ -42,6 +57,17 @@ class AnswerGrid {
     const answerBox = this.answerBoxes.find(box => box.rank === rank);
     if (answerBox) {
       answerBox.reveal(answer, points, canonicalAnswer, true);
+    }
+  }
+  
+  /**
+   * Highlights an already guessed answer
+   * @param {number} rank - The rank of the answer to highlight
+   */
+  highlightAnswer(rank) {
+    const answerBox = this.answerBoxes.find(box => box.rank === rank);
+    if (answerBox) {
+      answerBox.highlight();
     }
   }
   

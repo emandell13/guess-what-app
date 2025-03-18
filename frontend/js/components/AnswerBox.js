@@ -1,3 +1,5 @@
+// AnswerBox.js
+
 import { flipReveal } from '../utils/animationUtils.js';
 
 /**
@@ -33,7 +35,7 @@ class AnswerBox {
         </div>
       </div>
     `;
-}
+  }
   
   /**
    * Gets the DOM element for this answer box
@@ -82,6 +84,28 @@ class AnswerBox {
         this.revealed = true;
       }
     );
+  }
+  
+  /**
+   * Highlights this answer temporarily
+   * This is used for already guessed answers
+   */
+  highlight() {
+    if (!this.revealed) return;
+    
+    const cardBody = this.element.querySelector(".card-body");
+    
+    // Store original classes to restore later
+    const originalClasses = [...cardBody.classList];
+    
+    // Add highlight class
+    cardBody.classList.add("bg-warning", "bg-opacity-75");
+    
+    // Remove highlight after a delay
+    setTimeout(() => {
+      // Remove highlight classes
+      cardBody.classList.remove("bg-warning", "bg-opacity-75");
+    }, 1000);
   }
 }
 

@@ -1,3 +1,5 @@
+import eventService from '../services/EventService.js';
+
 /**
  * Component representing the score display
  */
@@ -10,6 +12,12 @@ class ScoreTracker {
   constructor(currentScoreId, maxScoreId) {
     this.currentScoreElement = document.getElementById(currentScoreId);
     this.maxScoreElement = document.getElementById(maxScoreId);
+    
+    // Listen for score change events
+    eventService.on('game:score-change', (event) => {
+      const { currentScore, maxPoints } = event.detail;
+      this.updateScore(currentScore, maxPoints);
+    });
   }
   
   /**

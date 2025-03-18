@@ -1,18 +1,20 @@
+import eventService from '../services/EventService.js';
 import { strikeReveal } from '../utils/animationUtils.js';
 
 /**
  * Component representing the strike counter
  */
 class StrikeCounter {
-  /**
-   * Creates a new StrikeCounter
-   * @param {string} strikesId - The ID of the strikes container element
-   * @param {number} maxStrikes - The maximum number of strikes
-   */
   constructor(strikesId, maxStrikes = 3) {
     this.strikesContainer = document.getElementById(strikesId);
     this.maxStrikes = maxStrikes;
     this.initialize();
+
+    // Listen for strike events
+    eventService.on('game:strike-added', (event) => {
+      const { strikes } = event.detail;
+      this.updateStrikes(strikes, true);
+    });
   }
   
   /**
