@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="css/modal.css">
     <!-- Font Awesome for strike icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Material Design Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -21,7 +23,7 @@
                     <!-- Fixed-width container for the auth button -->
                     <div class="position-absolute end-0 top-50 translate-middle-y">
                         <button id="auth-button" class="btn-icon">
-                            <i class="fas fa-user"></i>
+                            <span class="material-icons md-24 user-icon">person</span>
                         </button>
                     </div>
                     <!-- Centered title -->
@@ -62,17 +64,18 @@
                 <!-- Guessing Module -->
                 <div id="guess-form-container">
                     <div class="guess-outer-container">
-                      <form id="guess-form">
-                        <div class="input-group">
-                          <input type="text" class="form-control guess-input" placeholder="Type your guess here..." required>
-                          <button class="btn btn-dark">Guess</button>
-                        </div>
-                      </form>
+                        <form id="guess-form">
+                            <div class="input-group">
+                                <input type="text" class="form-control guess-input"
+                                    placeholder="Type your guess here..." required>
+                                <button class="btn btn-dark">Guess</button>
+                            </div>
+                        </form>
                     </div>
-                  </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Game Completion Modal - moved outside the container -->

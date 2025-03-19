@@ -142,18 +142,14 @@ class App {
   async updateAuthButton() {
     const authButton = document.getElementById('auth-button');
     const isAuthenticated = authService.isAuthenticated();
-
+  
     if (authButton) {
       if (isAuthenticated) {
-        // Just show the icon when authenticated
-        authButton.innerHTML = `<i class="fas fa-user"></i>`;
-        authButton.classList.remove('btn-outline-primary');
-        authButton.classList.add('btn-primary');
+        // Use Material Design icon when authenticated
+        authButton.innerHTML = `<span class="material-icons">person</span>`;
       } else {
-        // Just show the icon when not authenticated
-        authButton.innerHTML = `<i class="fas fa-user"></i>`;
-        authButton.classList.remove('btn-primary');
-        authButton.classList.add('btn-outline-primary');
+        // Use Material Design icon when not authenticated
+        authButton.innerHTML = `<span class="material-icons">person</span>`;
       }
     }
   }
