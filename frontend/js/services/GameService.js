@@ -224,7 +224,7 @@ class GameService {
    */
   getQuestionText() {
     return this.question ? 
-      `What did ${this.question.totalVotes} people say was ${this.question.guessPrompt}` : 
+      `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${this.question.guessPrompt}` : 
       "No question available for guessing yet";
   }
 

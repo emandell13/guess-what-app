@@ -110,6 +110,14 @@ class App {
       const { guess } = event.detail;
       this.showAlreadyGuessedMessage(guess);
     });
+
+    // Listen for open voting modal events
+    eventService.on('ui:open-voting-modal', () => {
+      // Open the modal and go to voting step
+      this.gameModal.modal.show();
+      this.gameModal.currentStep = 1; // Set to 1 before calling nextStep
+      this.gameModal.nextStep();
+    });
   }
 
   checkVerificationStatus() {
@@ -179,8 +187,16 @@ class App {
    * Update UI with initial game state
    */
   updateInitialUI(answerCount) {
-    // Update question text
-    this.questionHeading.textContent = gameService.getQuestionText();
+    this.questionHeading.innerHTML = gameService.getQuestionText();
+
+    // Add click event listener to the people count element
+    const peopleCountElement = document.getElementById('people-count');
+    if (peopleCountElement) {
+      peopleCountElement.addEventListener('click', () => {
+        // Emit an event to open the voting modal
+        eventService.emit('ui:open-voting-modal');
+      });
+    }
 
     // Create answer boxes
     this.answerGrid.initialize(answerCount);

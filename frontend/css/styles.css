@@ -386,3 +386,19 @@ h2,
 .logo-image+h2 {
     margin-top: 1.5rem;
 }
+
+/* Clickable number styling */
+.clickable-number {
+    text-decoration: underline;
+    color: #000; /* Black text to match the rest of the heading */
+    cursor: pointer;
+    font-weight: inherit; /* Keep the same font weight as the heading */
+  }
+  
+  .clickable-number:hover {
+    opacity: 0.8; /* Subtle hover effect */
+  }
+  
+  .clickable-number:active {
+    opacity: 0.6; /* Slightly more opaque when clicked */
+  }
