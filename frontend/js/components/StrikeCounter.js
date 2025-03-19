@@ -21,11 +21,12 @@ class StrikeCounter {
    * Initializes the strike counter display
    */
   initialize() {
+    // Create strikes with custom styling instead of Font Awesome
     this.strikesContainer.innerHTML = Array(this.maxStrikes)
       .fill()
-      .map(() => `<i class="far fa-circle text-danger opacity-75"></i>`)
-      .join(' ');
-}
+      .map(() => `<span class="strike-circle empty"></span>`)
+      .join('');
+  }
   
   /**
    * Updates the strike display to show a specific number of strikes
@@ -33,19 +34,21 @@ class StrikeCounter {
    * @param {boolean} animate - Whether to animate the last strike
    */
   updateStrikes(strikeCount, animate = true) {
-    const strikeIcons = this.strikesContainer.querySelectorAll('i');
+    const strikeElements = this.strikesContainer.querySelectorAll('.strike-circle');
     
     for (let i = 0; i < this.maxStrikes; i++) {
-      const icon = strikeIcons[i];
+      const element = strikeElements[i];
       if (i < strikeCount) {
-        icon.classList.replace('far', 'fas');
+        element.classList.remove('empty');
+        element.classList.add('filled');
         
         // Animate the last added strike if requested
         if (animate && i === strikeCount - 1) {
-          strikeReveal(icon);
+          strikeReveal(element);
         }
       } else {
-        icon.classList.replace('fas', 'far');
+        element.classList.remove('filled');
+        element.classList.add('empty');
       }
     }
   }
