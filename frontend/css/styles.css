@@ -148,17 +148,11 @@ h2,
 }
 
 .mb-4 {
-    margin-bottom: 1rem !important;
+    margin-bottom: 1.5rem !important;
 }
 
 .mb-3 {
     margin-bottom: 0.5rem !important;
-}
-
-/* Answer box styling */
-.card-body {
-    padding: 0.75rem 1.25rem;
-    min-height: 60px;
 }
 
 .card-body .d-flex {
@@ -172,12 +166,16 @@ h2,
     box-shadow: none;
 }
 
+#answer-boxes .answer-box {
+    margin-bottom: 0.5rem;
+  }
+
 #answer-boxes .card-body {
     border-radius: 0.5rem;
     border: 0.125rem solid #EAEAF2;
     background-color: #FAFAFC;
     box-sizing: border-box;
-    min-height: 3.75rem;
+    min-height: 3.125rem;
     transition: background-color 0.3s ease, border-color 0.3s ease;
     display: flex;
     align-items: center;

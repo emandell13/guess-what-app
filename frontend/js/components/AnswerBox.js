@@ -21,20 +21,18 @@ class AnswerBox {
    * Creates the DOM element for the answer box
    */
   createDomElement() {
-    this.element = document.createElement("div");
-    this.element.className = "col-12 mb-2";
+    // Get the template
+    const template = document.getElementById('answer-box-template');
+    
+    // Clone the template content
+    const element = template.content.cloneNode(true);
+    
+    // Get the root element from the template
+    this.element = element.querySelector('.answer-box');
+    
+    // Set the ID and rank
     this.element.id = `answer-${this.rank}`;
-    this.element.innerHTML = `
-      <div class="card w-100">
-        <div class="card-body d-flex justify-content-between align-items-center py-3 bg-light" style="min-height: 60px">
-          <div class="d-flex align-items-center w-100">
-            <span class="answer-rank">${this.rank}</span>
-            <span class="answer-text flex-grow-1 text-center h5 mb-0"></span>
-            <span class="points badge d-none">0 pts</span>
-          </div>
-        </div>
-      </div>
-    `;
+    this.element.querySelector('.answer-rank').textContent = this.rank;
   }
   
   /**
