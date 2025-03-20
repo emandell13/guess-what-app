@@ -28,7 +28,7 @@ class AnswerBox {
       <div class="card w-100">
         <div class="card-body d-flex justify-content-between align-items-center py-3 bg-light" style="min-height: 60px">
           <div class="d-flex align-items-center w-100">
-            <span class="answer-rank me-3">${this.rank}</span>
+            <span class="answer-rank">${this.rank}</span>
             <span class="answer-text flex-grow-1 text-center h5 mb-0"></span>
             <span class="points badge d-none">0 pts</span>
           </div>

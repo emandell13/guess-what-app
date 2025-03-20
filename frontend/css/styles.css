@@ -172,34 +172,106 @@ h2,
     position: relative;
 }
 
+/* Answer box styling updates */
+#answer-boxes .card {
+    overflow: hidden;
+    border: none;
+    box-shadow: none;
+}
+
+#answer-boxes .card-body {
+    border-radius: 0.5rem;
+    border: 0.125rem solid #EAEAF2;
+    background-color: #FAFAFC;
+    box-sizing: border-box;
+    min-height: 3.75rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+}
+
+/* Correct answer styling */
+#answer-boxes .card-body.bg-success,
+#answer-boxes .card-body.bg-success.bg-opacity-25 {
+    background-color: #CBE5D9 !important;
+    border: 0.125rem solid #A6CCBB !important;
+}
+
+/* Incorrect answer styling */
+#answer-boxes .card-body.bg-danger,
+#answer-boxes .card-body.bg-danger.bg-opacity-25 {
+    background-color: #F8D7DA !important;
+    border: 0.125rem solid #EBC8C5 !important;
+}
+
 /* Styling for answer rank numbers inside boxes */
-.answer-rank {
-    font-size: 1.25rem;
-    font-weight: 600;
-    min-width: 1.5rem;
-    color: #333;
+#answer-boxes .answer-rank {
+    font-size: 1.125rem;
+    font-weight: 700;
+    font-style: normal;
+    font-family: "libre Franklin";
+    color: #000;
+    flex: 0 0 2rem;
+    width: 2rem;
+    text-align: center;
 }
 
-.answer-text {
+#answer-boxes .answer-text {
+    flex: 1;
+    text-align: center;
+    font-size: 1.125rem;
+    font-style: normal;
     text-transform: capitalize;
+    font-weight: 700;
+    font-family: "libre Franklin";
+    color: #000;
+    margin: 0 0.5rem;
     opacity: 0;
-    text-align: left;
     transition: opacity 0.5s ease-in-out;
-    padding-right: 1rem;
 }
 
-.answer-text.visible {
+#answer-boxes .answer-text.visible {
     opacity: 1;
     transition-delay: 0.5s;
 }
 
 /* Points styling */
-.points.badge {
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 0.35rem 0.65rem;
+#answer-boxes .points.badge {
+    flex: 0 0 3.5rem;
+    width: 3.5 rem;
+    margin: 0;
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 400;
+    padding: none !important;
     color: #000;
 }
+
+/* Desktop styles */
+@media (min-width: 768px) {
+    #answer-boxes .card-body {
+        min-height: 4.5rem;
+        /* Slightly taller on desktop */
+        padding: 1rem;
+    }
+
+    #answer-boxes .answer-rank {
+        flex: 0 0 2.5rem;
+        width: 2.5rem;
+    }
+
+    #answer-boxes .answer-text {
+        margin: 0 0.75rem;
+        font-size: 1.1rem;
+    }
+
+    #answer-boxes .points.badge {
+        flex: 0 0 4rem;
+        width: 4rem;
+    }
+}
+
 
 /* Guess form styling */
 .guess-outer-container {
@@ -287,61 +359,63 @@ h2,
     /* Maintain no left border to connect cleanly to input */
 }
 
-/* Mobile-specific styles */
-@media (max-width: 767.98px) {
-    h2.text-center.mb-4 {
-        margin-bottom: 2rem !important;
-    }
-
-    #guess-form-placeholder {
-        display: block;
-        height: 70px;
-    }
-
-    #guess-form-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        background-color: white;
-        border-top: 1px solid #E0E0E0;
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-        box-sizing: border-box;
-        width: 100vw;
-        /* Ensure it's full viewport width */
-        margin: 0;
-        /* Remove any margin */
-    }
-
-    body.keyboard-open #guess-form-container {
-        position: sticky;
-        bottom: 0;
-    }
-
-    .guess-outer-container {
-        max-width: 100%;
-    }
+/* Base styles (mobile-first) */
+h2.text-center.mb-4 {
+    margin-bottom: 2.5rem !important;
 }
 
-/* Desktop-specific styles */
+#guess-form-placeholder {
+    display: block;
+    height: 70px;
+}
+
+#guess-form-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: white;
+    border-top: 1px solid #E0E0E0;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+}
+
+body.keyboard-open #guess-form-container {
+    position: sticky;
+    bottom: 0;
+}
+
+.guess-outer-container {
+    max-width: 100%;
+}
+
+/* Desktop styles (overrides) */
 @media (min-width: 768px) {
     #guess-form-placeholder {
         display: none;
     }
-}
 
-/* Remove legacy styles */
-.text-center.mb-4 h4.text-muted.mb-3 {
-    display: none;
+    #guess-form-container {
+        position: static;
+        border-top: none;
+        padding: 0;
+    }
+
+    .guess-outer-container {
+        max-width: 580px;
+        /* Restore from earlier in the CSS */
+    }
 }
 
 /* Material Icons sizing */
-.material-icons.md-24 { 
+.material-icons.md-24 {
     font-size: 1.5rem;
-  }
+}
 
 /* Icon button styling */
 .btn-icon {
@@ -356,7 +430,7 @@ h2,
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease;
-  }
+}
 
 .btn-icon:hover {
     background-color: rgba(0, 0, 0, 0.05);
@@ -371,11 +445,9 @@ h2,
 /* Logo styling */
 .logo-image {
     width: 7.5rem;
-    /* 120px on mobile by default (assuming 16px base font size) */
     height: auto;
     margin: 0 auto;
-    margin-top: 3rem;
-    /* 64px top margin */
+    margin-top: 1rem;
 }
 
 /* Desktop styles - apply when screen is wider than 768px */
@@ -394,15 +466,19 @@ h2,
 /* Clickable number styling */
 .clickable-number {
     text-decoration: underline;
-    color: #000; /* Black text to match the rest of the heading */
+    color: #000;
+    /* Black text to match the rest of the heading */
     cursor: pointer;
-    font-weight: inherit; /* Keep the same font weight as the heading */
-  }
-  
-  .clickable-number:hover {
-    opacity: 0.8; /* Subtle hover effect */
-  }
-  
-  .clickable-number:active {
-    opacity: 0.6; /* Slightly more opaque when clicked */
-  }
+    font-weight: inherit;
+    /* Keep the same font weight as the heading */
+}
+
+.clickable-number:hover {
+    opacity: 0.8;
+    /* Subtle hover effect */
+}
+
+.clickable-number:active {
+    opacity: 0.6;
+    /* Slightly more opaque when clicked */
+}
