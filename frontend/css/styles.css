@@ -103,21 +103,16 @@ h2,
 @keyframes flipReveal {
     0% {
         transform: perspective(1000px) rotateX(0deg);
-        background-color: #f8f9fa;
+        background-color: #FFE0DD;
     }
 
     50% {
         transform: perspective(1000px) rotateX(90deg);
-        background-color: #f8f9fa;
-    }
-
-    50.1% {
-        background-color: rgba(25, 135, 84, 0.25);
+        background-color: #FFE0DD;
     }
 
     100% {
         transform: perspective(1000px) rotateX(180deg);
-        background-color: rgba(25, 135, 84, 0.25);
     }
 }
 
@@ -201,7 +196,7 @@ h2,
 /* Incorrect answer styling */
 #answer-boxes .card-body.bg-danger,
 #answer-boxes .card-body.bg-danger.bg-opacity-25 {
-    background-color: #F8D7DA !important;
+    background-color: #FFE0DD !important;
     border: 0.125rem solid #EBC8C5 !important;
 }
 
@@ -333,8 +328,10 @@ h2,
     justify-content: center;
 }
 
-#guess-form-container {
-    box-shadow: none;
+/* Add a better class for handling keyboard visibility */
+body.keyboard-visible #guess-form-container {
+    position: fixed !important;
+    bottom: 0 !important;
 }
 
 /* Disabled state styling */
@@ -365,9 +362,9 @@ h2.text-center.mb-4 {
 }
 
 #guess-form-placeholder {
+    height: 4.5rem;
     display: block;
-    height: 70px;
-}
+  }
 
 #guess-form-container {
     position: fixed;
@@ -382,8 +379,7 @@ h2.text-center.mb-4 {
     justify-content: center;
     box-sizing: border-box;
     width: 100%;
-    margin: 0;
-}
+  }
 
 body.keyboard-open #guess-form-container {
     position: sticky;
@@ -393,6 +389,15 @@ body.keyboard-open #guess-form-container {
 .guess-outer-container {
     max-width: 100%;
 }
+
+:root {
+    --vh: 1vh;
+  }
+  
+  /* Adjust fixed positioning using the custom viewport height */
+  #guess-form-placeholder {
+    height: 4.5rem; /* Fixed height instead of relying on dynamic calculation */
+  }
 
 /* Desktop styles (overrides) */
 @media (min-width: 768px) {
