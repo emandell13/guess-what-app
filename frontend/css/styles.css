@@ -103,12 +103,10 @@ h2,
 @keyframes flipReveal {
     0% {
         transform: perspective(1000px) rotateX(0deg);
-        background-color: #FFE0DD;
     }
 
     50% {
         transform: perspective(1000px) rotateX(90deg);
-        background-color: #FFE0DD;
     }
 
     100% {
