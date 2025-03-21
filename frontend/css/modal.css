@@ -10,15 +10,15 @@
 
 /* Apply main font variables to modal */
 .modal {
-  font-family: var(--font-family-base);
+    font-family: var(--font-family-base);
 }
 
-.modal-title, 
-.modal h3, 
-.modal h4, 
-.modal h5, 
+.modal-title,
+.modal h3,
+.modal h4,
+.modal h5,
 .modal .btn {
-  font-family: var(--font-family-base);
+    font-family: var(--font-family-base);
 }
 
 /* Score and metrics in the modal */
@@ -26,8 +26,8 @@
 .modal .score-value,
 .modal #modalFinalScore,
 .modal #modalFinalScoreShare {
-  font-family: var(--font-family-accent);
-  font-weight: 700;
+    font-family: var(--font-family-accent);
+    font-weight: 700;
 }
 
 /* Modal styling */
@@ -39,15 +39,17 @@
 
 /* Modal header styling */
 .modal-header {
-    position: relative; /* Ensure positioning context for the close button */
+    position: relative;
+    /* Ensure positioning context for the close button */
 }
 
 .modal-header .btn-close {
     opacity: 0.7;
-    background-color: rgba(255, 255, 255, 0.8);
+    width: 0.75rem;
+    height: 0.75rem;
     padding: 0.5rem;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 0.125rem solid #000;
 }
 
 .modal-header .btn-close:hover {
@@ -57,7 +59,8 @@
 
 /* Progress bar */
 .modal-header .progress {
-    max-width: calc(100% - 40px); /* Ensure space for the close button */
+    max-width: calc(100% - 40px);
+    /* Ensure space for the close button */
 }
 
 .progress {
@@ -73,16 +76,85 @@
 }
 
 /* Summary section */
-.final-score {
-    padding: 2rem;
-    background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
-    border-radius: 1rem;
-    margin: 1rem 0;
+/* Score display styling */
+.score-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.5rem;
 }
 
-.final-score .display-4 {
+.score-boxes {
+    display: flex;
+    margin-bottom: 0.75rem;
+}
+
+.score-box {
+    width: 5.75rem;
+    height: 5.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: 700;
+    font-family: var(--font-family-base);
+    line-height: 1;
+}
+
+#gameCompleteModal h3,
+.h3 {
     color: #000;
-    font-weight: bold;
+    text-align: center;
+    font-family: "Libre Franklin";
+    font-size: 1.375rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.875rem;
+    letter-spacing: -0.015rem;
+}
+
+.tens-digit-box {
+    background-color: #CBE5D9;
+    border: 0.25rem solid #000;
+    border-right: none;
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+}
+
+.ones-digit-box {
+    background-color: #CBE5D9;
+    border: 0.25rem solid #000;
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.score-text {
+    color: #9E9E9E;
+    text-align: center;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 2.5rem;
+    letter-spacing: -0.015rem;
+}
+
+.stats-link {
+    color: #9E9E9E;
+    text-decoration: none;
+    text-align: center;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 2.5rem;
+    /* 250% */
+    letter-spacing: -0.015rem;
+}
+
+.stats-link:hover {
+    color: #000;
+    text-decoration: underline;
 }
 
 /* Answers summary */
@@ -100,30 +172,30 @@
     justify-content: space-between;
     align-items: center;
     font-family: var(--font-family-base);
-  }
+}
 
-  .answer-card .answer-content {
+.answer-card .answer-content {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-grow: 1;
-  }
+}
 
-  .answer-card .answer-text {
+.answer-card .answer-text {
     text-transform: capitalize;
     text-align: center;
     opacity: unset;
     font-weight: 500;
-  }
+}
 
-  .answer-card .points.badge {
+.answer-card .points.badge {
     font-size: 0.9rem;
     font-weight: 700;
     padding: 0.35rem 0.65rem;
     color: #000;
     background-color: rgba(0, 0, 0, 0.08);
     margin-left: 1rem;
-  }
+}
 
 .answer-card.correct {
     background-color: rgba(25, 135, 84, 0.1);
