@@ -109,8 +109,8 @@ class VoteStep {
     this.formContainer.innerHTML = `
       <form id="modal-vote-form" class="mt-3">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Enter your response" required>
-          <button class="btn btn-primary" type="submit">Submit Vote</button>
+          <input type="text" class="form-control" placeholder="Your response" required>
+          <button class="btn btn-primary" type="submit">Submit</button>
         </div>
       </form>
     `;
