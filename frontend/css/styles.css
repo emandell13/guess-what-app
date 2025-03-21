@@ -54,6 +54,11 @@ h2,
     font-size: clamp(1.5rem, 4vw, 2.5rem);
 }
 
+h5,
+.h5 {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
 /* Make score numbers bolder */
 .score-value {
     font-weight: 700;
@@ -67,7 +72,7 @@ h2,
 /* Improved strike counter styling */
 .strike-circle {
     display: inline-block;
-    font-size: 1rem;
+    font-size: clamp(1rem 2vw 1.25rem);
     width: 1rem;
     height: 1rem;
     margin-left: 0.5rem;
@@ -92,7 +97,7 @@ h2,
 /* Desktop styles for strikes - apply when screen is wider than 768px */
 @media (min-width: 768px) {
     .strike-circle {
-        font-size: 1.25rem;
+        font-size: clamp(1.25rem, 2vw, 1.5rem);
         width: 1.25rem;
         height: 1.25rem;
         margin-left: 0.625rem;
@@ -166,10 +171,6 @@ h2,
     box-shadow: none;
 }
 
-#answer-boxes .answer-box {
-    margin-bottom: 0.5rem;
-  }
-
 #answer-boxes .card-body {
     border-radius: 0.5rem;
     border: 0.125rem solid #EAEAF2;
@@ -198,7 +199,7 @@ h2,
 
 /* Styling for answer rank numbers inside boxes */
 #answer-boxes .answer-rank {
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 700;
     font-style: normal;
     font-family: "libre Franklin";
@@ -211,7 +212,7 @@ h2,
 #answer-boxes .answer-text {
     flex: 1;
     text-align: center;
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-style: normal;
     text-transform: capitalize;
     font-weight: 700;
@@ -233,7 +234,7 @@ h2,
     width: 3.5 rem;
     margin: 0;
     text-align: center;
-    font-size: 1.125rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 400;
     padding: none !important;
     color: #000;
@@ -254,7 +255,7 @@ h2,
 
     #answer-boxes .answer-text {
         margin: 0 0.75rem;
-        font-size: 1.1rem;
+        font-size: clamp(1.125rem, 2vw, 1.25rem);
     }
 
     #answer-boxes .points.badge {
