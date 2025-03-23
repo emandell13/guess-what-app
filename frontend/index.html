@@ -69,7 +69,7 @@
                         <form id="guess-form">
                             <div class="input-group">
                                 <input type="text" class="form-control guess-input"
-                                    placeholder="Type your guess here..." required>
+                                    placeholder="Type your guess here" required>
                                 <button class="btn btn-dark">Guess</button>
                             </div>
                         </form>
@@ -85,9 +85,13 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <!-- Progress Bar -->
-                <div class="modal-header border-0 pb-0 d-flex align-items-center">
-                    <div class="progress flex-grow-1 me-4" style="height: 4px;">
-                        <div class="progress-bar" role="progressbar" style="width: 33%"></div>
+                <div class="modal-header pb-0 pt-4 d-flex justify-content-between align-items-center">
+                    <div class="progress-container">
+                        <div class="progress-segments flex-grow-1">
+                            <div class="segment filled"></div>
+                            <div class="segment empty"></div>
+                            <div class="segment empty"></div>
+                        </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -113,27 +117,45 @@
                     </button>
 
                     <div class="text-center mt-3">
-                        <a href="#" class="stats-link">Track your stats →</a>
+                        <a href="#" class="stats-link">Track your stats</a>
                     </div>
                 </div>
 
                 <!-- Step 2: Vote -->
                 <div class="modal-body" id="voteStep" style="display: none;">
-                    <h3 class="text-center mb-4">Help create tomorrow's game!</h3>
+                    <h3 class="text-center mb-4">Help create tomorrow's game</h3>
 
                     <div class="vote-container">
-                        <p class="text-center mb-4">What do you think most people will answer?</p>
-                        <div id="modalVoteForm" class="mb-4">
-                            <!-- Vote form will be moved here -->
+                        <div class="question-container mb-2">
+                            <h4 class="question-text text-center mb-4"></h4>
+                            <div id="modalVoteForm">
+                                <form id="modal-vote-form">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="Your response" required>
+                                        <button type="submit" class="btn btn-submit">Submit</button>
+                                    </div>
+                                </form>
+                                <div id="vote-response-message" class="mt-3"></div>
+                            </div>
                         </div>
+                        <div id="thanks-container" style="display: none;" class="text-center mb-4">
+                            <div class="thanks-boxes d-flex justify-content-center">
+                                <div class="thanks-box">T</div>
+                                <div class="thanks-box">H</div>
+                                <div class="thanks-box">A</div>
+                                <div class="thanks-box">N</div>
+                                <div class="thanks-box">K</div>
+                                <div class="thanks-box">S</div>
+                                <div class="thanks-box">!</div>
+                            </div>
+                            <p class="mt-4 thanks-text">Come back tomorrow to see if others thought like you!</p>
+                        </div>                        
                     </div>
 
-                    <div class="text-center text-muted">
-                        <small>Come back tomorrow to see if others thought like you!</small>
+                    <div class="text-center">
+                        <a href="#" class="skip-link">Skip</a>
+                        <button class="btn btn-next" style="display: none;">Next</button>
                     </div>
-                    <button class="btn btn-next w-100 mt-4">
-                        Share Your Results →
-                    </button>
                 </div>
 
                 <!-- Step 3: Share -->

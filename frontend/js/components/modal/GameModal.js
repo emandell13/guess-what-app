@@ -92,7 +92,18 @@ class GameModal {
    * Updates the progress bar
    */
   updateProgress() {
-    this.progressBar.style.width = `${(this.currentStep / 3) * 100}%`;
+    const segments = this.modalElement.querySelectorAll('.progress-segments .segment');
+    
+    // Update segments based on current step
+    segments.forEach((segment, index) => {
+      if (index < this.currentStep) {
+        segment.classList.add('filled');
+        segment.classList.remove('empty');
+      } else {
+        segment.classList.add('empty');
+        segment.classList.remove('filled');
+      }
+    });
     
     // Emit progress update event
     eventService.emit('modal:progress-updated', {

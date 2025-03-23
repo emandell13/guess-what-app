@@ -11,19 +11,12 @@ class VoteStep {
    */
   constructor(stepId) {
     this.stepElement = document.getElementById(stepId);
-    this.questionElement = this.stepElement.querySelector('.vote-container p');
-    this.formContainer = document.getElementById('modalVoteForm');
-    this.nextButton = this.stepElement.querySelector('.btn-next');
+    this.questionElement = this.stepElement.querySelector('.question-text');
+    this.formElement = document.getElementById('modal-vote-form');
+    this.responseMessageElement = document.getElementById('vote-response-message');
+    this.skipLink = this.stepElement.querySelector('.skip-link');
     
-    // Set up event listener for next button
-    this.nextButton.addEventListener('click', () => {
-      eventService.emit('modal:next-step', {
-        currentStep: 'vote',
-        nextStep: 'share'
-      });
-    });
-    
-    // Set up event listeners for vote events
+    // Set up event listeners
     this.setupEventListeners();
   }
   
@@ -31,7 +24,27 @@ class VoteStep {
    * Sets up event listeners
    */
   setupEventListeners() {
-    // Listen for vote submission events
+    // Form submission
+    if (this.formElement) {
+      this.formElement.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = this.formElement.querySelector('input');
+        await this.handleVoteSubmission(input.value);
+      });
+    }
+    
+    // Skip link
+    if (this.skipLink) {
+      this.skipLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        eventService.emit('modal:next-step', {
+          currentStep: 'vote',
+          nextStep: 'share'
+        });
+      });
+    }
+    
+    // Listen for vote events
     eventService.on('vote:submitted', (event) => {
       this.showSuccessMessage(event.detail.message || "Vote recorded successfully!");
     });
@@ -55,7 +68,9 @@ class VoteStep {
    * Updates the question text display
    */
   updateQuestionText(questionText) {
-    this.questionElement.innerHTML = `<strong>${questionText}</strong><br>`;
+    if (this.questionElement) {
+      this.questionElement.textContent = questionText || "What do you think most people will answer?";
+    }
   }
   
   /**
@@ -81,49 +96,61 @@ class VoteStep {
     const questionText = voteService.getTomorrowsQuestionText();
     
     // Update the question text
-    this.questionElement.innerHTML = `<strong>${questionText}</strong><br>`;
+    this.updateQuestionText(questionText);
     
     // Check if user has already voted
     if (voteService.hasAlreadyVoted()) {
       this.showAlreadyVotedMessage();
     } else {
-      this.createVoteForm();
+      // Reset the form and response message
+      if (this.formElement) {
+        this.formElement.reset();
+        this.formElement.style.display = 'block';
+      }
+      if (this.responseMessageElement) {
+        this.responseMessageElement.innerHTML = '';
+      }
     }
   }
   
-  /**
-   * Shows a message indicating the user has already voted
-   */
-  showAlreadyVotedMessage() {
-    this.formContainer.innerHTML = `
-      <div class="alert alert-info">
-        You've already voted for tomorrow's question. Come back tomorrow to play again!
-      </div>
-    `;
+ /**
+ * Shows a message indicating the user has already voted
+ */
+showAlreadyVotedMessage() {
+  // Hide the question container and form
+  const questionContainer = this.stepElement.querySelector('.question-container');
+  if (questionContainer) {
+    questionContainer.style.display = 'none';
   }
   
-  /**
-   * Creates the vote submission form
-   */
-  createVoteForm() {
-    this.formContainer.innerHTML = `
-      <form id="modal-vote-form" class="mt-3">
-        <div class="input-group">
-          <input type="text" class="form-control" placeholder="Your response" required>
-          <button class="btn btn-primary" type="submit">Submit</button>
-        </div>
-      </form>
-    `;
+  // Show the thanks container
+  const thanksContainer = document.getElementById('thanks-container');
+  if (thanksContainer) {
+    thanksContainer.style.display = 'block';
+  }
+  
+  // Hide skip link and show Next button
+  if (this.skipLink) {
+    this.skipLink.style.display = 'none';
+  }
+  
+  const nextButton = this.stepElement.querySelector('.btn-next');
+  if (nextButton) {
+    nextButton.style.display = 'inline-block';
     
-    // Add event listener to the newly created form
-    const modalVoteForm = document.getElementById("modal-vote-form");
-    if (modalVoteForm) {
-      modalVoteForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await this.handleVoteSubmission(e.target.elements[0].value);
+    // Add event listener if not already added
+    if (!nextButton.hasListener) {
+      nextButton.addEventListener('click', () => {
+        eventService.emit('modal:next-step', {
+          currentStep: 'vote',
+          nextStep: 'share'
+        });
       });
+      nextButton.hasListener = true;
     }
   }
+}
+
   
   /**
    * Handles the submission of a vote
@@ -131,56 +158,90 @@ class VoteStep {
    */
   async handleVoteSubmission(userResponse) {
     try {
+      const input = this.formElement.querySelector('input');
+      const submitButton = this.formElement.querySelector('button[type="submit"]');
+      
+      // Disable input and button during submission
+      if (input) input.disabled = true;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+      }
+      
       await voteService.submitVote(userResponse);
-      // The vote events are now handled by the event listeners
+      
+      // Re-enable input and button (in case of error)
+      if (input) input.disabled = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Submit';
+      }
     } catch (error) {
       console.error("Error submitting vote:", error);
       this.showErrorMessage("An error occurred while submitting your vote.");
+      
+      // Re-enable input and button
+      const input = this.formElement.querySelector('input');
+      const submitButton = this.formElement.querySelector('button[type="submit"]');
+      if (input) input.disabled = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Submit';
+      }
     }
   }
   
   /**
-   * Shows a success message
-   * @param {string} message - The message to display
-   */
-  showSuccessMessage(message) {
-    // Create response message element
-    const responseMsg = document.createElement('div');
-    responseMsg.className = 'alert alert-success mt-3';
-    responseMsg.textContent = message;
+ * Shows a success message with the "THANKS!" design
+ * @param {string} message - The message to display
+ */
+showSuccessMessage(message) {
+  // Hide the question container and form
+  const questionContainer = this.stepElement.querySelector('.question-container');
+  if (questionContainer) {
+    questionContainer.style.display = 'none';
+  }
+  
+  // Show the thanks container
+  const thanksContainer = document.getElementById('thanks-container');
+  if (thanksContainer) {
+    thanksContainer.style.display = 'block';
+  }
+  
+  // Hide skip link and show Next button
+  if (this.skipLink) {
+    this.skipLink.style.display = 'none';
+  }
+  
+  const nextButton = this.stepElement.querySelector('.btn-next');
+  if (nextButton) {
+    nextButton.style.display = 'inline-block';
     
-    this.clearPreviousMessages();
-    this.formContainer.appendChild(responseMsg);
-    
-    // Hide form on success
-    const modalVoteForm = document.getElementById("modal-vote-form");
-    if (modalVoteForm) {
-      modalVoteForm.style.display = 'none';
+    // Add event listener if not already added
+    if (!nextButton.hasListener) {
+      nextButton.addEventListener('click', () => {
+        eventService.emit('modal:next-step', {
+          currentStep: 'vote',
+          nextStep: 'share'
+        });
+      });
+      nextButton.hasListener = true;
     }
   }
+}
   
   /**
    * Shows an error message
    * @param {string} message - The error message to display
    */
   showErrorMessage(message) {
-    // Show error message
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'alert alert-danger mt-3';
-    errorMsg.textContent = message;
-    
-    this.clearPreviousMessages();
-    this.formContainer.appendChild(errorMsg);
-  }
-  
-  /**
-   * Clears any previous response messages
-   */
-  clearPreviousMessages() {
-    // Clear any previous response
-    const existingResponse = this.formContainer.querySelector('.alert');
-    if (existingResponse) {
-      existingResponse.remove();
+    if (this.responseMessageElement) {
+      this.responseMessageElement.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          ${message}
+        </div>
+      `;
     }
   }
 }
