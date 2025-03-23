@@ -12,78 +12,144 @@ class ShareStep {
    */
   constructor(stepId) {
     this.stepElement = document.getElementById(stepId);
-    this.scoreElement = this.stepElement.querySelector('#modalFinalScoreShare');
-    this.strikesElement = this.stepElement.querySelector('#modalStrikes');
-    this.answersSummary = this.stepElement.querySelector('.answers-summary');
-    
+    // Add these two new lines
+    this.shareTensDigit = this.stepElement.querySelector('#shareTensDigit');
+    this.shareOnesDigit = this.stepElement.querySelector('#shareOnesDigit');
+
+    // Keep the existing lines
+    this.shareableAsset = this.stepElement.querySelector('#shareableAsset');
+    this.shareQuestionText = this.stepElement.querySelector('#shareQuestionText');
+    this.shareScoreValue = this.stepElement.querySelector('#shareScoreValue');
+    this.shareMaxScore = this.stepElement.querySelector('#shareMaxScore');
+    this.answerBoxes = this.stepElement.querySelectorAll('.answer-box');
+
     // Game state cache
     this.gameData = {
       score: 0,
-      strikes: 0,
-      correctGuesses: [],
-      allAnswers: null
+      maxPoints: 0,
+      questionText: '',
+      correctAnswers: []
     };
 
     // Set up event listeners
     this.setupEventListeners();
-    
+
     // Set up share buttons event listeners
     this.setupShareButtons();
   }
-  
+
   /**
    * Sets up event listeners for game events
    */
+  /**
+ * Sets up event listeners for game events
+ */
   setupEventListeners() {
     // Listen for score changes
     eventService.on('game:score-change', (event) => {
-      const { currentScore } = event.detail;
+      const { currentScore, maxPoints } = event.detail;
+      console.log("Score change event, maxPoints:", maxPoints);
       this.gameData.score = currentScore;
-    });
-    
-    // Listen for strike added events
-    eventService.on('game:strike-added', (event) => {
-      const { strikes } = event.detail;
-      this.gameData.strikes = strikes;
-    });
-    
-    // Listen for answers revealed
-    eventService.on('game:answer-revealed', (event) => {
-      const { guess, rank, points, canonicalAnswer } = event.detail;
-      
-      // Store the revealed answer
-      const guessInfo = {
-        guess: canonicalAnswer || guess,
-        rank,
-        points
-      };
-      
-      // Check if we already have this rank
-      const existingIndex = this.gameData.correctGuesses.findIndex(g => g.rank === rank);
-      if (existingIndex >= 0) {
-        this.gameData.correctGuesses[existingIndex] = guessInfo;
-      } else {
-        this.gameData.correctGuesses.push(guessInfo);
+      if (maxPoints !== undefined) {
+        this.gameData.maxPoints = maxPoints;
+        // Update UI immediately if visible
+        if (this.stepElement.style.display === 'block' && this.shareMaxScore) {
+          this.shareMaxScore.textContent = maxPoints;
+        }
       }
     });
-    
+
+    // Listen for answers revealed
+    eventService.on('game:answer-revealed', (event) => {
+      const { rank } = event.detail;
+
+      // Store the revealed answer rank
+      if (!this.gameData.correctAnswers.includes(rank)) {
+        this.gameData.correctAnswers.push(rank);
+      }
+    });
+
     // Listen for game completed event
     eventService.on('game:completed', (event) => {
-      const { currentScore, strikes, correctGuesses } = event.detail;
+      const { currentScore, maxPoints, correctGuesses } = event.detail;
+      console.log("Game completed event, maxPoints:", maxPoints);
       this.gameData.score = currentScore;
-      this.gameData.strikes = strikes;
-      this.gameData.correctGuesses = correctGuesses;
-      
-      // Fetch all answers when game completes
-      this.fetchAllAnswers();
+      if (maxPoints !== undefined) {
+        this.gameData.maxPoints = maxPoints;
+      }
+      this.gameData.correctAnswers = correctGuesses.map(guess => guess.rank);
+
+      // Fetch question text if not available
+      if (!this.gameData.questionText) {
+        this.fetchQuestionText();
+      }
+
+      // We can set a default if we still don't have maxPoints
+      if (!this.gameData.maxPoints && this.shareMaxScore) {
+        this.gameData.maxPoints = 99;  // Use a reasonable default
+      }
+    });
+
+    // Listen for game initialized
+    eventService.on('game:initialized', (event) => {
+      console.log("Game initialized event:", event.detail);
+      const { question, maxPoints } = event.detail;
+      if (question && question.question) {
+        this.gameData.questionText = question.question;
+      }
+      if (maxPoints !== undefined) {
+        this.gameData.maxPoints = maxPoints;
+      }
     });
   }
 
   /**
-   * Shows this step and updates its content
-   */
+  * Shows this step and updates its content
+  */
   show() {
     this.stepElement.style.display = 'block';
+
+    // Try to get data from game service or DOM if available
+    try {
+      // Look for game service in window.app
+      const gameService = window.app ? window.app.gameService : null;
+      if (gameService) {
+        // Update from game service if available
+        this.gameData.score = gameService.currentScore || 0;
+        this.gameData.maxPoints = gameService.maxPoints || 99;
+        if (gameService.correctGuesses) {
+          this.gameData.correctAnswers = gameService.correctGuesses.map(guess => guess.rank);
+        }
+        this.gameData.questionText = gameService.question ? gameService.question.question : '';
+      } else {
+        // Fallback: try to get data from DOM elements
+        const currentScoreElement = document.getElementById('current-score');
+        const maxScoreElement = document.getElementById('max-score');
+
+        if (currentScoreElement) {
+          this.gameData.score = parseInt(currentScoreElement.textContent) || 0;
+        }
+
+        if (maxScoreElement) {
+          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 99;
+        }
+
+        // Try to get correct answers from the game display
+        const revealedAnswers = document.querySelectorAll('#answer-boxes .card-body.bg-success');
+        if (revealedAnswers.length > 0) {
+          this.gameData.correctAnswers = Array.from(revealedAnswers).map(el => {
+            const rankEl = el.querySelector('.answer-rank');
+            return rankEl ? parseInt(rankEl.textContent) : null;
+          }).filter(rank => rank !== null);
+        }
+      }
+    } catch (error) {
+      console.error('Error getting game state:', error);
+      // Use defaults if there's an error
+      this.gameData.maxPoints = 99;
+    }
+
+    // Update the content with whatever data we have
     this.updateContent();
   }
 
@@ -97,131 +163,276 @@ class ShareStep {
   /**
    * Updates all content in the share step
    */
-  async updateContent() {
+  updateContent() {
+    // Update question text
+    this.updateQuestionText();
+
     // Update score
-    this.scoreElement.textContent = this.gameData.score;
+    this.updateScore(this.gameData.score);
 
-    // Update strikes display
-    this.updateStrikesDisplay();
+    // Make sure we have a valid maxPoints value
+    if (this.shareMaxScore) {
+      // Use stored value, or 99 as fallback
+      const maxPoints = this.gameData.maxPoints || 99;
+      this.shareMaxScore.textContent = maxPoints;
+      console.log("Setting max points in UI to:", maxPoints);
+    }
 
-    // Update answers summary
-    this.updateAnswersSummary();
+    // Update answer boxes
+    this.updateAnswerBoxes();
+
+    // Make sure we have the latest data
+    if (!this.gameData.questionText) {
+      this.fetchQuestionText();
+    }
   }
-  
+
   /**
-   * Fetches all answers for the current question
+   * Fetches the question text from the API if not already available
    */
-  async fetchAllAnswers() {
+  async fetchQuestionText() {
     try {
-      const response = await fetch("/guesses/question?includeAnswers=true");
+      const response = await fetch("/guesses/question");
       const data = await response.json();
-      
-      if (!data.error) {
-        this.gameData.allAnswers = data.answers || [];
-        
-        // Emit event that answers were loaded
-        eventService.emit('share:answers-loaded', {
-          answers: this.gameData.allAnswers
-        });
+
+      if (data.question) {
+        this.gameData.questionText = data.question;
+        this.updateQuestionText();
       }
     } catch (error) {
-      console.error("Error fetching answers:", error);
-      eventService.emit('share:error', {
-        message: "Failed to fetch answers",
-        error
-      });
+      console.error("Error fetching question text:", error);
     }
   }
 
   /**
-   * Updates the strikes display
+   * Updates the question text in the shareable asset
    */
-  updateStrikesDisplay() {
-    this.strikesElement.innerHTML = Array(3)
-      .fill()
-      .map((_, i) => `<i class="fa${i < this.gameData.strikes ? 's' : 'r'} fa-circle me-2 ${i < this.gameData.strikes ? 'text-danger' : 'text-muted'}"></i>`)
-      .join('');
+  updateQuestionText() {
+    if (this.gameData.questionText) {
+      this.shareQuestionText.textContent = this.gameData.questionText;
+    } else {
+      this.shareQuestionText.textContent = "What did people say was...";
+    }
   }
 
   /**
-   * Updates the answers summary section
+   * Updates the answer boxes based on correct guesses
    */
-  updateAnswersSummary() {
-    // Clear existing answers
-    this.answersSummary.innerHTML = '';
-    
-    // If we don't have answers yet, show loading
-    if (!this.gameData.allAnswers) {
-      this.answersSummary.innerHTML = '<div class="text-center"><span class="spinner-border spinner-border-sm"></span> Loading answers...</div>';
-      return;
-    }
-
-    if (this.gameData.allAnswers.length === 0) {
-      this.answersSummary.innerHTML = '<div class="alert alert-danger">Failed to load answers</div>';
-      return;
-    }
-
-    // Add each answer card
-    this.gameData.allAnswers.forEach(answer => {
-      const wasGuessed = this.gameData.correctGuesses.some(guess =>
-        guess.rank === answer.rank
-      );
-
-      const card = document.createElement('div');
-      card.className = `answer-card ${wasGuessed ? 'correct' : 'revealed'}`;
-      card.innerHTML = `
-         <div class="answer-rank">${answer.rank}</div>
-      <div class="answer-content">
-        <span class="answer-text">${answer.answer}</span>
-      </div>
-      <div class="answer-points">
-        <span class="points-badge">${answer.points} pts</span>
-      </div>
-      `;
-      this.answersSummary.appendChild(card);
+  updateAnswerBoxes() {
+    // Reset all boxes first
+    this.answerBoxes.forEach(box => {
+      box.classList.remove('correct');
     });
-    
-    // Emit event that answers were displayed
-    eventService.emit('share:answers-displayed');
-  }
 
+    // Mark the correct ones
+    this.gameData.correctAnswers.forEach(rank => {
+      const box = this.stepElement.querySelector(`.answer-box[data-rank="${rank}"]`);
+      if (box) {
+        box.classList.add('correct');
+      }
+    });
+  }
+  /**
+   * Updates the score displayed in the score boxes
+   * @param {number} score - The score to display
+   */
+  updateScore(score) {
+    // Get the tens and ones digits of the score
+    const scoreStr = score.toString().padStart(2, '0');
+    const tensDigit = scoreStr.length > 1 ? scoreStr[scoreStr.length - 2] : '0';
+    const onesDigit = scoreStr[scoreStr.length - 1];
+
+    // Update the score boxes
+    if (this.shareTensDigit) this.shareTensDigit.textContent = tensDigit;
+    if (this.shareOnesDigit) this.shareOnesDigit.textContent = onesDigit;
+  }
   /**
    * Sets up event listeners for share buttons
    */
   setupShareButtons() {
-    const twitterBtn = this.stepElement.querySelector('[data-platform="twitter"]');
-    const copyLinkBtn = this.stepElement.querySelector('[data-action="copy-link"]');
+    const shareButtons = this.stepElement.querySelectorAll('.share-button');
 
-    if (twitterBtn) {
-      twitterBtn.addEventListener('click', () => this.shareOnTwitter());
-    }
+    shareButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const platform = button.getAttribute('data-platform');
+        const action = button.getAttribute('data-action');
 
-    if (copyLinkBtn) {
-      copyLinkBtn.addEventListener('click', () => this.copyShareLink());
-    }
+        if (action === 'copy-link') {
+          this.copyShareLink();
+        } else if (platform) {
+          this.shareOnPlatform(platform);
+        }
+      });
+    });
   }
 
-  /**
-   * Shares the result on Twitter
-   */
-  shareOnTwitter() {
+/**
+ * Shares the result on a specific platform
+ * @param {string} platform - The platform to share on
+ */
+/**
+ * Shares the result on a specific platform
+ * @param {string} platform - The platform to share on
+ */
+shareOnPlatform(platform) {
+  // First generate an image of the shareable asset
+  this.generateShareImage().then(imageUrl => {
+    // Create the share text
     const score = this.gameData.score;
-    const maxScore = this.gameData.allAnswers ? 
-      this.gameData.allAnswers.reduce((sum, a) => sum + a.points, 0) : 
-      100; // fallback
-
+    const maxScore = this.gameData.maxPoints;
     const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
     const url = window.location.href;
-
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    
+    // Platform-specific URLs
+    let shareUrl;
+    
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        window.open(shareUrl, '_blank');
+        
+        if (imageUrl) {
+          this.downloadImage(imageUrl, 'guesswhat-score.png');
+          setTimeout(() => {
+            alert('Your score has been shared to Twitter! The image has been downloaded to your device. Please attach it to your tweet.');
+          }, 500);
+        }
+        break;
+        
+      case 'facebook':
+        // Facebook supports setting a default message with the quote parameter
+        const fbMessage = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fbMessage)}`;
+        window.open(shareUrl, '_blank');
+        
+        if (imageUrl) {
+          this.downloadImage(imageUrl, 'guesswhat-score.png');
+          setTimeout(() => {
+            alert('Your score has been shared to Facebook! The image has been downloaded to your device. Please attach it to your post.');
+          }, 500);
+        }
+        break;
+        
+      case 'reddit':
+        // Specify a default subreddit (replace 'gaming' with your preferred subreddit)
+        const subreddit = 'gaming';
+        shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+        window.open(shareUrl, '_blank');
+        
+        if (imageUrl) {
+          this.downloadImage(imageUrl, 'guesswhat-score.png');
+          setTimeout(() => {
+            alert('Your score has been shared to Reddit! The image has been downloaded to your device. Please attach it to your post.');
+          }, 500);
+        }
+        break;
+        
+      case 'bluesky':
+        // Currently no direct sharing API for Bluesky
+        shareUrl = `https://bsky.app`;
+        window.open(shareUrl, '_blank');
+        
+        if (imageUrl) {
+          this.downloadImage(imageUrl, 'guesswhat-score.png');
+          setTimeout(() => {
+            alert('To share on Bluesky, please create a new post and attach the image that has been downloaded to your device.');
+          }, 500);
+        }
+        break;
+        
+      case 'instagram':
+        // Instagram doesn't have a web sharing API
+        if (imageUrl) {
+          this.downloadImage(imageUrl, 'guesswhat-score.png');
+          setTimeout(() => {
+            alert('To share on Instagram, please upload the downloaded image through the Instagram app on your phone.');
+          }, 500);
+        }
+        break;
+    }
     
     // Emit share event
     eventService.emit('share:shared', {
-      platform: 'twitter',
+      platform,
       score,
-      maxScore
+      maxScore,
+      imageUrl
     });
+  }).catch(error => {
+    console.error("Error generating share image:", error);
+    
+    // Fallback to text-only sharing if image generation fails
+    const score = this.gameData.score;
+    const maxScore = this.gameData.maxPoints;
+    const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+    const url = window.location.href;
+    
+    let shareUrl = null;
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+        break;
+      case 'reddit':
+        const subreddit = 'gaming';
+        shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+        break;
+      case 'bluesky':
+        shareUrl = `https://bsky.app`;
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+    }
+  });
+}
+
+/**
+ * Downloads an image from a data URL
+ * @param {string} dataUrl - The data URL of the image
+ * @param {string} fileName - The file name to save as
+ */
+downloadImage(dataUrl, fileName) {
+  // Create a download link and trigger a click
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+  async generateShareImage() {
+    try {
+      // Check if html2canvas is available
+      if (typeof html2canvas === 'undefined') {
+        console.error('html2canvas library not loaded');
+        return null;
+      }
+      
+      // Generate canvas from the shareable asset element
+      const canvas = await html2canvas(this.shareableAsset, {
+        backgroundColor: '#ffffff',
+        scale: 2, // 2x scale for better quality
+        logging: false,
+        useCORS: true
+      });
+      
+      // Convert canvas to data URL
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      // Return the data URL
+      return dataUrl;
+      
+    } catch (error) {
+      console.error("Error generating image:", error);
+      throw error;
+    }
   }
+  
 
   /**
    * Copies the share link to clipboard
@@ -243,12 +454,27 @@ class ShareStep {
 
     // Show feedback
     alert('Link copied to clipboard!');
-    
+
     // Emit share event
     eventService.emit('share:shared', {
       platform: 'clipboard',
       url
     });
+  }
+
+  /**
+   * Creates and returns an image of the shareable asset
+   * @returns {Promise<Blob>} - A promise that resolves to the image blob
+   */
+  async createShareImage() {
+    try {
+      // We would use html2canvas or a similar library here
+      // As a fallback, just return a placeholder message
+      return null;
+    } catch (error) {
+      console.error("Error creating share image:", error);
+      return null;
+    }
   }
 }
 
