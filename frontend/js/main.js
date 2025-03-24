@@ -19,6 +19,7 @@ import AuthModal from './components/modal/AuthModal.js';
 class App {
   constructor() {
     // Initialize components
+    this.isGameOverModalPending = false;
     this.answerGrid = new AnswerGrid("answer-boxes");
     this.scoreTracker = new ScoreTracker("current-score", "max-score");
     this.strikeCounter = new StrikeCounter("strikes", 3);
@@ -158,23 +159,62 @@ class App {
     });
 
     // Strike added events
-    eventService.on('game:strike-added', (event) => {
+    eventService.on('game:strike-added', async (event) => {
       const { strikes } = event.detail;
       this.strikeCounter.updateStrikes(strikes, true);
-
+    
       // If max strikes reached, reveal all remaining answers
       if (strikes >= 3) {
-        this.revealAllRemainingAnswers();
+        console.log("Max strikes reached, disabling form and revealing answers");
+        
+        // Disable form immediately
+        if (this.guessForm) this.guessForm.disable();
+        
+        // Signal that animations are in progress
+        document.body.dataset.revealingAnswers = 'true';
+        
+        try {
+          // Wait for all reveals to complete
+          await this.revealAllRemainingAnswers();
+          console.log("All answers revealed, showing modal");
+          
+          // Clear the flag - animations complete
+          document.body.dataset.revealingAnswers = 'false';
+          
+          // Show the modal with the pending score (if game completed)
+          if (this.gameModal.pendingScore !== undefined) {
+            this.gameModal.show(this.gameModal.pendingScore);
+            this.gameModal.pendingScore = undefined;
+          }
+        } catch (error) {
+          console.error("Error in strike-out sequence:", error);
+          // Clean up in case of error
+          document.body.dataset.revealingAnswers = 'false';
+          
+          // Show modal anyway if there was an error and game completed
+          if (this.gameModal.pendingScore !== undefined) {
+            this.gameModal.show(this.gameModal.pendingScore);
+            this.gameModal.pendingScore = undefined;
+          }
+        }
       }
     });
 
     // Game completed events
     eventService.on('game:completed', (event) => {
       const { currentScore } = event.detail;
-
-      // Show game complete modal
+    
+      // Check if we're in the middle of a strike-reveal sequence
+      if (this.isGameOverModalPending) {
+        console.log("game:completed event received but modal pending - not showing yet");
+        // Don't show the modal yet - the strike handler will do it after reveals
+        return;
+      }
+    
+      // Show game complete modal for normal completion
+      console.log("game:completed event showing modal");
       this.gameModal.show(currentScore);
-
+    
       // Disable guess form
       if (this.guessForm) this.guessForm.disable();
     });
@@ -212,18 +252,18 @@ class App {
 
     eventService.on('ui:open-voting-modal', (event) => {
       const isDirect = event?.detail?.direct || false;
-      
+
       // Open the modal and go to voting step
       if (this.gameModal) {
         // If direct access, hide the progress bar and adjust close button
         if (isDirect) {
           const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
           const closeButton = document.querySelector('#gameCompleteModal .btn-close');
-          
+
           if (progressContainer) {
             progressContainer.style.display = 'none';
           }
-          
+
           // Adjust close button to be in the top right corner
           if (closeButton) {
             closeButton.style.position = 'absolute';
@@ -231,9 +271,9 @@ class App {
             closeButton.style.top = '1rem';
           }
         }
-        
+
         this.gameModal.modal.show();
-        
+
         // If direct access, go directly to voting step (skip summary)
         if (isDirect) {
           this.gameModal.goToVotingStep();
@@ -244,8 +284,8 @@ class App {
         }
       }
     });
-    
-    
+
+
   }
 
   checkVerificationStatus() {
@@ -382,25 +422,36 @@ class App {
   }
 
   /**
-   * Reveals all remaining answers when the game is over
-   */
+ * Reveals all remaining answers when the game is over
+ * @returns {Promise} A promise that resolves when all answers are revealed
+ */
   async revealAllRemainingAnswers() {
     try {
+      console.log("Starting reveal of remaining answers");
       const response = await fetch("/guesses/question?includeAnswers=true");
       const data = await response.json();
-
+  
       // Filter out already guessed answers
       const remainingAnswers = data.answers.filter(answer =>
         !gameService.correctGuesses.some(guess => guess.rank === answer.rank)
       );
-
+      
+      console.log(`Revealing ${remainingAnswers.length} remaining answers`);
+      
       // Reveal all remaining answers with staggered animations
-      await this.answerGrid.revealAllRemaining(remainingAnswers);
-
-      // Disable guess form after revealing all
-      if (this.guessForm) this.guessForm.disable();
+      const promise = this.answerGrid.revealAllRemaining(remainingAnswers);
+      
+      // Add these debug logs
+      promise.then(() => {
+        console.log("All answers revealed successfully");
+      }).catch(err => {
+        console.error("Error in reveal animation promise:", err);
+      });
+      
+      return promise;
     } catch (error) {
       console.error('Error revealing remaining answers:', error);
+      return Promise.resolve(); // Return a resolved promise on error
     }
   }
 }

@@ -40,7 +40,15 @@ class GameModal {
     // Listen for game completed event
     eventService.on('game:completed', (event) => {
       const { currentScore } = event.detail;
-      this.show(currentScore);
+      // Don't automatically show the modal on game completion
+      // Instead, store the score and check if we're pending animations
+      this.pendingScore = currentScore;
+      
+      // If there are no pending animations, show the modal immediately
+      if (!document.body.dataset.revealingAnswers) {
+        this.show(currentScore);
+      }
+      // Otherwise, the main.js animations will call show() when done
     });
     
     // Listen for step navigation events
@@ -54,6 +62,13 @@ class GameModal {
    * @param {number} score - The final score to display
    */
   show(score) {
+    // If animations are in progress, don't show yet
+    if (document.body.dataset.revealingAnswers === 'true') {
+      // Store the score for later when animations complete
+      this.pendingScore = score;
+      return;
+    }
+    
     this.resetModal();
     this.modal.show();
   }

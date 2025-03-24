@@ -38,20 +38,32 @@ export function flipReveal(element, onHalfway, onComplete) {
   }
   
   /**
-   * Staggers animations with a delay between each
-   * @param {Array} elements - Array of elements or data for animations
-   * @param {Function} animateFunc - Function to call for each element
-   * @param {number} delay - Delay between animations in ms
-   * @returns {Promise} - Resolves when all animations are complete
-   */
+ * Staggers animations with a delay between each
+ * @param {Array} elements - Array of elements or data for animations
+ * @param {Function} animateFunc - Function to call for each element
+ * @param {number} delay - Delay between animations in ms
+ * @returns {Promise} - Resolves when all animations are complete
+ */
   export function staggerAnimations(elements, animateFunc, delay = 300) {
-    const totalTime = elements.length * delay;
-    
-    elements.forEach((element, index) => {
-      setTimeout(() => {
-        animateFunc(element, index);
-      }, index * delay);
+    return new Promise(resolve => {
+      if (elements.length === 0) {
+        resolve();
+        return;
+      }
+      
+      // Calculate the total time correctly
+      // Last animation starts at (elements.length - 1) * delay
+      // Then we need to wait for its full duration (1000ms)
+      const totalTime = ((elements.length - 1) * delay) + 1000 + 100; // Add extra 100ms buffer
+      
+      // Start each animation with the specified delay
+      elements.forEach((element, index) => {
+        setTimeout(() => {
+          animateFunc(element, index);
+        }, index * delay);
+      });
+      
+      // Only resolve after the complete time
+      setTimeout(resolve, totalTime);
     });
-    
-    return new Promise(resolve => setTimeout(resolve, totalTime));
-  }
+  }  

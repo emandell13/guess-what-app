@@ -85,7 +85,7 @@ class AnswerGrid {
           answerBox.reveal(answer.answer, answer.points, null, false);
         }
       },
-      1000 // 1 second between animations
+      800
     );
   }
 }

@@ -113,14 +113,21 @@ class VoteStep {
     }
   }
   
- /**
+  /**
  * Shows a message indicating the user has already voted
  */
 showAlreadyVotedMessage() {
-  // Hide the question container and form
+  // Hide the form but leave the question visible
   const questionContainer = this.stepElement.querySelector('.question-container');
+  const formContainer = this.formElement?.parentElement;
+  
   if (questionContainer) {
-    questionContainer.style.display = 'none';
+    // Keep the container visible but hide only the form
+    questionContainer.style.display = 'block';
+  }
+  
+  if (formContainer) {
+    formContainer.style.display = 'none';
   }
   
   // Show the thanks container
@@ -195,11 +202,22 @@ showAlreadyVotedMessage() {
  * Shows a success message with the "THANKS!" design
  * @param {string} message - The message to display
  */
+/**
+ * Shows a success message with the "THANKS!" design
+ * @param {string} message - The message to display
+ */
 showSuccessMessage(message) {
-  // Hide the question container and form
+  // Hide the form but leave the question visible
   const questionContainer = this.stepElement.querySelector('.question-container');
+  const formContainer = this.formElement?.parentElement;
+  
   if (questionContainer) {
-    questionContainer.style.display = 'none';
+    // Keep the container visible but hide only the form
+    questionContainer.style.display = 'block';
+  }
+  
+  if (formContainer) {
+    formContainer.style.display = 'none';
   }
   
   // Show the thanks container
