@@ -74,7 +74,7 @@
     display: flex;
     justify-content: center;
     margin-right: 1rem;
-    padding-left: 3.75rem;
+    padding-left: 3rem;
     /* Compensate for the space taken by close button */
 }
 
@@ -127,23 +127,35 @@
     letter-spacing: -0.015rem;
 }
 
-#modal-vote-form .input-group {
+.input-group {
     display: flex;
     overflow: hidden;
     border-radius: 0.75rem;
 }
 
-#modal-vote-form .form-control {
+.form-label {
+    color: #000;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: -0.015rem;
+}
+
+.form-control {
     height: 3.25rem;
     padding: 0.75rem 1.25rem;
     border: 0.125rem solid #EAEAF2;
-    border-right: none;
-    border-radius: 0.75rem 0 0 0.75rem;
+    border-radius: 0.75rem;
     font-size: 1rem;
     box-shadow: none;
     font-family: var(--font-family-accent);
     line-height: 2.5rem;
     letter-spacing: -0.015rem;
+}
+
+#modal-vote-form .form-control {
+    border-right: none;
 }
 
 /* Style for the input placeholder text */
@@ -188,6 +200,16 @@
 .skip-link:hover {
     color: #333;
     text-decoration: underline;
+}
+
+.text-muted {
+    color: #9E9E9E !important;
+    text-align: center;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: -0.015rem;
 }
 
 /* Thanks UI styling */
@@ -608,4 +630,165 @@
 #modal-vote-form .btn-primary:hover {
     background-color: #333;
     border-color: #333;
+}
+
+/* Minimal custom styling for logout button */
+#logout-button {
+    border: 0.125rem solid #000;
+    color: #000;
+    height: 3.25rem;
+    transition: all 0.2s ease;
+}
+
+#logout-button:hover {
+    background: #333;
+    color: #FFF;
+    transform: translateY(-2px);
+}
+
+.account-reminder {
+    color: #000;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    letter-spacing: -0.015rem;
+    display: inline-block;
+}
+
+.account-link {
+    color: #000;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    letter-spacing: -0.015rem;
+    display: inline-block;
+    text-decoration: underline;
+}
+
+#loginModal h3,
+#registerModal h3,
+#userProfileModal h3 {
+    color: #000;
+    text-align: center;
+    font-family: var(--font-family-base);
+    font-size: 1.375rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.875rem;
+    letter-spacing: -0.015rem;
+}
+
+#loginModal h3,
+#registerModal h3 {
+    padding-left: 3rem;
+}
+
+#userProfileModal #profile-username {
+    margin-bottom: 0rem;
+}
+
+/* Style for the input placeholder text */
+#loginModal input::placeholder,
+#registerModal input::placeholder,
+#userProfileModal input::placeholder {
+    color: #9e9e9e;
+    font-family: var(--font-family-accent);
+}
+
+.stat-card {
+    border-radius: 0.5rem;
+    border: 0.25rem solid #000;
+}
+
+.card-title {
+    color: #000;
+    text-align: center;
+    font-family: var(--font-family-accent);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 1.5rem;
+    letter-spacing: -0.015rem;
+}
+
+.card-body {
+    color: #000;
+    text-align: center;
+    font-family: var(--font-family-base);
+    font-size: 1.75rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.875rem;
+    letter-spacing: -0.015rem;
+}
+
+.card-games-played {
+    background: #CBE5D9;
+}
+
+.card-high-score {
+    background: #FFE0DD;
+}
+
+.card-average-score {
+    background: #FBF8EA;
+}
+
+.card-perfect-games {
+    background: #E6EAFF;
+}
+
+/* Recent games styling */
+.recent-games-list {
+    margin-top: 1rem;
+}
+
+.recent-game-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 0.0625px solid #EAEAF2;
+}
+
+.recent-game-item:last-child {
+    border-bottom: none;
+}
+
+.game-right-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.game-date {
+    font-family: var(--font-family-base);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.game-score {
+    font-family: var(--font-family-accent);
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+/* Reuse the strike circles from the main game */
+.game-strikes-container {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.game-strikes-container .strike-circle {
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0rem;
+}
+
+/* If you need to override any existing strike circle styles */
+.recent-game-item .strike-circle.filled {
+    background-color: #FFE0DD;
+    border: 0.125rem solid #EBC8C5;
 }

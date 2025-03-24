@@ -236,120 +236,222 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-                <script type="module" src="js/main.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/main.js"></script>
 
-                <!-- Authentication Modals -->
-                <!-- Login Modal -->
-                <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="loginModalLabel">Log In</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="alert alert-danger d-none" id="login-error"></div>
-                                <form id="login-form">
-                                    <div class="mb-3">
-                                        <label for="login-email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="login-email" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="login-password" class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="login-password" required>
-                                    </div>
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary">Log In</button>
-                                    </div>
-                                </form>
-                                <div class="text-center mt-3">
-                                    <p>Don't have an account? <a href="#" id="switch-to-register">Create one</a>
-                                    </p>
-                                </div>
+
+    <!-- Authentication Modals -->
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header pb-0 pt-4 d-flex justify-content-between align-items-center">
+                    <h3 class="text-center w-100 mb-0">Log in</h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="login-error"></div>
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="login-email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <input type="email" class="form-control" id="login-email" placeholder="Email" required>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="login-password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="login-password" placeholder="Password"
+                                    required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-next w-100 mt-4">Log In</button>
+                    </form>
+                    <div class="text-center">
+                        <p class="account-reminder">Don't have an account? <a href="#" id="switch-to-register"
+                                class="account-link">Create one</a></p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Registration Modal -->
-                <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="registerModalLabel">Create Account</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="alert alert-danger d-none" id="register-error"></div>
-                                <form id="register-form">
-                                    <div class="mb-3">
-                                        <label for="register-username" class="form-label">Username</label>
-                                        <input type="text" class="form-control" id="register-username" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="register-email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="register-email" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="register-password" class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="register-password" required>
-                                        <div class="form-text">Password must be at least 8 characters long</div>
-                                    </div>
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary">Create Account</button>
-                                    </div>
-                                </form>
-                                <div class="text-center mt-3">
-                                    <p>Already have an account? <a href="#" id="switch-to-login">Log in</a></p>
-                                </div>
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header pb-0 pt-4 d-flex justify-content-between align-items-center">
+                    <h3 class="text-center w-100 mb-0">Create account</h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="register-error"></div>
+                    <form id="register-form">
+                        <div class="mb-4">
+                            <label for="register-username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="register-username" placeholder="Username"
+                                    required>
                             </div>
                         </div>
+                        <div class="mb-4">
+                            <label for="register-email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <input type="email" class="form-control" id="register-email" placeholder="Email"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="register-password"
+                                    placeholder="Password" required>
+                            </div>
+                            <div class="form-text">Password must be at least 8 characters long</div>
+                        </div>
+                        <button type="submit" class="btn btn-next w-100 mt-4">Create Account</button>
+                    </form>
+                    <div class="text-center">
+                        <p class="account-reminder">Already have an account? <a href="#" id="switch-to-login"
+                                class="account-link">Log in</a></p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- User Profile/Menu -->
-                <div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel"
-                    aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="userProfileModalLabel">Your Profile</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
+    <!-- User Profile/Menu -->
+    <div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header pb-0 pt-4 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="user-profile-info">
+                        <!-- Profile content structure -->
+                        <div class="profile-content">
+                            <div class="text-center mb-4">
+                                <h3 id="profile-username">Username</h3>
+                                <p id="profile-email" class="text-muted">user@example.com</p>
                             </div>
-                            <div class="modal-body">
-                                <div id="user-profile-info">
-                                    <!-- Will be populated with profile info -->
-                                    <p>Loading profile...</p>
+                            <div class="text-center mb-3">
+                                <h3 class="mb-3">Your Stats</h3>
+                                <div id="user-stats">
+                                    <!-- No games state -->
+                                    <div class="no-games-message" style="display: none;">
+                                        <p>Play some games to see your statistics here!</p>
+                                    </div>
+
+                                    <!-- Stats content -->
+                                    <div class="stats-content">
+                                        <div class="row">
+                                            <div class="col-6 mb-3">
+                                                <div class="stat-card card">
+                                                    <div class="card-body text-center card-games-played">
+                                                        <h6 class="card-title">Games Played</h6>
+                                                        <p class="mb-0" id="stats-total-games">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <div class="stat-card card">
+                                                    <div class="card-body text-center card-high-score">
+                                                        <h6 class="card-title">High Score</h6>
+                                                        <p class="mb-0" id="stats-high-score">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <div class="stat-card card">
+                                                    <div class="card-body text-center card-average-score">
+                                                        <h6 class="card-title">Average Score</h6>
+                                                        <p class="mb-0" id="stats-avg-score">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <div class="stat-card card">
+                                                    <div class="card-body text-center card-perfect-games">
+                                                        <h6 class="card-title">Perfect Games</h6>
+                                                        <p class="mb-0" id="stats-perfect-games">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h3 class="mt-4 mb-3">Recent Games</h3>
+                                        <div id="recent-games-container">
+                                            <!-- No recent games message -->
+                                            <div id="no-recent-games" style="display: none;">
+                                                <p>No recent games found.</p>
+                                            </div>
+
+                                            <!-- Recent games list -->
+                                            <div id="recent-games-list" class="recent-games-list">
+                                                <!-- Recent game template item - will be used as template and updated -->
+                                                <div class="recent-game-item" id="recent-game-template"
+                                                    style="display: none;">
+                                                    <div class="game-date">Jan 1</div>
+                                                    <div class="game-right-content">
+                                                        <div class="game-score">100 pts</div>
+                                                        <div class="game-strikes-container">
+                                                            <span class="strike-circle empty"></span>
+                                                            <span class="strike-circle empty"></span>
+                                                            <span class="strike-circle empty"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Loading indicator -->
+                                                <p id="recent-games-loading"><em>Loading recent games...</em></p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="d-grid gap-2 mt-3">
-                                    <button id="logout-button" class="btn btn-outline-danger">Log Out</button>
-                                </div>
+
                             </div>
                         </div>
+
+                        <!-- Loading state -->
+                        <div class="profile-loading" style="display: none;">
+                            <p class="text-center"><em>Loading profile...</em></p>
+                        </div>
+
+                        <!-- Error state -->
+                        <div class="profile-error alert alert-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span class="error-message">Unable to load profile information</span>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button id="logout-button" class="btn btn-outline-danger w-100">Log Out</button>
                     </div>
                 </div>
-                <!-- Templates -->
-                <template id="answer-box-template">
-                    <div class="col-12 answer-box">
-                        <div class="card w-100">
-                            <div class="card-body d-flex justify-content-between align-items-center bg-light">
-                                <div class="d-flex align-items-center w-100">
-                                    <span class="answer-rank"></span>
-                                    <span class="answer-text flex-grow-1 text-center h5 mb-0"></span>
-                                    <span class="points badge d-none">0 pts</span>
-                                </div>
-                            </div>
-                        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="answer-box-template">
+        <div class="col-12 answer-box">
+            <div class="card w-100">
+                <div class="card-body d-flex justify-content-between align-items-center bg-light">
+                    <div class="d-flex align-items-center w-100">
+                        <span class="answer-rank"></span>
+                        <span class="answer-text flex-grow-1 text-center h5 mb-0"></span>
+                        <span class="points badge d-none">0 pts</span>
                     </div>
-                </template>
+                </div>
+            </div>
+        </div>
+    </template>
 </body>
 
 </html>

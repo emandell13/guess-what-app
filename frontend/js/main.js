@@ -126,19 +126,21 @@ class App {
     }
   }
 
-  /**
-   * Set up auth button click handler
-   */
   setupAuthButton() {
     const authButton = document.getElementById('auth-button');
     if (authButton) {
       authButton.addEventListener('click', () => {
-        this.authModal.showProfile();
+        // Check if the user is authenticated
+        if (authService.isAuthenticated()) {
+          this.authModal.showProfile();
+        } else {
+          this.authModal.showLogin();
+        }
       });
-
+  
       // Update button text based on auth state
       this.updateAuthButton();
-
+  
       // Listen for auth state changes
       eventService.on('auth:login', () => this.updateAuthButton());
       eventService.on('auth:logout', () => this.updateAuthButton());

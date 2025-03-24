@@ -223,45 +223,65 @@ class AuthModal {
    */
   async updateProfileInfo(user) {
     try {
+      // Show loading state
+      const profileContent = document.querySelector('#user-profile-info .profile-content');
+      const profileLoading = document.querySelector('#user-profile-info .profile-loading');
+      const profileError = document.querySelector('#user-profile-info .profile-error');
+      
+      // Hide content and error, show loading
+      if (profileContent) profileContent.style.display = 'none';
+      if (profileError) profileError.style.display = 'none';
+      if (profileLoading) profileLoading.style.display = 'block';
+      
       const profileResult = await authService.getProfile();
-
+  
       if (profileResult.success && profileResult.profile) {
         const profile = profileResult.profile;
-
-        this.userProfileInfo.innerHTML = `
-        <div class="text-center mb-4">
-          <h4>${profile.username}</h4>
-          <p class="text-muted">${user.email}</p>
-        </div>
-        <div class="mb-3">
-          <h5>Your Stats</h5>
-          <div id="user-stats">
-            <!-- Stats will be loaded by UserStats component -->
-            <p><em>Loading your statistics...</em></p>
-          </div>
-        </div>
-      `;
-
+        
+        // Update specific elements
+        const usernameElement = document.getElementById('profile-username');
+        const emailElement = document.getElementById('profile-email');
+        
+        if (usernameElement) usernameElement.textContent = profile.username;
+        if (emailElement) emailElement.textContent = user.email;
+        
+        // Hide loading, show content
+        if (profileLoading) profileLoading.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'block';
+        
         // Initialize UserStats component
         new UserStats('user-stats');
       } else if (profileResult.error === 'token_expired') {
-        // Token expired is now handled via the event listener
+        // Token expiration is now handled via the event listener
       } else {
-        this.userProfileInfo.innerHTML = `
-        <div class="alert alert-warning">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          Unable to load profile information
-        </div>
-      `;
+        // Show error message
+        const errorMessageElement = document.querySelector('#user-profile-info .profile-error .error-message');
+        if (errorMessageElement) {
+          errorMessageElement.textContent = 'Unable to load profile information';
+        }
+        
+        // Hide loading and content, show error
+        if (profileLoading) profileLoading.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'none';
+        if (profileError) profileError.style.display = 'block';
       }
     } catch (error) {
       console.error('Error updating profile info:', error);
-      this.userProfileInfo.innerHTML = `
-      <div class="alert alert-danger">
-        <i class="fas fa-exclamation-circle me-2"></i>
-        An error occurred while loading your profile
-      </div>
-    `;
+      
+      // Show error message
+      const errorMessageElement = document.querySelector('#user-profile-info .profile-error .error-message');
+      if (errorMessageElement) {
+        errorMessageElement.textContent = 'An error occurred while loading your profile';
+      }
+      
+      // Hide loading and content, show error
+      const profileContent = document.querySelector('#user-profile-info .profile-content');
+      const profileLoading = document.querySelector('#user-profile-info .profile-loading');
+      const profileError = document.querySelector('#user-profile-info .profile-error');
+      
+      if (profileLoading) profileLoading.style.display = 'none';
+      if (profileContent) profileContent.style.display = 'none';
+      if (profileError) profileError.style.display = 'block';
     }
   }
 
