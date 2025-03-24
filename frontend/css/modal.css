@@ -202,7 +202,7 @@
     text-decoration: underline;
 }
 
-.text-muted {
+#profile-email {
     color: #9E9E9E !important;
     text-align: center;
     font-family: var(--font-family-accent);
@@ -281,6 +281,18 @@
     margin-bottom: 0.5rem;
 }
 
+#gameCompleteModal h3,
+.h3 {
+    color: #000;
+    text-align: center;
+    font-family: var(--font-family-base);
+    font-size: 1.375rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.875rem;
+    letter-spacing: -0.015rem;
+}
+
 .score-boxes {
     display: flex;
     margin-bottom: 0.75rem;
@@ -296,33 +308,44 @@
     font-weight: 700;
     font-family: var(--font-family-base);
     line-height: 1;
-}
-
-#gameCompleteModal h3,
-.h3 {
-    color: #000;
-    text-align: center;
-    font-family: var(--font-family-base);
-    font-size: 1.375rem;
-    font-style: normal;
-    font-weight: 700;
-    line-height: 1.875rem;
-    letter-spacing: -0.015rem;
-}
-
-.tens-digit-box {
-    background-color: #CBE5D9;
     border: 0.25rem solid #000;
+    border-radius: 0.5rem;
+    background-color: #CBE5D9;
+}
+
+/* Single digit display */
+.single-digit .ones-digit-box {
+    border: 0.25rem solid #000;
+    border-radius: 0.5rem;
+}
+
+/* Double digit display */
+.double-digit .tens-digit-box {
     border-right: none;
-    border-top-left-radius: 0.5rem;
-    border-bottom-left-radius: 0.5rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
-.ones-digit-box {
-    background-color: #CBE5D9;
-    border: 0.25rem solid #000;
-    border-top-right-radius: 0.5rem;
-    border-bottom-right-radius: 0.5rem;
+.double-digit .ones-digit-box {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Triple digit display */
+.triple-digit .hundreds-digit-box {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.triple-digit .tens-digit-box {
+    border-right: none;
+    border-left: none;
+    border-radius: 0;
+}
+
+.triple-digit .ones-digit-box {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
 .score-text {
@@ -424,7 +447,7 @@
 
 .shareable-asset {
     width: 100%;
-    max-width: 20rem;
+    max-width: 24rem;
     padding: 1.5rem;
     border: 0.1875rem solid #000;
     border-radius: 1rem;

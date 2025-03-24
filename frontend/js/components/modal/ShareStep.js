@@ -12,11 +12,9 @@ class ShareStep {
    */
   constructor(stepId) {
     this.stepElement = document.getElementById(stepId);
-    // Add these two new lines
+    this.shareHundredsDigit = this.stepElement.querySelector('#shareHundredsDigit');
     this.shareTensDigit = this.stepElement.querySelector('#shareTensDigit');
     this.shareOnesDigit = this.stepElement.querySelector('#shareOnesDigit');
-
-    // Keep the existing lines
     this.shareableAsset = this.stepElement.querySelector('#shareableAsset');
     this.shareQuestionText = this.stepElement.querySelector('#shareQuestionText');
     this.shareScoreValue = this.stepElement.querySelector('#shareScoreValue');
@@ -103,12 +101,9 @@ class ShareStep {
     });
   }
 
-  /**
-  * Shows this step and updates its content
-  */
   show() {
     this.stepElement.style.display = 'block';
-
+  
     // Try to get data from game service or DOM if available
     try {
       // Look for game service in window.app
@@ -125,15 +120,15 @@ class ShareStep {
         // Fallback: try to get data from DOM elements
         const currentScoreElement = document.getElementById('current-score');
         const maxScoreElement = document.getElementById('max-score');
-
+  
         if (currentScoreElement) {
           this.gameData.score = parseInt(currentScoreElement.textContent) || 0;
         }
-
+  
         if (maxScoreElement) {
           this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 99;
         }
-
+  
         // Try to get correct answers from the game display
         const revealedAnswers = document.querySelectorAll('#answer-boxes .card-body.bg-success');
         if (revealedAnswers.length > 0) {
@@ -148,7 +143,7 @@ class ShareStep {
       // Use defaults if there's an error
       this.gameData.maxPoints = 99;
     }
-
+  
     // Update the content with whatever data we have
     this.updateContent();
   }
@@ -160,27 +155,23 @@ class ShareStep {
     this.stepElement.style.display = 'none';
   }
 
-  /**
-   * Updates all content in the share step
-   */
   updateContent() {
     // Update question text
     this.updateQuestionText();
-
+  
     // Update score
     this.updateScore(this.gameData.score);
-
+  
     // Make sure we have a valid maxPoints value
     if (this.shareMaxScore) {
       // Use stored value, or 99 as fallback
       const maxPoints = this.gameData.maxPoints || 99;
       this.shareMaxScore.textContent = maxPoints;
-      console.log("Setting max points in UI to:", maxPoints);
     }
-
+  
     // Update answer boxes
     this.updateAnswerBoxes();
-
+  
     // Make sure we have the latest data
     if (!this.gameData.questionText) {
       this.fetchQuestionText();
@@ -232,20 +223,47 @@ class ShareStep {
       }
     });
   }
-  /**
-   * Updates the score displayed in the score boxes
-   * @param {number} score - The score to display
-   */
-  updateScore(score) {
-    // Get the tens and ones digits of the score
-    const scoreStr = score.toString().padStart(2, '0');
-    const tensDigit = scoreStr.length > 1 ? scoreStr[scoreStr.length - 2] : '0';
-    const onesDigit = scoreStr[scoreStr.length - 1];
-
-    // Update the score boxes
-    if (this.shareTensDigit) this.shareTensDigit.textContent = tensDigit;
-    if (this.shareOnesDigit) this.shareOnesDigit.textContent = onesDigit;
+  
+// Update the updateScore method to match the SummaryStep approach
+updateScore(score) {
+  // Get the tens and ones digits of the score
+  const scoreBoxesContainer = this.shareOnesDigit.closest('.score-boxes');
+  const hundredsDigitBox = this.shareHundredsDigit?.closest('.hundreds-digit-box');
+  const tensDigitBox = this.shareTensDigit?.closest('.tens-digit-box');
+  
+  // Remove all digit-related classes
+  if (scoreBoxesContainer) {
+    scoreBoxesContainer.classList.remove('single-digit', 'double-digit', 'triple-digit');
   }
+  
+  // Split the score into digits and update display
+  if (score >= 100) {
+    // Triple digit scenario
+    if (scoreBoxesContainer) scoreBoxesContainer.classList.add('triple-digit');
+    if (hundredsDigitBox) hundredsDigitBox.style.display = 'flex';
+    
+    const scoreStr = score.toString();
+    this.shareHundredsDigit.textContent = scoreStr[0];
+    this.shareTensDigit.textContent = scoreStr[1];
+    this.shareOnesDigit.textContent = scoreStr[2];
+  } else if (score >= 10) {
+    // Double digit scenario
+    if (scoreBoxesContainer) scoreBoxesContainer.classList.add('double-digit');
+    if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';
+    
+    const scoreStr = score.toString();
+    this.shareTensDigit.textContent = scoreStr[0];
+    this.shareOnesDigit.textContent = scoreStr[1];
+  } else {
+    // Single digit scenario
+    if (scoreBoxesContainer) scoreBoxesContainer.classList.add('single-digit');
+    if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';
+    if (tensDigitBox) tensDigitBox.style.display = 'none';
+    
+    this.shareOnesDigit.textContent = score.toString();
+  }
+}
+
   /**
    * Sets up event listeners for share buttons
    */

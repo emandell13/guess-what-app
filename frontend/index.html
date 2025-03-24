@@ -102,6 +102,9 @@
 
                     <div class="score-display">
                         <div class="score-boxes">
+                            <div class="score-box hundreds-digit-box" style="display: none;">
+                                <span id="modalScoreHundreds">0</span>
+                            </div>
                             <div class="score-box tens-digit-box">
                                 <span id="modalScoreTens">0</span>
                             </div>
@@ -190,8 +193,17 @@
                             <div class="share-score-display mb-3">
                                 <div class="share-score-label mb-2">Your score</div>
                                 <div class="score-boxes">
-                                    <div class="score-box tens-digit-box" id="shareTensDigit">0</div>
-                                    <div class="score-box ones-digit-box" id="shareOnesDigit">0</div>
+                                    <div class="score-boxes">
+                                        <div class="score-box hundreds-digit-box">
+                                            <span id="shareHundredsDigit">0</span>
+                                        </div>
+                                        <div class="score-box tens-digit-box">
+                                            <span id="shareTensDigit">0</span>
+                                        </div>
+                                        <div class="score-box ones-digit-box">
+                                            <span id="shareOnesDigit">0</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="score-text">out of <span id="shareMaxScore">0</span> points</div>
                             </div>
@@ -339,7 +351,7 @@
                         <div class="profile-content">
                             <div class="text-center mb-4">
                                 <h3 id="profile-username">Username</h3>
-                                <p id="profile-email" class="text-muted">user@example.com</p>
+                                <p id="profile-email">user@example.com</p>
                             </div>
                             <div class="text-center mb-3">
                                 <h3 class="mb-3">Your Stats</h3>

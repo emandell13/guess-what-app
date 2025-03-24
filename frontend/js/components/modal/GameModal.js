@@ -88,6 +88,22 @@ class GameModal {
     this.updateProgress();
   }
   
+  goToVotingStep() {
+    // Hide all steps
+    this.summaryStep.hide();
+    this.voteStep.hide();
+    this.shareStep.hide();
+    
+    // Show only the vote step
+    this.voteStep.show();
+    
+    // Don't update progress indicators in direct mode
+    this.currentStep = 0; // Set to non-standard value to indicate direct access
+    
+    // Emit event to signal direct voting step access
+    eventService.emit('modal:direct-voting-access');
+  } 
+
   /**
    * Updates the progress bar
    */
@@ -112,10 +128,7 @@ class GameModal {
       percent: (this.currentStep / 3) * 100
     });
   }
-  
-  /**
-   * Resets the modal to its initial state
-   */
+
   resetModal() {
     this.currentStep = 1;
     this.updateProgress();
@@ -125,9 +138,22 @@ class GameModal {
     this.shareStep.hide();
     this.summaryStep.show();
     
+    // Make sure progress bar is visible again
+    const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
+    if (progressContainer) {
+      progressContainer.style.display = '';
+    }
+    
+    // Reset close button positioning
+    const closeButton = document.querySelector('#gameCompleteModal .btn-close');
+    if (closeButton) {
+      closeButton.style.position = '';
+      closeButton.style.right = '';
+      closeButton.style.top = '';
+    }
+    
     // Emit reset event
     eventService.emit('modal:reset');
-  }
-}
+  }}
 
 export default GameModal;

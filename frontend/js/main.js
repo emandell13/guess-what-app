@@ -47,11 +47,11 @@ class App {
     if (!window.matchMedia('(max-width: 767.98px)').matches) {
       return;
     }
-    
+
     // Get input element
     const inputElement = document.querySelector('#guess-form input');
     if (!inputElement) return;
-    
+
     // Use the VisualViewport API which is specifically designed for handling mobile keyboards
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', () => {
@@ -63,7 +63,7 @@ class App {
           guessForm.style.bottom = bottomOffset > 0 ? `${bottomOffset}px` : '0';
         }
       });
-      
+
       // Reset when viewport changes orientation
       window.visualViewport.addEventListener('scroll', () => {
         const guessForm = document.getElementById('guess-form-container');
@@ -81,23 +81,23 @@ class App {
         // Then we set the value in the --vh custom property to the root of the document
         document.documentElement.style.setProperty('--vh', `${vh}px`);
       };
-      
+
       // Set the height initially
       setViewportHeight();
-      
+
       // Update the height on resize (with debounce for performance)
       let resizeTimeout;
       window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(setViewportHeight, 150);
       });
-      
+
       // Handle iOS specific issues by listening for orientation changes
       window.addEventListener('orientationchange', () => {
         // Small timeout to wait for the resize to finish
         setTimeout(setViewportHeight, 200);
       });
-      
+
       // Additional handling for input focus
       inputElement.addEventListener('focus', () => {
         // Delay scroll to allow keyboard to fully open
@@ -106,7 +106,7 @@ class App {
         }, 300);
       });
     }
-    
+
     // Add padding to prevent content from being hidden behind the form on mobile
     const content = document.querySelector('.container');
     if (content) {
@@ -137,10 +137,10 @@ class App {
           this.authModal.showLogin();
         }
       });
-  
+
       // Update button text based on auth state
       this.updateAuthButton();
-  
+
       // Listen for auth state changes
       eventService.on('auth:login', () => this.updateAuthButton());
       eventService.on('auth:logout', () => this.updateAuthButton());
@@ -191,13 +191,61 @@ class App {
       this.showAlreadyGuessedMessage(guess);
     });
 
-    // Listen for open voting modal events
-    eventService.on('ui:open-voting-modal', () => {
-      // Open the modal and go to voting step
-      this.gameModal.modal.show();
-      this.gameModal.currentStep = 1; // Set to 1 before calling nextStep
-      this.gameModal.nextStep();
+    // Listen for open login modal events
+    eventService.on('ui:open-login-modal', () => {
+      // Close the game modal first if it's open
+      if (this.gameModal) {
+        const modalElement = document.getElementById('gameCompleteModal');
+        const bsModal = bootstrap.Modal.getInstance(modalElement);
+        if (bsModal) {
+          bsModal.hide();
+        }
+      }
+
+      // Then show the login modal
+      setTimeout(() => {
+        if (this.authModal) {
+          this.authModal.showLogin();
+        }
+      }, 400); // Short delay to allow the game modal to close
     });
+
+    eventService.on('ui:open-voting-modal', (event) => {
+      const isDirect = event?.detail?.direct || false;
+      
+      // Open the modal and go to voting step
+      if (this.gameModal) {
+        // If direct access, hide the progress bar and adjust close button
+        if (isDirect) {
+          const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
+          const closeButton = document.querySelector('#gameCompleteModal .btn-close');
+          
+          if (progressContainer) {
+            progressContainer.style.display = 'none';
+          }
+          
+          // Adjust close button to be in the top right corner
+          if (closeButton) {
+            closeButton.style.position = 'absolute';
+            closeButton.style.right = '1rem';
+            closeButton.style.top = '1rem';
+          }
+        }
+        
+        this.gameModal.modal.show();
+        
+        // If direct access, go directly to voting step (skip summary)
+        if (isDirect) {
+          this.gameModal.goToVotingStep();
+        } else {
+          // Normal flow - go to summary first
+          this.gameModal.currentStep = 1; // Set to 1 before calling nextStep
+          this.gameModal.nextStep();
+        }
+      }
+    });
+    
+    
   }
 
   checkVerificationStatus() {
@@ -222,7 +270,7 @@ class App {
   async updateAuthButton() {
     const authButton = document.getElementById('auth-button');
     const isAuthenticated = authService.isAuthenticated();
-  
+
     if (authButton) {
       if (isAuthenticated) {
         // Use Material Design icon when authenticated
@@ -270,7 +318,7 @@ class App {
     if (peopleCountElement) {
       peopleCountElement.addEventListener('click', () => {
         // Emit an event to open the voting modal
-        eventService.emit('ui:open-voting-modal');
+        eventService.emit('ui:open-voting-modal', { direct: true });
       });
     }
 
