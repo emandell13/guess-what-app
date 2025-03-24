@@ -266,144 +266,145 @@ class ShareStep {
     });
   }
 
-/**
- * Shares the result on a specific platform
- * @param {string} platform - The platform to share on
- */
-/**
- * Shares the result on a specific platform
- * @param {string} platform - The platform to share on
- */
-shareOnPlatform(platform) {
-  // First generate an image of the shareable asset
-  this.generateShareImage().then(imageUrl => {
-    // Create the share text
-    const score = this.gameData.score;
-    const maxScore = this.gameData.maxPoints;
-    const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
-    const url = window.location.href;
-    
-    // Platform-specific URLs
-    let shareUrl;
-    
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-        window.open(shareUrl, '_blank');
-        
-        if (imageUrl) {
-          this.downloadImage(imageUrl, 'guesswhat-score.png');
-          setTimeout(() => {
-            alert('Your score has been shared to Twitter! The image has been downloaded to your device. Please attach it to your tweet.');
-          }, 500);
-        }
-        break;
-        
-      case 'facebook':
-        // Facebook supports setting a default message with the quote parameter
-        const fbMessage = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(fbMessage)}`;
-        window.open(shareUrl, '_blank');
-        
-        if (imageUrl) {
-          this.downloadImage(imageUrl, 'guesswhat-score.png');
-          setTimeout(() => {
-            alert('Your score has been shared to Facebook! The image has been downloaded to your device. Please attach it to your post.');
-          }, 500);
-        }
-        break;
-        
-      case 'reddit':
-        // Specify a default subreddit (replace 'gaming' with your preferred subreddit)
-        const subreddit = 'gaming';
-        shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
-        window.open(shareUrl, '_blank');
-        
-        if (imageUrl) {
-          this.downloadImage(imageUrl, 'guesswhat-score.png');
-          setTimeout(() => {
-            alert('Your score has been shared to Reddit! The image has been downloaded to your device. Please attach it to your post.');
-          }, 500);
-        }
-        break;
-        
-      case 'bluesky':
-        // Currently no direct sharing API for Bluesky
-        shareUrl = `https://bsky.app`;
-        window.open(shareUrl, '_blank');
-        
-        if (imageUrl) {
-          this.downloadImage(imageUrl, 'guesswhat-score.png');
-          setTimeout(() => {
-            alert('To share on Bluesky, please create a new post and attach the image that has been downloaded to your device.');
-          }, 500);
-        }
-        break;
-        
-      case 'instagram':
-        // Instagram doesn't have a web sharing API
-        if (imageUrl) {
-          this.downloadImage(imageUrl, 'guesswhat-score.png');
-          setTimeout(() => {
-            alert('To share on Instagram, please upload the downloaded image through the Instagram app on your phone.');
-          }, 500);
-        }
-        break;
-    }
-    
-    // Emit share event
-    eventService.emit('share:shared', {
-      platform,
-      score,
-      maxScore,
-      imageUrl
-    });
-  }).catch(error => {
-    console.error("Error generating share image:", error);
-    
-    // Fallback to text-only sharing if image generation fails
-    const score = this.gameData.score;
-    const maxScore = this.gameData.maxPoints;
-    const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
-    const url = window.location.href;
-    
-    let shareUrl = null;
-    switch (platform) {
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-        break;
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
-        break;
-      case 'reddit':
-        const subreddit = 'gaming';
-        shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
-        break;
-      case 'bluesky':
-        shareUrl = `https://bsky.app`;
-        break;
-    }
-    
-    if (shareUrl) {
-      window.open(shareUrl, '_blank');
-    }
-  });
-}
+  /**
+   * Shares the result on a specific platform
+   * @param {string} platform - The platform to share on
+   */
+  /**
+   * Shares the result on a specific platform
+   * @param {string} platform - The platform to share on
+   */
+  shareOnPlatform(platform) {
+    // First generate an image of the shareable asset
+    this.generateShareImage().then(imageUrl => {
+      // Create the share text
+      const score = this.gameData.score;
+      const maxScore = this.gameData.maxPoints;
+      const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+      const url = window.location.href;
 
-/**
- * Downloads an image from a data URL
- * @param {string} dataUrl - The data URL of the image
- * @param {string} fileName - The file name to save as
- */
-downloadImage(dataUrl, fileName) {
-  // Create a download link and trigger a click
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+      // Platform-specific URLs
+      let shareUrl;
+
+      switch (platform) {
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+          window.open(shareUrl, '_blank');
+
+          if (imageUrl) {
+            this.downloadImage(imageUrl, 'guesswhat-score.png');
+            setTimeout(() => {
+              alert('Your score has been shared to Twitter! The image has been downloaded to your device. Please attach it to your tweet.');
+            }, 500);
+          }
+          break;
+
+        case 'facebook':
+          // For Facebook, just download the image and direct to Facebook homepage
+          if (imageUrl) {
+            this.downloadImage(imageUrl, 'guesswhat-score.png');
+            setTimeout(() => {
+              alert('Your score image has been downloaded. We\'ll now take you to Facebook where you can create a new post and attach this image.');
+              // Direct to Facebook's homepage or composer if possible
+              window.open('https://www.facebook.com/', '_blank');
+            }, 500);
+          } else {
+            // If no image, just go to Facebook
+            window.open('https://www.facebook.com/', '_blank');
+          }
+          break;
+
+        case 'reddit':
+          // Specify a default subreddit (replace 'gaming' with your preferred subreddit)
+          const subreddit = 'gaming';
+          shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+          window.open(shareUrl, '_blank');
+
+          if (imageUrl) {
+            this.downloadImage(imageUrl, 'guesswhat-score.png');
+            setTimeout(() => {
+              alert('Your score has been shared to Reddit! The image has been downloaded to your device. Please attach it to your post.');
+            }, 500);
+          }
+          break;
+
+        case 'bluesky':
+          // Currently no direct sharing API for Bluesky
+          shareUrl = `https://bsky.app`;
+          window.open(shareUrl, '_blank');
+
+          if (imageUrl) {
+            this.downloadImage(imageUrl, 'guesswhat-score.png');
+            setTimeout(() => {
+              alert('To share on Bluesky, please create a new post and attach the image that has been downloaded to your device.');
+            }, 500);
+          }
+          break;
+
+        case 'instagram':
+          // Instagram doesn't have a web sharing API
+          if (imageUrl) {
+            this.downloadImage(imageUrl, 'guesswhat-score.png');
+            setTimeout(() => {
+              alert('To share on Instagram, please upload the downloaded image through the Instagram app on your phone.');
+            }, 500);
+          }
+          break;
+      }
+
+      // Emit share event
+      eventService.emit('share:shared', {
+        platform,
+        score,
+        maxScore,
+        imageUrl
+      });
+    }).catch(error => {
+      console.error("Error generating share image:", error);
+
+      // Fallback to text-only sharing if image generation fails
+      const score = this.gameData.score;
+      const maxScore = this.gameData.maxPoints;
+      const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+      const url = window.location.href;
+
+      let shareUrl = null;
+      switch (platform) {
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+          break;
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+          break;
+        case 'reddit':
+          const subreddit = 'gaming';
+          shareUrl = `https://www.reddit.com/r/${subreddit}/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+          break;
+        case 'bluesky':
+          shareUrl = `https://bsky.app`;
+          break;
+      }
+
+      if (shareUrl) {
+        window.open(shareUrl, '_blank');
+      }
+    });
+  }
+
+  /**
+   * Downloads an image from a data URL
+   * @param {string} dataUrl - The data URL of the image
+   * @param {string} fileName - The file name to save as
+   */
+  downloadImage(dataUrl, fileName) {
+    // Create a download link and trigger a click
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   async generateShareImage() {
     try {
@@ -412,7 +413,7 @@ downloadImage(dataUrl, fileName) {
         console.error('html2canvas library not loaded');
         return null;
       }
-      
+
       // Generate canvas from the shareable asset element
       const canvas = await html2canvas(this.shareableAsset, {
         backgroundColor: '#ffffff',
@@ -420,19 +421,19 @@ downloadImage(dataUrl, fileName) {
         logging: false,
         useCORS: true
       });
-      
+
       // Convert canvas to data URL
       const dataUrl = canvas.toDataURL('image/png');
-      
+
       // Return the data URL
       return dataUrl;
-      
+
     } catch (error) {
       console.error("Error generating image:", error);
       throw error;
     }
   }
-  
+
 
   /**
    * Copies the share link to clipboard
