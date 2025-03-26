@@ -18,21 +18,21 @@ class GameModal {
     this.modalElement = document.getElementById(modalId);
     this.progressBar = this.modalElement.querySelector('.progress-bar');
     this.currentStep = 1;
-    
+
     // Initialize steps with no callback dependencies
     this.summaryStep = new SummaryStep('summaryStep');
     this.voteStep = new VoteStep('voteStep');
     this.shareStep = new ShareStep('shareStep');
-    
+
     // Handle modal hidden event
     this.modalElement.addEventListener('hidden.bs.modal', () => {
       this.resetModal();
     });
-    
+
     // Listen for events
     this.setupEventListeners();
   }
-  
+
   /**
    * Set up event listeners
    */
@@ -43,20 +43,20 @@ class GameModal {
       // Don't automatically show the modal on game completion
       // Instead, store the score and check if we're pending animations
       this.pendingScore = currentScore;
-      
+
       // If there are no pending animations, show the modal immediately
       if (!document.body.dataset.revealingAnswers) {
         this.show(currentScore);
       }
       // Otherwise, the main.js animations will call show() when done
     });
-    
+
     // Listen for step navigation events
     eventService.on('modal:next-step', (event) => {
       this.nextStep();
     });
   }
-  
+
   /**
    * Shows the modal
    * @param {number} score - The final score to display
@@ -68,24 +68,24 @@ class GameModal {
       this.pendingScore = score;
       return;
     }
-    
+
     this.resetModal();
     this.modal.show();
   }
-  
+
   /**
    * Advances to the next step
    */
   nextStep() {
     this.currentStep++;
-    
+
     // Hide all steps
     this.summaryStep.hide();
     this.voteStep.hide();
     this.shareStep.hide();
-    
+
     // Show current step
-    switch(this.currentStep) {
+    switch (this.currentStep) {
       case 1:
         this.summaryStep.show();
         eventService.emit('modal:step-changed', { step: 'summary' });
@@ -99,32 +99,38 @@ class GameModal {
         eventService.emit('modal:step-changed', { step: 'share' });
         break;
     }
-    
+
     this.updateProgress();
   }
-  
+
   goToVotingStep() {
     // Hide all steps
     this.summaryStep.hide();
     this.voteStep.hide();
     this.shareStep.hide();
-    
+
     // Show only the vote step
     this.voteStep.show();
-    
+
     // Don't update progress indicators in direct mode
     this.currentStep = 0; // Set to non-standard value to indicate direct access
-    
+
+    // Hide the skip link when in direct voting access
+    const skipLink = document.querySelector('#voteStep .skip-link');
+    if (skipLink) {
+      skipLink.style.display = 'none';
+    }
+
     // Emit event to signal direct voting step access
     eventService.emit('modal:direct-voting-access');
-  } 
+  }
 
   /**
    * Updates the progress bar
    */
   updateProgress() {
     const segments = this.modalElement.querySelectorAll('.progress-segments .segment');
-    
+
     // Update segments based on current step
     segments.forEach((segment, index) => {
       if (index < this.currentStep) {
@@ -135,7 +141,7 @@ class GameModal {
         segment.classList.remove('filled');
       }
     });
-    
+
     // Emit progress update event
     eventService.emit('modal:progress-updated', {
       step: this.currentStep,
@@ -147,18 +153,18 @@ class GameModal {
   resetModal() {
     this.currentStep = 1;
     this.updateProgress();
-    
+
     // Hide vote and share steps, show summary step
     this.voteStep.hide();
     this.shareStep.hide();
     this.summaryStep.show();
-    
+
     // Make sure progress bar is visible again
     const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
     if (progressContainer) {
       progressContainer.style.display = '';
     }
-    
+
     // Reset close button positioning
     const closeButton = document.querySelector('#gameCompleteModal .btn-close');
     if (closeButton) {
@@ -166,9 +172,10 @@ class GameModal {
       closeButton.style.right = '';
       closeButton.style.top = '';
     }
-    
+
     // Emit reset event
     eventService.emit('modal:reset');
-  }}
+  }
+}
 
 export default GameModal;
