@@ -38,8 +38,11 @@ class AnswerGrid {
     this.container.innerHTML = '';
     this.answerBoxes = [];
     
+    // Create at most 5 answer boxes
+    const boxesToCreate = Math.min(count, 5);
+    
     // Create answer boxes
-    for (let i = 1; i <= count; i++) {
+    for (let i = 1; i <= boxesToCreate; i++) {
       const answerBox = new AnswerBox(i);
       this.answerBoxes.push(answerBox);
       this.container.appendChild(answerBox.getElement());
@@ -54,6 +57,9 @@ class AnswerGrid {
    * @param {string} canonicalAnswer - Optional canonical version of the answer
    */
   revealAnswer(rank, answer, points, canonicalAnswer = null) {
+    // Only reveal answers with rank 1-5
+    if (rank > 5) return;
+    
     const answerBox = this.answerBoxes.find(box => box.rank === rank);
     if (answerBox) {
       answerBox.reveal(answer, points, canonicalAnswer, true);
@@ -65,6 +71,9 @@ class AnswerGrid {
    * @param {number} rank - The rank of the answer to highlight
    */
   highlightAnswer(rank) {
+    // Only highlight answers with rank 1-5
+    if (rank > 5) return;
+    
     const answerBox = this.answerBoxes.find(box => box.rank === rank);
     if (answerBox) {
       answerBox.highlight();
@@ -77,8 +86,11 @@ class AnswerGrid {
    * @returns {Promise} - Resolves when all reveals are complete
    */
   revealAllRemaining(remainingAnswers) {
+    // Filter out answers with rank > 5
+    const topFiveAnswers = remainingAnswers.filter(answer => answer.rank <= 5);
+    
     return staggerAnimations(
-      remainingAnswers,
+      topFiveAnswers,
       (answer) => {
         const answerBox = this.answerBoxes.find(box => box.rank === answer.rank);
         if (answerBox) {
