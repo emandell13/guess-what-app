@@ -159,9 +159,11 @@ class SummaryStep {
       this.tensDigitElement.textContent = scoreStr[1];
       this.onesDigitElement.textContent = scoreStr[2];
     } else if (score >= 10) {
+      
       // Double digit scenario
       if (scoreBoxesContainer) scoreBoxesContainer.classList.add('double-digit');
       if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';
+      if (tensDigitBox) tensDigitBox.style.display = 'flex'; // Make sure tens digit is visible
 
       const scoreStr = score.toString();
       this.tensDigitElement.textContent = scoreStr[0];
