@@ -51,28 +51,29 @@ class App {
 
     // Get input element
     const inputElement = document.querySelector('#guess-form input');
+    inputElement.addEventListener('focus', () => {
+      setTimeout(() => {
+        inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    });
     if (!inputElement) return;
 
     // Use the VisualViewport API which is specifically designed for handling mobile keyboards
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
-        // Update the form position based on visual viewport
-        const guessForm = document.getElementById('guess-form-container');
-        if (guessForm) {
-          // Set the bottom position based on the viewport height difference
-          const bottomOffset = window.innerHeight - window.visualViewport.height;
-          guessForm.style.bottom = bottomOffset > 0 ? `${bottomOffset}px` : '0';
-        }
-      });
-
-      // Reset when viewport changes orientation
-      window.visualViewport.addEventListener('scroll', () => {
-        const guessForm = document.getElementById('guess-form-container');
-        if (guessForm && window.visualViewport.height === window.innerHeight) {
-          guessForm.style.bottom = '0';
-        }
-      });
-    }
+      const guessForm = document.getElementById('guess-form-container');
+      const updatePosition = () => {
+        if (!guessForm) return;
+        const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+        guessForm.style.transform = offset > 0 ? `translateY(-${offset}px)` : 'translateY(0)';
+      };
+      let vpTimeout;
+      const handleViewportChange = () => {
+        clearTimeout(vpTimeout);
+        vpTimeout = setTimeout(updatePosition, 10);
+      };
+      
+      window.visualViewport.addEventListener("resize", handleViewportChange);
+      window.visualViewport.addEventListener("scroll", handleViewportChange);    }
     // Fallback for browsers without VisualViewport API - use the CSS variable approach
     else {
       // Set initial viewport height
