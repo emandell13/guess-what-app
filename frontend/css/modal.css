@@ -621,6 +621,7 @@
 .share-button {
     width: 2rem;
     height: 2rem;
+    padding: 0rem;
     border-radius: 50%;
     border: 0.125rem solid #000;
     background-color: #fff;
@@ -639,6 +640,7 @@
 
 .share-button i {
     font-size: 1rem;
+    color: #000;
 }
 
 /* Vote form submit button styling */
