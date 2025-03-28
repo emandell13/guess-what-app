@@ -8,7 +8,7 @@ const SystemOperations = {
             alert('Starting daily update - this may take a moment...');
 
             // Call the update endpoint with authentication
-            const response = await Auth.fetchWithAuth('/admin/run-update');
+            const response = await Auth.fetchWithAuth('/admin/tools/run-update');
             const result = await response.json();
 
             // Show result
