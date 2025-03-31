@@ -18,7 +18,7 @@ const votesRouter = require('./routes/votes');
 app.use('/votes', votesRouter);
 
 // Add cron job for daily updates at midnight ET (5am UTC)
-cron.schedule('0 5 * * *', () => {
+cron.schedule('0 8 * * *', () => {
   console.log('Running scheduled daily update...');
   dailyUpdate()
     .then(result => console.log('Daily update result:', result))
