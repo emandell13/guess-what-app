@@ -15,11 +15,12 @@ class VoteStep {
     this.formElement = document.getElementById('modal-vote-form');
     this.responseMessageElement = document.getElementById('vote-response-message');
     this.skipLink = this.stepElement.querySelector('.skip-link');
-    
+    this.isDirectMode = false;  // Add this line
+
     // Set up event listeners
     this.setupEventListeners();
   }
-  
+
   /**
    * Sets up event listeners
    */
@@ -32,7 +33,7 @@ class VoteStep {
         await this.handleVoteSubmission(input.value);
       });
     }
-    
+
     // Skip link
     if (this.skipLink) {
       this.skipLink.addEventListener('click', (e) => {
@@ -43,27 +44,38 @@ class VoteStep {
         });
       });
     }
-    
+
     // Listen for vote events
     eventService.on('vote:submitted', (event) => {
       this.showSuccessMessage(event.detail.message || "Vote recorded successfully!");
     });
-    
+
     eventService.on('vote:error', (event) => {
       this.showErrorMessage(event.detail.error || "Failed to submit vote");
     });
-    
+
     eventService.on('vote:already-voted', () => {
       this.showAlreadyVotedMessage();
     });
-    
+
     // Listen for question loaded events
     eventService.on('vote:question-loaded', (event) => {
       const { questionText } = event.detail;
       this.updateQuestionText(questionText);
     });
+
+    // Listen for direct voting modal access
+    eventService.on('modal:direct-voting-access', () => {
+      this.isDirectMode = true;
+    });
+
+    // Reset direct mode when modal is reset
+    eventService.on('modal:reset', () => {
+      this.isDirectMode = false;
+    });
+
   }
-  
+
   /**
    * Updates the question text display
    */
@@ -72,7 +84,7 @@ class VoteStep {
       this.questionElement.textContent = questionText || "What do you think most people will answer?";
     }
   }
-  
+
   /**
    * Shows this step and initializes the content
    */
@@ -80,24 +92,24 @@ class VoteStep {
     this.stepElement.style.display = 'block';
     this.initializeVoteForm();
   }
-  
+
   /**
    * Hides this step
    */
   hide() {
     this.stepElement.style.display = 'none';
   }
-  
+
   /**
    * Initializes the vote form based on user's vote status
    */
   initializeVoteForm() {
     // Get tomorrow's question
     const questionText = voteService.getTomorrowsQuestionText();
-    
+
     // Update the question text
     this.updateQuestionText(questionText);
-    
+
     // Check if user has already voted
     if (voteService.hasAlreadyVoted()) {
       this.showAlreadyVotedMessage();
@@ -112,53 +124,57 @@ class VoteStep {
       }
     }
   }
-  
+
   /**
  * Shows a message indicating the user has already voted
  */
-showAlreadyVotedMessage() {
-  // Hide the form but leave the question visible
-  const questionContainer = this.stepElement.querySelector('.question-container');
-  const formContainer = this.formElement?.parentElement;
-  
-  if (questionContainer) {
-    // Keep the container visible but hide only the form
-    questionContainer.style.display = 'block';
-  }
-  
-  if (formContainer) {
-    formContainer.style.display = 'none';
-  }
-  
-  // Show the thanks container
-  const thanksContainer = document.getElementById('thanks-container');
-  if (thanksContainer) {
-    thanksContainer.style.display = 'block';
-  }
-  
-  // Hide skip link and show Next button
-  if (this.skipLink) {
-    this.skipLink.style.display = 'none';
-  }
-  
-  const nextButton = this.stepElement.querySelector('.btn-next');
-  if (nextButton) {
-    nextButton.style.display = 'inline-block';
-    
-    // Add event listener if not already added
-    if (!nextButton.hasListener) {
-      nextButton.addEventListener('click', () => {
-        eventService.emit('modal:next-step', {
-          currentStep: 'vote',
-          nextStep: 'share'
-        });
-      });
-      nextButton.hasListener = true;
+  showAlreadyVotedMessage() {
+    // Hide the form but leave the question visible
+    const questionContainer = this.stepElement.querySelector('.question-container');
+    const formContainer = this.formElement?.parentElement;
+
+    if (questionContainer) {
+      // Keep the container visible but hide only the form
+      questionContainer.style.display = 'block';
+    }
+
+    if (formContainer) {
+      formContainer.style.display = 'none';
+    }
+
+    // Show the thanks container
+    const thanksContainer = document.getElementById('thanks-container');
+    if (thanksContainer) {
+      thanksContainer.style.display = 'block';
+    }
+
+    // Hide skip link and show Next button
+    if (this.skipLink) {
+      this.skipLink.style.display = 'none';
+    }
+
+    const nextButton = this.stepElement.querySelector('.btn-next');
+    if (nextButton) {
+      if (this.isDirectMode) {
+        nextButton.style.display = 'none';
+      } else {
+        nextButton.style.display = 'inline-block';
+
+        // Add event listener if not already added
+        if (!nextButton.hasListener) {
+          nextButton.addEventListener('click', () => {
+            eventService.emit('modal:next-step', {
+              currentStep: 'vote',
+              nextStep: 'share'
+            });
+          });
+          nextButton.hasListener = true;
+        }
+      }
     }
   }
-}
 
-  
+
   /**
    * Handles the submission of a vote
    * @param {string} userResponse - The user's response
@@ -167,16 +183,16 @@ showAlreadyVotedMessage() {
     try {
       const input = this.formElement.querySelector('input');
       const submitButton = this.formElement.querySelector('button[type="submit"]');
-      
+
       // Disable input and button during submission
       if (input) input.disabled = true;
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
       }
-      
+
       await voteService.submitVote(userResponse);
-      
+
       // Re-enable input and button (in case of error)
       if (input) input.disabled = false;
       if (submitButton) {
@@ -186,7 +202,7 @@ showAlreadyVotedMessage() {
     } catch (error) {
       console.error("Error submitting vote:", error);
       this.showErrorMessage("An error occurred while submitting your vote.");
-      
+
       // Re-enable input and button
       const input = this.formElement.querySelector('input');
       const submitButton = this.formElement.querySelector('button[type="submit"]');
@@ -197,57 +213,62 @@ showAlreadyVotedMessage() {
       }
     }
   }
-  
+
   /**
  * Shows a success message with the "THANKS!" design
  * @param {string} message - The message to display
  */
-/**
- * Shows a success message with the "THANKS!" design
- * @param {string} message - The message to display
- */
-showSuccessMessage(message) {
-  // Hide the form but leave the question visible
-  const questionContainer = this.stepElement.querySelector('.question-container');
-  const formContainer = this.formElement?.parentElement;
-  
-  if (questionContainer) {
-    // Keep the container visible but hide only the form
-    questionContainer.style.display = 'block';
-  }
-  
-  if (formContainer) {
-    formContainer.style.display = 'none';
-  }
-  
-  // Show the thanks container
-  const thanksContainer = document.getElementById('thanks-container');
-  if (thanksContainer) {
-    thanksContainer.style.display = 'block';
-  }
-  
-  // Hide skip link and show Next button
-  if (this.skipLink) {
-    this.skipLink.style.display = 'none';
-  }
-  
-  const nextButton = this.stepElement.querySelector('.btn-next');
-  if (nextButton) {
-    nextButton.style.display = 'inline-block';
-    
-    // Add event listener if not already added
-    if (!nextButton.hasListener) {
-      nextButton.addEventListener('click', () => {
-        eventService.emit('modal:next-step', {
-          currentStep: 'vote',
-          nextStep: 'share'
-        });
-      });
-      nextButton.hasListener = true;
+  /**
+   * Shows a success message with the "THANKS!" design
+   * @param {string} message - The message to display
+   */
+  showSuccessMessage(message) {
+    // Hide the form but leave the question visible
+    const questionContainer = this.stepElement.querySelector('.question-container');
+    const formContainer = this.formElement?.parentElement;
+
+    if (questionContainer) {
+      // Keep the container visible but hide only the form
+      questionContainer.style.display = 'block';
+    }
+
+    if (formContainer) {
+      formContainer.style.display = 'none';
+    }
+
+    // Show the thanks container
+    const thanksContainer = document.getElementById('thanks-container');
+    if (thanksContainer) {
+      thanksContainer.style.display = 'block';
+    }
+
+    // Hide skip link and show Next button
+    if (this.skipLink) {
+      this.skipLink.style.display = 'none';
+    }
+
+    const nextButton = this.stepElement.querySelector('.btn-next');
+    if (nextButton) {
+      if (this.isDirectMode) {
+        nextButton.style.display = 'none';
+      } else {
+
+        nextButton.style.display = 'inline-block';
+
+        // Add event listener if not already added
+        if (!nextButton.hasListener) {
+          nextButton.addEventListener('click', () => {
+            eventService.emit('modal:next-step', {
+              currentStep: 'vote',
+              nextStep: 'share'
+            });
+          });
+          nextButton.hasListener = true;
+        }
+      }
     }
   }
-}
-  
+
   /**
    * Shows an error message
    * @param {string} message - The error message to display
