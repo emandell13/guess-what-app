@@ -1,6 +1,6 @@
 require('dotenv').config();
 const supabase = require('../config/supabase');
-const { groupSimilarAnswers } = require('../utils/textUtils');
+const { groupSimilarAnswers } = require('../utils/semanticUtils');
 const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
 
 async function dailyUpdate() {
@@ -79,8 +79,11 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   // Extract response text from votes
   const voteTexts = votes.map(vote => vote.response);
   
-  // Group similar answers
-  const groupedVotes = groupSimilarAnswers(voteTexts);
+  // Group similar answers using semantic matching
+  // Pass the question text as context for better matching
+  const { groupedVotes, voteToAnswerMapping } = await groupSimilarAnswers(voteTexts, {
+    questionContext: question.question_text
+  });
   
   // Convert to array and sort by count
   const sortedVotes = Object.entries(groupedVotes)
@@ -105,6 +108,7 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   }
   
   // Insert into top_answers table
+  const insertedAnswers = [];
   for (let i = 0; i < topAnswers.length; i++) {
     const { answer, count } = topAnswers[i];
     const rank = i + 1;
@@ -125,6 +129,39 @@ async function tallyVotesForTodaysQuestion(todayDate) {
       console.error(`Error inserting answer #${rank}:`, insertError);
     } else {
       console.log(`Answer #${rank} inserted:`, insertedAnswer);
+      if (insertedAnswer && insertedAnswer.length > 0) {
+        insertedAnswers.push(insertedAnswer[0]);
+      }
+    }
+  }
+  
+  // Update votes with matched_answer_id
+  console.log('Updating votes with matched answer IDs...');
+  
+  // Create a mapping of canonical answers to top_answer IDs
+  const answerToIdMap = {};
+  insertedAnswers.forEach(answer => {
+    answerToIdMap[answer.answer] = answer.id;
+  });
+  
+  // Update each vote with its matched answer ID
+  for (const vote of votes) {
+    const normalizedVote = normalizeText(vote.response);
+    const mappedAnswer = voteToAnswerMapping[normalizedVote];
+    
+    if (mappedAnswer && answerToIdMap[mappedAnswer]) {
+      const matchedAnswerId = answerToIdMap[mappedAnswer];
+      
+      console.log(`Updating vote: "${vote.response}" -> "${mappedAnswer}" (ID: ${matchedAnswerId})`);
+      
+      const { error: updateError } = await supabase
+        .from('votes')
+        .update({ matched_answer_id: matchedAnswerId })
+        .eq('id', vote.id);
+        
+      if (updateError) {
+        console.error(`Error updating vote ${vote.id}:`, updateError);
+      }
     }
   }
   

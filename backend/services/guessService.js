@@ -1,5 +1,6 @@
 const supabase = require('../config/supabase');
 const { getTodayDateET } = require('../utils/dateUtils');
+const {isSemanticMatch} = require('../utils/semanticUtils');
 const { isFuzzyMatch, normalizeText } = require('../utils/textUtils');
 
 async function getCurrentQuestion() {
@@ -37,10 +38,44 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     const normalizedGuess = normalizeText(guess);
     let matchedAnswer = null;
 
-    for (const answer of top5Answers) {
-        if (isFuzzyMatch(normalizedGuess, answer.answer)) {
-            matchedAnswer = answer;
-            break;
+    // First check: Look for exact matches in the votes table that have a matched_answer_id
+    // This gives us the fastest response for previously seen answers
+    if (normalizedGuess) {
+        const { data: matchingVotes, error: votesError } = await supabase
+            .from('votes')
+            .select('matched_answer_id')
+            .eq('question_id', question.id)
+            .ilike('response', normalizedGuess)
+            .not('matched_answer_id', 'is', null);
+
+        if (!votesError && matchingVotes && matchingVotes.length > 0) {
+            // Check if the vote maps to any of our top 5 answers
+            const matchedAnswerId = matchingVotes[0].matched_answer_id;
+            matchedAnswer = top5Answers.find(answer => answer.id === matchedAnswerId);
+            
+            if (matchedAnswer) {
+                console.log(`Found exact match for "${guess}" from votes table`);
+            }
+        }
+    }
+
+    // Second check: Use semantic matching if first check didn't find a match
+    if (!matchedAnswer) {
+        console.log(`No exact match found for "${guess}", performing semantic matching...`);
+        
+        // Check each top 5 answer with semantic matching
+        for (const answer of top5Answers) {
+            // Use the question context to improve matching accuracy
+            const isMatch = await isSemanticMatch(normalizedGuess, answer.answer, {
+                threshold: 0.75, // Adjust threshold as needed
+                questionContext: question.question_text
+            });
+            
+            if (isMatch) {
+                matchedAnswer = answer;
+                console.log(`Semantic match found: "${guess}" matches "${answer.answer}"`);
+                break;
+            }
         }
     }
 
