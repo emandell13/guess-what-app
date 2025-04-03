@@ -134,16 +134,52 @@ async function isSemanticMatch(text1, text2, options = {}) {
     }
     
     try {
-        // Get embeddings for both texts
-        const [embedding1, embedding2] = await Promise.all([
-            getEmbedding(normalizedText1),
-            getEmbedding(normalizedText2)
-        ]);
+        let similarity;
         
-        if (!embedding1 || !embedding2) return false;
-        
-        // Calculate similarity
-        const similarity = cosineSimilarity(embedding1, embedding2);
+        if (questionContext) {
+            // If we have question context, use it to influence the similarity calculation
+            // Get embeddings for both texts and the question context
+            const [embedding1, embedding2, questionEmbedding] = await Promise.all([
+                getEmbedding(normalizedText1),
+                getEmbedding(normalizedText2),
+                getEmbedding(questionContext)
+            ]);
+            
+            if (!embedding1 || !embedding2 || !questionEmbedding) return false;
+            
+            // Calculate base similarity between texts
+            const baseSimilarity = cosineSimilarity(embedding1, embedding2);
+            
+            // Calculate similarities of each text to the question context
+            const text1ToQuestion = cosineSimilarity(embedding1, questionEmbedding);
+            const text2ToQuestion = cosineSimilarity(embedding2, questionEmbedding);
+            
+            // If both texts are similarly relevant to the question, boost their similarity
+            const questionRelevanceDiff = Math.abs(text1ToQuestion - text2ToQuestion);
+            const relevanceBoost = 1 - questionRelevanceDiff;
+            
+            // Apply weighted combination: 70% base similarity, 30% question relevance boost
+            similarity = (baseSimilarity * 0.7) + (relevanceBoost * 0.3);
+            
+            console.log(`Semantic matching with question context: 
+              Base similarity: ${baseSimilarity.toFixed(4)}
+              Text1 to question: ${text1ToQuestion.toFixed(4)}
+              Text2 to question: ${text2ToQuestion.toFixed(4)}
+              Relevance diff: ${questionRelevanceDiff.toFixed(4)}
+              Boost: ${relevanceBoost.toFixed(4)}
+              Final similarity: ${similarity.toFixed(4)}`);
+        } else {
+            // Standard similarity calculation without question context
+            const [embedding1, embedding2] = await Promise.all([
+                getEmbedding(normalizedText1),
+                getEmbedding(normalizedText2)
+            ]);
+            
+            if (!embedding1 || !embedding2) return false;
+            
+            // Calculate similarity
+            similarity = cosineSimilarity(embedding1, embedding2);
+        }
         
         // Store in cache
         similarityCache.set(cacheKey, similarity);
@@ -243,34 +279,97 @@ async function groupSimilarAnswers(answers, options = {}) {
  * @returns {Promise<Object>} - Test results
  */
 async function testSemanticMatching(text1, text2, options = {}) {
-    const normalized1 = normalizeText(text1);
-    const normalized2 = normalizeText(text2);
-    
     try {
-        // Get embeddings
-        const [embedding1, embedding2] = await Promise.all([
-            getEmbedding(normalized1),
-            getEmbedding(normalized2)
-        ]);
+        const normalized1 = normalizeText(text1);
+        const normalized2 = normalizeText(text2);
+        const questionContext = options.questionContext;
         
-        // Calculate similarity
-        const semanticSimilarity = cosineSimilarity(embedding1, embedding2);
-        const isMatch = semanticSimilarity >= (options.threshold || 0.75);
+        console.log(`Normalized texts: "${normalized1}" and "${normalized2}"`);
+        
+        // First check for direct match after normalization
+        const exactMatch = normalized1 === normalized2;
+        if (exactMatch) {
+            return {
+                original: { text1, text2 },
+                normalized: { text1: normalized1, text2: normalized2 },
+                questionContext: questionContext || null,
+                metrics: { 
+                    semanticSimilarity: 1.0,
+                },
+                isMatch: true
+            };
+        }
+        
+        let metrics = {};
+        let isMatch = false;
+        
+        if (questionContext) {
+            // Get embeddings for both texts and the question context
+            const [embedding1, embedding2, questionEmbedding] = await Promise.all([
+                getEmbedding(normalized1),
+                getEmbedding(normalized2),
+                getEmbedding(questionContext)
+            ]);
+            
+            if (!embedding1 || !embedding2 || !questionEmbedding) {
+                throw new Error('Failed to generate embeddings');
+            }
+            
+            // Calculate base similarity between texts
+            const baseSimilarity = cosineSimilarity(embedding1, embedding2);
+            
+            // Calculate similarities of each text to the question context
+            const text1ToQuestion = cosineSimilarity(embedding1, questionEmbedding);
+            const text2ToQuestion = cosineSimilarity(embedding2, questionEmbedding);
+            
+            // If both texts are similarly relevant to the question, boost their similarity
+            const questionRelevanceDiff = Math.abs(text1ToQuestion - text2ToQuestion);
+            const relevanceBoost = 1 - questionRelevanceDiff;
+            
+            // Apply weighted combination: 70% base similarity, 30% question relevance boost
+            const finalSimilarity = (baseSimilarity * 0.7) + (relevanceBoost * 0.3);
+            
+            metrics = {
+                baseSimilarity,
+                text1ToQuestion,
+                text2ToQuestion,
+                questionRelevanceDiff,
+                relevanceBoost,
+                semanticSimilarity: finalSimilarity
+            };
+            
+            isMatch = finalSimilarity >= (options.threshold || 0.75);
+        } else {
+            // Standard similarity calculation without question context
+            const [embedding1, embedding2] = await Promise.all([
+                getEmbedding(normalized1),
+                getEmbedding(normalized2)
+            ]);
+            
+            if (!embedding1 || !embedding2) {
+                throw new Error('Failed to generate embeddings');
+            }
+            
+            // Calculate similarity
+            const semanticSimilarity = cosineSimilarity(embedding1, embedding2);
+            metrics = { semanticSimilarity };
+            isMatch = semanticSimilarity >= (options.threshold || 0.75);
+        }
         
         return {
             original: { text1, text2 },
             normalized: { text1: normalized1, text2: normalized2 },
-            metrics: { 
-                semanticSimilarity,
-            },
+            questionContext: questionContext || null,
+            metrics,
             isMatch
         };
     } catch (error) {
         console.error('Error in semantic matching test:', error);
         return {
             original: { text1, text2 },
-            normalized: { text1: normalized1, text2: normalized2 },
-            error: error.message
+            normalized: { text1: normalizeText(text1), text2: normalizeText(text2) },
+            questionContext: options.questionContext || null,
+            error: error.message || 'Unknown error in semantic matching'
         };
     }
 }
