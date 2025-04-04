@@ -2,6 +2,7 @@ require('dotenv').config();
 const supabase = require('../config/supabase');
 const { groupSimilarAnswers } = require('../utils/semanticUtils');
 const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
+const { normalizeText } = require('../utils/textUtils'); // Add this missing import
 
 async function dailyUpdate() {
   console.log('Starting daily update process...');
@@ -81,12 +82,12 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   
   // Group similar answers using semantic matching
   // Pass the question text as context for better matching
-  const { groupedVotes, voteToAnswerMapping } = await groupSimilarAnswers(voteTexts, {
+  const { groupedAnswers, voteToAnswerMapping } = await groupSimilarAnswers(voteTexts, { // Change groupedVotes to groupedAnswers
     questionContext: question.question_text
   });
   
   // Convert to array and sort by count
-  const sortedVotes = Object.entries(groupedVotes)
+  const sortedVotes = Object.entries(groupedAnswers) // Change groupedVotes to groupedAnswers
     .map(([answer, count]) => ({ answer, count }))
     .sort((a, b) => b.count - a.count);
   
