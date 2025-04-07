@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../../config/supabase');
-const { getTodayDateET, getTomorrowDateET } = require('../../utils/dateUtils');
+const { getTodayDate, getTomorrowDate } = require('../../utils/dateUtils');
 
 // Get all questions
 router.get('/', async (req, res) => {
@@ -14,8 +14,8 @@ router.get('/', async (req, res) => {
         if (error) throw error;
         
         // Calculate and add status to each question
-        const today = getTodayDateET();
-        const tomorrow = getTomorrowDateET();
+        const today = getTodayDate();
+        const tomorrow = getTomorrowDate();
         
         const questionsWithStatus = questions.map(question => {
             let status = 'upcoming';

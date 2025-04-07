@@ -1,7 +1,7 @@
 require('dotenv').config();
 const supabase = require('../config/supabase');
 const { groupSimilarAnswers } = require('../utils/semanticUtils');
-const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
+const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils'); // Add this missing import
 
 async function dailyUpdate() {
@@ -9,14 +9,14 @@ async function dailyUpdate() {
   
   try {
     // Get dates in ET timezone using date utilities
-    const todayDate = getTodayDateET();
+    const todayDate = getTodayDate();
     
     // Step 1: Find TODAY's question that was in voting phase yesterday
     // (it should have active_date=TODAY and voting_complete=false)
     await tallyVotesForTodaysQuestion(todayDate);
 
     // Step 2: Prepare tomorrow's question for voting
-    const tomorrowDate = getTomorrowDateET();
+    const tomorrowDate = getTomorrowDate();
     await prepareTomorrowsQuestion(tomorrowDate);
     
     console.log('Daily update completed successfully');

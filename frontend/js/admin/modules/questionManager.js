@@ -1,7 +1,7 @@
 // questionManager.js - Question management for admin panel
 import Auth from './auth.js';
 import { escapeHtml, getStatusBadgeClass, getStatusText } from '../../utils/adminUtils.js';
-import { getTodayDateET, getTomorrowDateET, formatDisplayDate } from '../../utils/dateUtils.js';
+import { getTodayDate, getTomorrowDate, formatDisplayDate } from '../../utils/dateUtils.js';
 
 const QuestionsManager = {
     loadQuestions: async function () {
@@ -207,8 +207,8 @@ const QuestionsManager = {
 
                 // Show/hide sections based on status
                 const status = data.question.status ||
-                    (data.question.active_date === getTodayDateET() && data.question.voting_complete ? 'active' :
-                        data.question.active_date === getTomorrowDateET() && !data.question.voting_complete ? 'voting' : 'unknown');
+                    (data.question.active_date === getTodayDate() && data.question.voting_complete ? 'active' :
+                        data.question.active_date === getTomorrowDate() && !data.question.voting_complete ? 'voting' : 'unknown');
 
                 // Update/show top answers if voting is complete
                 if ((status === 'active' || status === 'completed') && data.topAnswers) {

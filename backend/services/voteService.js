@@ -1,8 +1,8 @@
 const supabase = require('../config/supabase');
-const { getTodayDateET, getTomorrowDateET } = require('../utils/dateUtils');
+const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 
 async function getCurrentQuestion() {
-    const tomorrowDate = getTomorrowDateET();
+    const tomorrowDate = getTomorrowDate();
 
     const { data: question, error } = await supabase
         .from('questions')
@@ -19,7 +19,7 @@ async function getCurrentQuestion() {
 }
 
 async function submitVote(response, visitorId = null, userId = null) {
-    const tomorrowDate = getTomorrowDateET();
+    const tomorrowDate = getTomorrowDate();
 
     const { data: question, error: questionError } = await supabase
         .from('questions')
@@ -201,7 +201,7 @@ async function getTopAnswersForQuestion(questionId) {
 
 async function getTopAnswersForToday() {
     try {
-        const todayDate = getTodayDateET();
+        const todayDate = getTodayDate();
         
         // Get today's active question
         const { data: question, error: questionError } = await supabase

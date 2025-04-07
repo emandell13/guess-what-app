@@ -3,22 +3,22 @@
  */
 
 /**
- * Gets today's date in Eastern Time as a YYYY-MM-DD string
+ * Gets today's date in the application timezone (PT) as a YYYY-MM-DD string
  */
-export function getTodayDateET() {
-  const et = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  const etDate = new Date(et);
-  return formatDateString(etDate);
+export function getTodayDate() {
+  const pt = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+  const localDate = new Date(pt);
+  return formatDateString(localDate);
 }
 
 /**
- * Gets tomorrow's date in Eastern Time as a YYYY-MM-DD string
+ * Gets tomorrow's date in the application timezone (PT) as a YYYY-MM-DD string
  */
-export function getTomorrowDateET() {
-  const et = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  const etDate = new Date(et);
-  etDate.setDate(etDate.getDate() + 1);
-  return formatDateString(etDate);
+export function getTomorrowDate() {
+  const pt = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+  const localDate = new Date(pt);
+  localDate.setDate(localDate.getDate() + 1);
+  return formatDateString(localDate);
 }
 
 /**

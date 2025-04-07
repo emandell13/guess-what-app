@@ -1,10 +1,10 @@
 const supabase = require('../config/supabase');
-const { getTodayDateET } = require('../utils/dateUtils');
+const { getTodayDate } = require('../utils/dateUtils');
 const {isSemanticMatch} = require('../utils/semanticUtils');
 const { isFuzzyMatch, normalizeText } = require('../utils/textUtils');
 
 async function getCurrentQuestion() {
-    const todayDate = getTodayDateET();
+    const todayDate = getTodayDate();
     const { data: question, error } = await supabase
         .from('questions')
         .select('*')
