@@ -23,7 +23,16 @@ async function dailyUpdate() {
     await prepareTomorrowsQuestion(tomorrowDate);
 
     // Step 3: Generate and share today's results on social media
-    await generateAndShareSocialContent(todayDate);
+    // Wrap this in a try-catch to ensure it doesn't stop the daily update if it fails
+    try {
+      const socialResult = await generateAndShareSocialContent(todayDate);
+      if (!socialResult) {
+        console.log('Social content generation skipped or failed, but daily update will continue');
+      }
+    } catch (socialError) {
+      console.error('Error in social content generation stage:', socialError);
+      // Continue despite error - this should not prevent the daily update from completing
+    }
 
     console.log('Daily update completed successfully');
     return { success: true };
@@ -232,7 +241,7 @@ async function generateAndShareSocialContent(currentDate) {
 
     if (questionError || !question) {
       console.log('No question available for yesterday, skipping social sharing');
-      return;
+      return false;
     }
 
     // Get the top answers for this question
@@ -245,11 +254,8 @@ async function generateAndShareSocialContent(currentDate) {
 
     if (answersError || !answers || answers.length === 0) {
       console.log('No answers available for yesterday, skipping social sharing');
-      return;
+      return false;
     }
-
-    // Create a temporary file with the share data
-    const displayDate = formatDateForDisplay(yesterdayDate);
 
     // Calculate total votes to compute percentages for points
     const totalVotes = answers.reduce((sum, answer) => sum + answer.vote_count, 0);
@@ -264,25 +270,38 @@ async function generateAndShareSocialContent(currentDate) {
     // Getting the base URL for server
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 
-    console.log('Generating GIF from template...');
+    // Check if SKIP_GIF_GENERATION is set to true (for environments without Chrome)
+    const skipGifGeneration = process.env.SKIP_GIF_GENERATION === 'true';
 
-    // Generate GIF and static image using gifService
-    const mediaResult = await gifService.generateGifAndStillImage(`${baseUrl}/social-share.html`);
-    if (!mediaResult || !mediaResult.gifUrl || !mediaResult.staticImageUrl) {
-      throw new Error('Failed to generate media');
+    let mediaResult = null;
+    
+    if (!skipGifGeneration) {
+      try {
+        console.log('Attempting to generate GIF from template...');
+        // Generate GIF and static image using gifService
+        mediaResult = await gifService.generateGifAndStillImage(`${baseUrl}/social-share.html`);
+        
+        if (mediaResult && mediaResult.gifUrl && mediaResult.staticImageUrl) {
+          console.log('Media generated successfully:');
+          console.log('GIF URL:', mediaResult.gifUrl);
+          console.log('Static Image URL:', mediaResult.staticImageUrl);
+        } else {
+          console.log('Media generation returned incomplete results, will skip posting');
+        }
+      } catch (gifError) {
+        console.error('Error generating GIF:', gifError);
+        console.log('Will proceed without media generation');
+      }
+    } else {
+      console.log('Skipping GIF generation as per configuration');
     }
 
-    console.log('Media generated successfully:');
-    console.log('GIF URL:', mediaResult.gifUrl);
-    console.log('Static Image URL:', mediaResult.staticImageUrl);
-
-
-    // Check if we should skip social posting (for testing)
-    const skipPosting = process.env.SKIP_SOCIAL_POSTING === 'true';
+    // Check if we should skip social posting
+    const skipPosting = process.env.SKIP_SOCIAL_POSTING === 'true' || !mediaResult;
 
     if (skipPosting) {
-      console.log('Skipping social media posting as per configuration');
-      return;
+      console.log('Skipping social media posting as per configuration or missing media');
+      return false;
     }
 
     // Create caption with question and date
@@ -298,11 +317,11 @@ async function generateAndShareSocialContent(currentDate) {
     );
 
     if (!zapierResult.success) {
-      throw new Error(`Zapier posting failed: ${zapierResult.error}`);
+      console.error(`Zapier posting failed: ${zapierResult.error || 'Unknown error'}`);
+      return false;
     }
 
     console.log('Successfully sent to Zapier for Instagram posting');
-
     return true;
   } catch (error) {
     console.error('Error in social content generation:', error);
