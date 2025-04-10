@@ -34,11 +34,16 @@ const gifService = {
         const localGifPath = path.join(tempDir, gifFilename);
         const staticImagePath = path.join(tempDir, staticImageFilename);
 
+
+        console.log('Chrome environment variables:');
+        console.log(`- CHROME_EXECUTABLE_PATH: ${process.env.CHROME_EXECUTABLE_PATH || 'not set'}`);
+        console.log(`- CHROME_PATH: ${process.env.CHROME_PATH || 'not set'}`);
+        
         const browser = await puppeteer.launch({
             headless: 'new',
             args: [
-                '--no-sandbox', 
-                '--disable-setuid-sandbox', 
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
@@ -46,9 +51,8 @@ const gifService = {
                 '--single-process',
                 '--disable-gpu'
             ],
-            executablePath: isProd ? 
-                process.env.CHROME_EXECUTABLE_PATH || '/tmp/chrome-testing/chrome-linux/chrome' : 
-                undefined
+            // Use the Chrome executable path provided by the Heroku buildpack
+            executablePath: process.env.CHROME_EXECUTABLE_PATH || process.env.CHROME_PATH
         });
 
         try {
@@ -90,7 +94,7 @@ const gifService = {
                 await page.screenshot({ path: framePath, type: 'png' });
                 framePaths.push(framePath);
                 lastFramePath = framePath;
-                
+
                 // Calculate progress and check animation status
                 if (frameCount % 20 === 0) {
                     console.log(`Captured ${frameCount} frames so far...`);
@@ -100,7 +104,7 @@ const gifService = {
                         console.log('Animation complete detected, stopping capture');
                     }
                 }
-                
+
                 // Delay until next frame
                 await new Promise(resolve => setTimeout(resolve, frameInterval));
                 frameCount++;
@@ -110,7 +114,7 @@ const gifService = {
 
             // Take a final screenshot for Instagram
             console.log('Taking final static image for Instagram...');
-            await page.screenshot({ 
+            await page.screenshot({
                 path: staticImagePath,
                 type: 'jpeg',
                 quality: 90 // High quality
@@ -160,45 +164,45 @@ const gifService = {
             // Upload GIF to Supabase Storage
             console.log('Uploading GIF to Supabase Storage...');
             const gifBuffer = fs.readFileSync(localGifPath);
-            
+
             const { data: gifData, error: gifError } = await supabase.storage
                 .from('social-assets')  // Your bucket name
                 .upload(gifFilename, gifBuffer, {
                     contentType: 'image/gif',
                     upsert: true
                 });
-                
+
             if (gifError) {
                 throw new Error(`Supabase GIF upload failed: ${gifError.message}`);
             }
-            
+
             // Upload static image to Supabase
             console.log('Uploading static image to Supabase Storage...');
             const staticImageBuffer = fs.readFileSync(staticImagePath);
-            
+
             const { data: staticImageData, error: staticImageError } = await supabase.storage
                 .from('social-assets')  // Same bucket
                 .upload(staticImageFilename, staticImageBuffer, {
                     contentType: 'image/jpeg',
                     upsert: true
                 });
-                
+
             if (staticImageError) {
                 throw new Error(`Supabase static image upload failed: ${staticImageError.message}`);
             }
-            
+
             // Get the public URLs
             const { data: gifUrlData } = supabase.storage
                 .from('social-assets')
                 .getPublicUrl(gifFilename);
-                
+
             const { data: staticImageUrlData } = supabase.storage
                 .from('social-assets')
                 .getPublicUrl(staticImageFilename);
-                
+
             const gifUrl = gifUrlData.publicUrl;
             const staticImageUrl = staticImageUrlData.publicUrl;
-            
+
             console.log('Media uploaded to Supabase successfully');
             console.log('GIF URL:', gifUrl);
             console.log('Static Image URL:', staticImageUrl);
@@ -207,11 +211,11 @@ const gifService = {
             fs.rm(framesDir, { recursive: true, force: true }, (err) => {
                 if (err) console.error('Error removing temporary frames:', err);
             });
-            
+
             fs.unlink(localGifPath, (err) => {
                 if (err) console.error('Error removing temporary GIF file:', err);
             });
-            
+
             fs.unlink(staticImagePath, (err) => {
                 if (err) console.error('Error removing temporary image file:', err);
             });
@@ -227,7 +231,7 @@ const gifService = {
             await browser.close();
         }
     },
-    
+
     /**
      * Generate a GIF of the animated social share template (legacy method)
      * @param {string} url - URL of the share template
