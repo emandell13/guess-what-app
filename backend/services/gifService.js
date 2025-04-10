@@ -4,6 +4,7 @@ const fs = require('fs');
 const GIFEncoder = require('gif-encoder-2');
 const { PNG } = require('pngjs');
 const supabase = require('../config/supabase');
+const isProd = process.env.NODE_ENV === 'production';
 
 /**
  * Service for generating GIFs and still images of social share templates
@@ -35,7 +36,19 @@ const gifService = {
 
         const browser = await puppeteer.launch({
             headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
+                '--disable-gpu'
+            ],
+            executablePath: isProd ? 
+                process.env.CHROME_EXECUTABLE_PATH || '/app/.apt/usr/bin/google-chrome' : 
+                undefined
         });
 
         try {
