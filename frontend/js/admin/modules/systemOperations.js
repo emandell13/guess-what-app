@@ -1,30 +1,41 @@
-// systemOperations.js - System-wide administrative operations
+// modules/systemOperations.js
 import Auth from './auth.js';
 
-const SystemOperations = {
-    runDailyUpdate: async function () {
+class SystemOperations {
+    async runDailyUpdate() {
         try {
-            // Show loading state via alert
-            alert('Starting daily update - this may take a moment...');
-
-            // Call the update endpoint with authentication
-            const response = await Auth.fetchWithAuth('/admin/tools/run-update');
+            // Show loading state
+            const resultContainer = document.getElementById('system-operation-result');
+            resultContainer.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i> Running daily update...</div>';
+            
+            // Get authentication credentials
+            const authHeader = Auth.getAuthHeader();
+            
+            // Call the server API endpoint
+            const response = await fetch('/admin/tools/run-update', {
+                method: 'GET',
+                headers: {
+                    'Authorization': authHeader
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to run daily update');
+            }
+            
             const result = await response.json();
-
-            // Show result
+            
+            // Update UI with result
             if (result.success) {
-                alert(`Update completed successfully!\n\nMessage: ${result.message}`);
-                return true;
+                resultContainer.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i> Daily update completed successfully!</div>';
             } else {
-                alert(`Update failed.\n\nError: ${result.error || 'Unknown error'}`);
-                return false;
+                resultContainer.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i> Daily update completed with warnings: ${result.message || 'Unknown error'}</div>`;
             }
         } catch (error) {
-            console.error('Error running update:', error);
-            alert(`Failed to run update: ${error.message}`);
-            return false;
+            console.error('Error running daily update:', error);
+            document.getElementById('system-operation-result').innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i> Error: ${error.message}</div>`;
         }
     }
-};
+}
 
-export default SystemOperations;
+export default new SystemOperations();
