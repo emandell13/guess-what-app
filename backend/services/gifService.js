@@ -50,12 +50,11 @@ const gifService = {
                 '--no-zygote',
                 '--single-process',
                 '--disable-gpu'
-            ],
-            // Only specify executablePath in production
-            ...(isProd ? { 
-                executablePath: process.env.CHROME_EXECUTABLE_PATH || process.env.CHROME_PATH 
-            } : {})
+            ]
+            // No executablePath needed - the buildpack configures the environment 
+            // so Puppeteer finds Chrome automatically in production
         });
+        
         try {
             const page = await browser.newPage();
 
