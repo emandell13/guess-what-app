@@ -8,14 +8,17 @@ class SystemOperations {
             const resultContainer = document.getElementById('system-operation-result');
             resultContainer.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i> Running daily update...</div>';
             
-            // Get authentication credentials
-            const authHeader = Auth.getAuthHeader();
+            // Get credentials instead of auth header
+            const credentials = Auth.getCredentials();
+            if (!credentials) {
+                throw new Error('Not authenticated');
+            }
             
             // Call the server API endpoint
             const response = await fetch('/admin/tools/run-update', {
                 method: 'GET',
                 headers: {
-                    'Authorization': authHeader
+                    'Authorization': `Basic ${credentials}`
                 }
             });
             
