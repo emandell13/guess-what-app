@@ -47,7 +47,7 @@ const gifService = {
                 '--disable-gpu'
             ],
             executablePath: isProd ? 
-                process.env.CHROME_EXECUTABLE_PATH || '/app/.apt/usr/bin/google-chrome' : 
+                process.env.CHROME_EXECUTABLE_PATH || '/tmp/chrome-testing/chrome-linux/chrome' : 
                 undefined
         });
 
