@@ -3,25 +3,20 @@ const path = require('path');
 const fs = require('fs');
 const GIFEncoder = require('gif-encoder-2');
 const { PNG } = require('pngjs');
+const supabase = require('../config/supabase');
 
 /**
- * Service for generating GIFs of social share templates
+ * Service for generating GIFs and still images of social share templates
  */
 const gifService = {
     /**
-     * Generate a GIF of the animated social share template
+     * Generate both a GIF and still image of the animated social share template and upload to Supabase
      * @param {string} url - URL of the share template
-     * @returns {Promise<string>} - Path to the saved GIF
+     * @returns {Promise<Object>} - Public URLs to the saved GIF and still image
      */
-    async generateGif(url) {
-        // Create directories if they don't exist
-        const uploadsDir = path.join(__dirname, '../../frontend/uploads');
+    async generateGifAndStillImage(url) {
+        // Create temp directory if it doesn't exist
         const tempDir = path.join(__dirname, '../../temp');
-
-        if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir, { recursive: true });
         }
@@ -34,7 +29,9 @@ const gifService = {
         }
 
         const gifFilename = `reel_${timestamp}.gif`;
-        const gifPath = path.join(uploadsDir, gifFilename);
+        const staticImageFilename = `still_${timestamp}.jpg`;
+        const localGifPath = path.join(tempDir, gifFilename);
+        const staticImagePath = path.join(tempDir, staticImageFilename);
 
         const browser = await puppeteer.launch({
             headless: 'new',
@@ -73,11 +70,13 @@ const gifService = {
 
             let frameCount = 0;
             let animationComplete = false;
+            let lastFramePath = null;
 
             while (frameCount < maxFrameCount && !animationComplete) {
                 const framePath = path.join(framesDir, `frame_${frameCount.toString().padStart(5, '0')}.png`);
                 await page.screenshot({ path: framePath, type: 'png' });
                 framePaths.push(framePath);
+                lastFramePath = framePath;
                 
                 // Calculate progress and check animation status
                 if (frameCount % 20 === 0) {
@@ -96,6 +95,14 @@ const gifService = {
 
             console.log(`Captured ${frameCount} frames, now creating GIF...`);
 
+            // Take a final screenshot for Instagram
+            console.log('Taking final static image for Instagram...');
+            await page.screenshot({ 
+                path: staticImagePath,
+                type: 'jpeg',
+                quality: 90 // High quality
+            });
+
             // Load all PNG files into memory
             const pngFrames = [];
             for (const framePath of framePaths) {
@@ -113,7 +120,7 @@ const gifService = {
             const encoder = new GIFEncoder(width, height);
 
             // Pipe to output file
-            const writeStream = fs.createWriteStream(gifPath);
+            const writeStream = fs.createWriteStream(localGifPath);
             encoder.createReadStream().pipe(writeStream);
 
             // Start encoding
@@ -137,17 +144,89 @@ const gifService = {
 
             console.log('GIF creation complete');
 
-            // Clean up the frames directory
+            // Upload GIF to Supabase Storage
+            console.log('Uploading GIF to Supabase Storage...');
+            const gifBuffer = fs.readFileSync(localGifPath);
+            
+            const { data: gifData, error: gifError } = await supabase.storage
+                .from('social-assets')  // Your bucket name
+                .upload(gifFilename, gifBuffer, {
+                    contentType: 'image/gif',
+                    upsert: true
+                });
+                
+            if (gifError) {
+                throw new Error(`Supabase GIF upload failed: ${gifError.message}`);
+            }
+            
+            // Upload static image to Supabase
+            console.log('Uploading static image to Supabase Storage...');
+            const staticImageBuffer = fs.readFileSync(staticImagePath);
+            
+            const { data: staticImageData, error: staticImageError } = await supabase.storage
+                .from('social-assets')  // Same bucket
+                .upload(staticImageFilename, staticImageBuffer, {
+                    contentType: 'image/jpeg',
+                    upsert: true
+                });
+                
+            if (staticImageError) {
+                throw new Error(`Supabase static image upload failed: ${staticImageError.message}`);
+            }
+            
+            // Get the public URLs
+            const { data: gifUrlData } = supabase.storage
+                .from('social-assets')
+                .getPublicUrl(gifFilename);
+                
+            const { data: staticImageUrlData } = supabase.storage
+                .from('social-assets')
+                .getPublicUrl(staticImageFilename);
+                
+            const gifUrl = gifUrlData.publicUrl;
+            const staticImageUrl = staticImageUrlData.publicUrl;
+            
+            console.log('Media uploaded to Supabase successfully');
+            console.log('GIF URL:', gifUrl);
+            console.log('Static Image URL:', staticImageUrl);
+
+            // Clean up the frames directory and temporary files
             fs.rm(framesDir, { recursive: true, force: true }, (err) => {
                 if (err) console.error('Error removing temporary frames:', err);
             });
+            
+            fs.unlink(localGifPath, (err) => {
+                if (err) console.error('Error removing temporary GIF file:', err);
+            });
+            
+            fs.unlink(staticImagePath, (err) => {
+                if (err) console.error('Error removing temporary image file:', err);
+            });
 
-            return `/uploads/${gifFilename}`;
+            return {
+                gifUrl,
+                staticImageUrl
+            };
         } catch (error) {
-            console.error('Error in GIF generation:', error);
+            console.error('Error in media generation:', error);
             throw error;
         } finally {
             await browser.close();
+        }
+    },
+    
+    /**
+     * Generate a GIF of the animated social share template (legacy method)
+     * @param {string} url - URL of the share template
+     * @returns {Promise<string>} - Public URL to the saved GIF
+     */
+    async generateGif(url) {
+        try {
+            const result = await this.generateGifAndStillImage(url);
+            return result.gifUrl;
+        } catch (error) {
+            console.error('Error in GIF generation:', error);
+            throw error;
         }
     }
 };
