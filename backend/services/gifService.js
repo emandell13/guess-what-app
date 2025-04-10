@@ -41,7 +41,7 @@ const gifService = {
         
         const browser = await puppeteer.launch({
             headless: 'new',
-            args: ['--no-sandbox']
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         
         try {
