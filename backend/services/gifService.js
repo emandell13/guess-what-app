@@ -51,10 +51,11 @@ const gifService = {
                 '--single-process',
                 '--disable-gpu'
             ],
-            // Use the Chrome executable path provided by the Heroku buildpack
-            executablePath: process.env.CHROME_EXECUTABLE_PATH || process.env.CHROME_PATH
+            // Only specify executablePath in production
+            ...(isProd ? { 
+                executablePath: process.env.CHROME_EXECUTABLE_PATH || process.env.CHROME_PATH 
+            } : {})
         });
-
         try {
             const page = await browser.newPage();
 
