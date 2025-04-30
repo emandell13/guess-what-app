@@ -22,7 +22,7 @@ class App {
     this.isGameOverModalPending = false;
     this.answerGrid = new AnswerGrid("answer-boxes");
     this.scoreTracker = new ScoreTracker("current-score", "max-score");
-    this.strikeCounter = new StrikeCounter("strikes", 3);
+    this.strikeCounter = new StrikeCounter("strikes", 5);
     this.gameModal = new GameModal("gameCompleteModal");
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
@@ -166,7 +166,7 @@ class App {
       this.strikeCounter.updateStrikes(strikes, true);
 
       // If max strikes reached, reveal all remaining answers
-      if (strikes >= 3) {
+      if (strikes >= 5) {
         console.log("Max strikes reached, disabling form and revealing answers");
 
         // Disable form immediately

@@ -12,7 +12,7 @@ class GameService {
     this.maxPoints = 100; // Now hardcoded to 100
     this.currentScore = 0;
     this.strikes = 0;
-    this.MAX_STRIKES = 3;
+    this.MAX_STRIKES = 5;
     this.question = null;
     this.answerCount = 5; // Default
   }
