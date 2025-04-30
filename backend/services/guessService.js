@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const { getTodayDate } = require('../utils/dateUtils');
 const {isSemanticMatch} = require('../utils/semanticUtils');
-const { isFuzzyMatch, normalizeText } = require('../utils/textUtils');
+const { normalizeText } = require('../utils/textUtils');
 
 async function getCurrentQuestion() {
     const todayDate = getTodayDate();
@@ -18,7 +18,7 @@ async function getCurrentQuestion() {
     return question;
 }
 
-async function getTopAnswers(questionId, limit = 10) {
+async function getTopAnswers(questionId, limit = 5) {
     const { data: answers, error } = await supabase
         .from('top_answers')
         .select('*')
@@ -32,14 +32,13 @@ async function getTopAnswers(questionId, limit = 10) {
 
 async function checkGuess(guess, userId = null, visitorId = null) {
     const question = await getCurrentQuestion();
-    const top10Answers = await getTopAnswers(question.id, 10);
-    const top5Answers = top10Answers.filter(answer => answer.rank <= 5);
+    // Now we only need to get the top 5 answers
+    const top5Answers = await getTopAnswers(question.id, 5);
     
     const normalizedGuess = normalizeText(guess);
     let matchedAnswer = null;
 
     // First check: Look for exact matches in the votes table that have a matched_answer_id
-    // This gives us the fastest response for previously seen answers
     if (normalizedGuess) {
         const { data: matchingVotes, error: votesError } = await supabase
             .from('votes')
@@ -79,8 +78,13 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         }
     }
 
-    const top10Total = top10Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
-    const score = matchedAnswer ? Math.round((matchedAnswer.vote_count / top10Total) * 100) : 0;
+    // Calculate total votes for the top 5 answers
+    const totalVotesTop5 = top5Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
+    
+    // Calculate the score based on percentage of top5 votes (out of 100)
+    const score = (totalVotesTop5 > 0 && matchedAnswer) 
+        ? Math.round((matchedAnswer.vote_count / totalVotesTop5) * 100) 
+        : 0;
 
     // Record the guess in the database if we have an identifier
     if (userId || visitorId) {

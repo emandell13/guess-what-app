@@ -24,7 +24,7 @@ class ShareStep {
     // Game state cache
     this.gameData = {
       score: 0,
-      maxPoints: 0,
+      maxPoints: 100,
       questionText: '',
       correctAnswers: []
     };
@@ -49,10 +49,10 @@ class ShareStep {
       console.log("Score change event, maxPoints:", maxPoints);
       this.gameData.score = currentScore;
       if (maxPoints !== undefined) {
-        this.gameData.maxPoints = maxPoints;
+        this.gameData.maxPoints = 100;
         // Update UI immediately if visible
         if (this.stepElement.style.display === 'block' && this.shareMaxScore) {
-          this.shareMaxScore.textContent = maxPoints;
+          this.shareMaxScore.textContent = 100;
         }
       }
     });
@@ -73,7 +73,7 @@ class ShareStep {
       console.log("Game completed event, maxPoints:", maxPoints);
       this.gameData.score = currentScore;
       if (maxPoints !== undefined) {
-        this.gameData.maxPoints = maxPoints;
+        this.gameData.maxPoints = 100;
       }
       this.gameData.correctAnswers = correctGuesses.map(guess => guess.rank);
 
@@ -84,7 +84,7 @@ class ShareStep {
 
       // We can set a default if we still don't have maxPoints
       if (!this.gameData.maxPoints && this.shareMaxScore) {
-        this.gameData.maxPoints = 99;  // Use a reasonable default
+        this.gameData.maxPoints = 100;  // Use a reasonable default
       }
     });
 
@@ -96,7 +96,7 @@ class ShareStep {
         this.gameData.questionText = question.question;
       }
       if (maxPoints !== undefined) {
-        this.gameData.maxPoints = maxPoints;
+        this.gameData.maxPoints = 100;
       }
     });
   }
@@ -111,7 +111,7 @@ class ShareStep {
       if (gameService) {
         // Update from game service if available
         this.gameData.score = gameService.currentScore || 0;
-        this.gameData.maxPoints = gameService.maxPoints || 99;
+        this.gameData.maxPoints = gameService.maxPoints || 100;
         if (gameService.correctGuesses) {
           this.gameData.correctAnswers = gameService.correctGuesses.map(guess => guess.rank);
         }
@@ -126,7 +126,7 @@ class ShareStep {
         }
   
         if (maxScoreElement) {
-          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 99;
+          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 100;
         }
   
         // Try to get correct answers from the game display
@@ -141,7 +141,7 @@ class ShareStep {
     } catch (error) {
       console.error('Error getting game state:', error);
       // Use defaults if there's an error
-      this.gameData.maxPoints = 99;
+      this.gameData.maxPoints = 100;
     }
   
     // Update the content with whatever data we have
@@ -165,8 +165,7 @@ class ShareStep {
     // Make sure we have a valid maxPoints value
     if (this.shareMaxScore) {
       // Use stored value, or 99 as fallback
-      const maxPoints = this.gameData.maxPoints || 99;
-      this.shareMaxScore.textContent = maxPoints;
+      this.shareMaxScore.textContent = 100;
     }
   
     // Update answer boxes
@@ -298,7 +297,7 @@ updateScore(score) {
       // Create the share text
       const score = this.gameData.score;
       const maxScore = this.gameData.maxPoints;
-      const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+      const text = `I scored ${score} out of 100 points in Guess What! Can you beat my score?`;
       const url = window.location.href;
 
       // Platform-specific URLs
@@ -374,7 +373,7 @@ updateScore(score) {
       eventService.emit('share:shared', {
         platform,
         score,
-        maxScore,
+        maxScore: 100,
         imageUrl
       });
     }).catch(error => {
@@ -383,7 +382,7 @@ updateScore(score) {
       // Fallback to text-only sharing if image generation fails
       const score = this.gameData.score;
       const maxScore = this.gameData.maxPoints;
-      const text = `I scored ${score} out of ${maxScore} points in Guess What! Can you beat my score?`;
+      const text = `I scored ${score} out of 100 points in Guess What! Can you beat my score?`;
       const url = window.location.href;
 
       let shareUrl = null;

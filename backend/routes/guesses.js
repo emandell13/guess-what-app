@@ -8,35 +8,40 @@ const supabase = require('../config/supabase');
 router.get('/question', async (req, res) => {
     try {
         const question = await guessService.getCurrentQuestion();
-        const topAnswers = await guessService.getTopAnswers(question.id, 10);
+        // Fetch only the top 5 answers now, since that's all we need
+        const top5Answers = await guessService.getTopAnswers(question.id, 5);
+        
+        // Calculate total votes for the available top answers (might be fewer than 5)
+        const totalVotesTop5 = top5Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
 
-        const totalVotesTop10 = topAnswers.reduce((sum, answer) => sum + answer.vote_count, 0);
-
+        // Get total votes for reference
         const totalVotes = await voteService.getTotalVotes(question.id);
 
-        const maxPoints = topAnswers
-            .filter(answer => answer.rank <= 5)
-            .reduce((sum, answer) => sum + Math.round((answer.vote_count / totalVotesTop10) * 100), 0);
+        // Max points is always 100 now
+        const maxPoints = 100;
 
         const response = {
             id: question.id,
             question: question.question_text,
             guessPrompt: question.guess_prompt,
             totalVotes,
-            totalVotesTop10,
+            totalVotesTop5,
             maxPoints,
-            answerCount: topAnswers.filter(answer => answer.rank <= 5).length
+            answerCount: top5Answers.length // This will correctly report available answers
         };
 
         if (req.query.includeAnswers === 'true') {
-            response.answers = topAnswers
-                .filter(answer => answer.rank <= 5)
-                .map(answer => ({
+            // If there are answers, calculate the points proportionally
+            if (top5Answers.length > 0 && totalVotesTop5 > 0) {
+                response.answers = top5Answers.map(answer => ({
                     rank: answer.rank,
                     answer: answer.answer,
                     rawVotes: answer.vote_count,
-                    points: Math.round((answer.vote_count / totalVotesTop10) * 100)
+                    points: Math.round((answer.vote_count / totalVotesTop5) * 100)
                 }));
+            } else {
+                response.answers = [];
+            }
         }
 
         res.json(response);

@@ -21,7 +21,7 @@ class SummaryStep {
     // Game state cache
     this.gameData = {
       score: 0,
-      maxPoints: 0
+      maxPoints: 100 // Hardcoded to 100
     };
 
     // Set up event listeners
@@ -73,21 +73,22 @@ class SummaryStep {
       const gameService = window.app ? window.app.gameService : null;
       if (gameService) {
         this.gameData.score = gameService.currentScore || 0;
-        this.gameData.maxPoints = gameService.maxPoints || 0;
+        // Max points is always 100 regardless of what gameService says
+        this.gameData.maxPoints = 100;
       } else {
         // Fallback if gameService isn't accessible
         // Try to get data from the DOM if available
         const currentScoreElement = document.getElementById('current-score');
-        const maxScoreElement = document.getElementById('max-score');
         if (currentScoreElement) {
           this.gameData.score = parseInt(currentScoreElement.textContent) || 0;
         }
-        if (maxScoreElement) {
-          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 0;
-        }
+        // Always set maxPoints to 100
+        this.gameData.maxPoints = 100;
       }
     } catch (error) {
       console.error('Error getting game state:', error);
+      // Ensure maxPoints is still 100 even if there's an error
+      this.gameData.maxPoints = 100;
     }
 
     // Update score with latest value when shown
@@ -133,9 +134,9 @@ class SummaryStep {
   * Updates the score displayed
   * @param {number} score - The score to display
   */
-  updateScore(score, maxPoints) {
+  updateScore(score, maxPoints = 100) {
     this.gameData.score = score;
-    this.gameData.maxPoints = maxPoints || this.gameData.maxPoints;
+    this.gameData.maxPoints = maxPoints; // Should always be 100
 
     // Get the parent element of the digit boxes (container for all score boxes)
     const scoreBoxesContainer = this.onesDigitElement.closest('.score-boxes');
@@ -177,13 +178,16 @@ class SummaryStep {
       this.onesDigitElement.textContent = score.toString();
     }
 
-    this.pointsTotalElement.textContent = this.gameData.maxPoints;
+    // Always set the points total to 100
+    if (this.pointsTotalElement) {
+      this.pointsTotalElement.textContent = '100';
+    }
 
     // Only emit update event if the element is visible
     if (this.stepElement.style.display !== 'none') {
       eventService.emit('summary:score-updated', {
         score: score,
-        maxPoints: this.gameData.maxPoints
+        maxPoints: 100 // Always emit 100 as maxPoints
       });
     }
   }

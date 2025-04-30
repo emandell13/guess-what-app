@@ -9,7 +9,7 @@ class GameService {
   constructor() {
     // Game state
     this.correctGuesses = [];
-    this.maxPoints = 0;
+    this.maxPoints = 100; // Now hardcoded to 100
     this.currentScore = 0;
     this.strikes = 0;
     this.MAX_STRIKES = 3;
@@ -50,7 +50,8 @@ class GameService {
       
       if (data.question) {
         this.question = data;
-        this.maxPoints = data.maxPoints;
+        // Max points is now always 100
+        this.maxPoints = 100;
         this.answerCount = data.answerCount || 5;
         return true;
       }

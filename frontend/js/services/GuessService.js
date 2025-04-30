@@ -51,7 +51,14 @@ class GuessService {
   async getAllAnswers() {
     try {
       const response = await fetch("/guesses/question?includeAnswers=true");
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure maxPoints is 100 even if the server responds differently
+      if (data && !data.error) {
+        data.maxPoints = 100;
+      }
+      
+      return data;
     } catch (error) {
       console.error("Error fetching answers:", error);
       return { 
