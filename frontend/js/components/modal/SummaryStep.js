@@ -18,10 +18,14 @@ class SummaryStep {
     this.nextButton = this.stepElement.querySelector('.btn-next');
     this.statsLink = this.stepElement.querySelector('.stats-link');
 
+    // Add these new lines to reference the answer boxes
+    this.answerBoxes = this.stepElement.querySelectorAll('.answer-box');
+
     // Game state cache
     this.gameData = {
       score: 0,
-      maxPoints: 100 // Hardcoded to 100
+      maxPoints: 100, // Hardcoded to 100
+      correctAnswers: []
     };
 
     // Set up event listeners
@@ -48,6 +52,16 @@ class SummaryStep {
       this.updateScore(currentScore);
     });
 
+    // Listen for answers revealed
+    eventService.on('game:answer-revealed', (event) => {
+      const { rank } = event.detail;
+
+      // Store the revealed answer rank
+      if (!this.gameData.correctAnswers.includes(rank)) {
+        this.gameData.correctAnswers.push(rank);
+      }
+    });
+
     // Listen for game completed event
     eventService.on('game:completed', (event) => {
       const { currentScore } = event.detail;
@@ -61,46 +75,65 @@ class SummaryStep {
     });
   }
 
+  updateAnswerBoxes() {
+    // Reset all boxes first
+    this.answerBoxes.forEach(box => {
+      box.classList.remove('correct');
+    });
+  
+    // Mark the correct ones
+    this.gameData.correctAnswers.forEach(rank => {
+      const box = this.stepElement.querySelector(`.answer-box[data-rank="${rank}"]`);
+      if (box) {
+        box.classList.add('correct');
+      }
+    });
+  }
+
   /**
    * Shows this step
    */
   show() {
     this.stepElement.style.display = 'block';
-
+  
     // Get the latest game score information
-    // This handles the case where the page is reloaded and no events are fired
     try {
       const gameService = window.app ? window.app.gameService : null;
       if (gameService) {
         this.gameData.score = gameService.currentScore || 0;
-        // Max points is always 100 regardless of what gameService says
-        this.gameData.maxPoints = 100;
+        this.gameData.maxPoints = gameService.maxPoints || 0;
+        if (gameService.correctGuesses) {
+          this.gameData.correctAnswers = gameService.correctGuesses.map(guess => guess.rank);
+        }
       } else {
         // Fallback if gameService isn't accessible
         // Try to get data from the DOM if available
         const currentScoreElement = document.getElementById('current-score');
+        const maxScoreElement = document.getElementById('max-score');
         if (currentScoreElement) {
           this.gameData.score = parseInt(currentScoreElement.textContent) || 0;
         }
-        // Always set maxPoints to 100
-        this.gameData.maxPoints = 100;
+        if (maxScoreElement) {
+          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 0;
+        }
       }
     } catch (error) {
       console.error('Error getting game state:', error);
-      // Ensure maxPoints is still 100 even if there's an error
-      this.gameData.maxPoints = 100;
     }
-
+  
     // Update score with latest value when shown
     this.updateScore(this.gameData.score, this.gameData.maxPoints);
-
+    
+    // Update answer boxes
+    this.updateAnswerBoxes();
+  
     // Emit event when step is shown
     eventService.emit('summary:shown', {
       score: this.gameData.score,
       maxPoints: this.gameData.maxPoints
     });
-
-    if (this.statsLink) {
+  
+    if (this.statsLink) {  
       if (authService.isAuthenticated()) {
         this.statsLink.style.display = 'none';
       } else {
@@ -160,7 +193,7 @@ class SummaryStep {
       this.tensDigitElement.textContent = scoreStr[1];
       this.onesDigitElement.textContent = scoreStr[2];
     } else if (score >= 10) {
-      
+
       // Double digit scenario
       if (scoreBoxesContainer) scoreBoxesContainer.classList.add('double-digit');
       if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';

@@ -123,6 +123,25 @@
                         <div class="score-text">out of <span id="modalPointsTotal">0</span> points</div>
                     </div>
 
+                    <!-- Numbered Boxes -->
+                    <div class="share-answer-boxes mb-4 mt-3">
+                        <div class="answer-box-wrapper">
+                            <div class="answer-box" data-rank="1">1</div>
+                        </div>
+                        <div class="answer-box-wrapper">
+                            <div class="answer-box" data-rank="2">2</div>
+                        </div>
+                        <div class="answer-box-wrapper">
+                            <div class="answer-box" data-rank="3">3</div>
+                        </div>
+                        <div class="answer-box-wrapper">
+                            <div class="answer-box" data-rank="4">4</div>
+                        </div>
+                        <div class="answer-box-wrapper">
+                            <div class="answer-box" data-rank="5">5</div>
+                        </div>
+                    </div>
+
                     <button class="btn btn-next w-100">
                         Vote for tomorrow's question
                     </button>
@@ -171,88 +190,29 @@
 
                 <!-- Step 3: Share -->
                 <div class="modal-body" id="shareStep" style="display: none;">
-                    <h3 class="text-center mb-4">Share your results</h3>
+                    <h3 class="text-center mb-4">Never miss a game! Follow us on social.</h3>
 
-                    <!-- Shareable Asset Container -->
-                    <div class="shareable-asset-container mb-2">
-                        <div class="shareable-asset" id="shareableAsset">
-                            <!-- Question Text -->
-                            <div class="share-question-text mb-3" id="shareQuestionText"></div>
-
-                            <!-- Numbered Boxes -->
-                            <div class="share-answer-boxes mb-4">
-                                <div class="answer-box-wrapper">
-                                    <div class="answer-box" data-rank="1">1</div>
-                                </div>
-                                <div class="answer-box-wrapper">
-                                    <div class="answer-box" data-rank="2">2</div>
-                                </div>
-                                <div class="answer-box-wrapper">
-                                    <div class="answer-box" data-rank="3">3</div>
-                                </div>
-                                <div class="answer-box-wrapper">
-                                    <div class="answer-box" data-rank="4">4</div>
-                                </div>
-                                <div class="answer-box-wrapper">
-                                    <div class="answer-box" data-rank="5">5</div>
-                                </div>
-                            </div>
-                            <!-- Score Display -->
-                            <div class="share-score-display mb-3">
-                                <div class="share-score-label mb-2">Your score</div>
-                                <div class="score-boxes">
-                                    <div class="score-boxes">
-                                        <div class="score-box hundreds-digit-box">
-                                            <span id="shareHundredsDigit">0</span>
-                                        </div>
-                                        <div class="score-box tens-digit-box">
-                                            <span id="shareTensDigit">0</span>
-                                        </div>
-                                        <div class="score-box ones-digit-box">
-                                            <span id="shareOnesDigit">0</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="score-text">out of <span id="shareMaxScore">0</span> points</div>
-                            </div>
-
-                            <!-- Divider -->
-                            <div class="share-divider"></div>
-
-                            <!-- Website URL -->
-                            <!-- Website URL with Logo -->
-                            <div class="website-container">
-                                <div class="logo-boxes">
-                                    <div class="logo-box logo-box-left">G</div>
-                                    <div class="logo-box logo-box-right">W</div>
-                                </div>
-                                <div class="website-url">playguesswhat.com</div>
-                            </div>
-                        </div>
+                    <!-- Logo -->
+                    <div class="text-center mb-4">
+                        <img src="images/logo.svg" alt="Guess What!" class="modal-logo-image"
+                            style="width: 120px; height: auto;">
                     </div>
 
-                    <!-- Share Options -->
-                    <div class="share-options-container">
-                        <div class="share-options-label">Share on:</div>
-                        <div class="share-options">
-                            <button class="share-button" data-platform="twitter">
-                                <i class="fab fa-twitter"></i>
-                            </button>
-                            <button class="share-button" data-platform="facebook">
-                                <i class="fab fa-facebook-f"></i>
-                            </button>
-                            <button class="share-button" data-platform="instagram">
+                    <!-- Social Media Icons -->
+                    <div class="social-follow-container text-center">
+                        <div class="social-options">
+                            <a href="https://instagram.com/playguesswhat" target="_blank" class="social-button"
+                                aria-label="Follow on Instagram">
                                 <i class="fab fa-instagram"></i>
-                            </button>
-                            <button class="share-button" data-platform="reddit">
-                                <i class="fab fa-reddit-alien"></i>
-                            </button>
-                            <button class="share-button" data-platform="bluesky">
-                                <i class="fas fa-cloud"></i>
-                            </button>
-                            <button class="share-button" data-action="copy-link">
-                                <i class="fas fa-link"></i>
-                            </button>
+                            </a>
+                            <a href="https://twitter.com/playguesswhat" target="_blank" class="social-button"
+                                aria-label="Follow on Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="https://www.facebook.com/profile.php?id=61574626265708" target="_blank" class="social-button"
+                                aria-label="Follow on Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
                         </div>
                     </div>
                 </div>

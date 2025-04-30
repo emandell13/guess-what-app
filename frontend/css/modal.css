@@ -817,3 +817,68 @@
     background-color: #FFE0DD;
     border: 0.125rem solid #EBC8C5;
 }
+
+/* Logo in modal */
+.modal-logo-image {
+    width: 120px;
+    height: auto;
+    margin: 0 auto;
+}
+
+/* Social Follow styling */
+.social-follow-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 1rem auto;
+}
+
+.social-options {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.social-button {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.25rem;
+    border: 0.125rem solid #000;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    color: #000;
+    text-decoration: none;
+    /* Add these properties to fix the blurry border */
+    position: relative;
+    box-shadow: 0 0 0 0.125rem #000;
+    border: none;
+}
+
+/* Create a pseudo-element for the border to ensure crisp edges */
+.social-button:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.social-button:hover {
+    background-color: #000;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 0.125rem #000;
+}
+
+.social-button i {
+    font-size: 1rem;
+}
