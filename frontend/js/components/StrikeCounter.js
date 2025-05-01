@@ -5,7 +5,7 @@ import { strikeReveal } from '../utils/animationUtils.js';
  * Component representing the strike counter
  */
 class StrikeCounter {
-  constructor(strikesId, maxStrikes = 5) {
+  constructor(strikesId, maxStrikes = 3) {
     this.strikesContainer = document.getElementById(strikesId);
     this.maxStrikes = maxStrikes;
     this.initialize();
