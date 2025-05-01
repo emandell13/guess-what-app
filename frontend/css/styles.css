@@ -334,12 +334,6 @@ h5,
     justify-content: center;
 }
 
-/* Add a better class for handling keyboard visibility */
-body.keyboard-visible #guess-form-container {
-    position: fixed !important;
-    bottom: 0 !important;
-}
-
 /* Disabled state styling */
 #guess-form .form-control:disabled,
 #guess-form .form-control[readonly] {
@@ -387,23 +381,9 @@ h2.text-center.mb-4 {
     width: 100%;
   }
 
-body.keyboard-open #guess-form-container {
-    position: sticky;
-    bottom: 0;
-}
-
 .guess-outer-container {
     max-width: 100%;
 }
-
-:root {
-    --vh: 1vh;
-  }
-  
-  /* Adjust fixed positioning using the custom viewport height */
-  #guess-form-placeholder {
-    height: 4.5rem; /* Fixed height instead of relying on dynamic calculation */
-  }
 
 /* Desktop styles (overrides) */
 @media (min-width: 768px) {

@@ -48,74 +48,46 @@ class App {
     if (!window.matchMedia('(max-width: 767.98px)').matches) {
       return;
     }
-
+  
     // Get input element
     const inputElement = document.querySelector('#guess-form input');
+    if (!inputElement) return;
+    
+    // Add focus handling for smooth scrolling to input
     inputElement.addEventListener('focus', () => {
       setTimeout(() => {
         inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
     });
-    if (!inputElement) return;
-
-    // Use the VisualViewport API which is specifically designed for handling mobile keyboards
+  
+    // Use the VisualViewport API to handle keyboard position
     if (window.visualViewport) {
       const guessForm = document.getElementById('guess-form-container');
+      if (!guessForm) return;
+      
+      // Efficient viewport handler with debouncing
+      let vpTimeout;
       const updatePosition = () => {
-        if (!guessForm) return;
         const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
         guessForm.style.transform = offset > 0 ? `translateY(-${offset}px)` : 'translateY(0)';
       };
-      let vpTimeout;
+      
       const handleViewportChange = () => {
         clearTimeout(vpTimeout);
         vpTimeout = setTimeout(updatePosition, 10);
       };
-
+  
+      // Add event listeners for viewport changes
       window.visualViewport.addEventListener("resize", handleViewportChange);
       window.visualViewport.addEventListener("scroll", handleViewportChange);
     }
-    // Fallback for browsers without VisualViewport API - use the CSS variable approach
-    else {
-      // Set initial viewport height
-      const setViewportHeight = () => {
-        // First we get the viewport height and multiply it by 1% to get a value for a vh unit
-        const vh = window.innerHeight * 0.01;
-        // Then we set the value in the --vh custom property to the root of the document
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-      };
-
-      // Set the height initially
-      setViewportHeight();
-
-      // Update the height on resize (with debounce for performance)
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(setViewportHeight, 150);
-      });
-
-      // Handle iOS specific issues by listening for orientation changes
-      window.addEventListener('orientationchange', () => {
-        // Small timeout to wait for the resize to finish
-        setTimeout(setViewportHeight, 200);
-      });
-
-      // Additional handling for input focus
-      inputElement.addEventListener('focus', () => {
-        // Delay scroll to allow keyboard to fully open
-        setTimeout(() => {
-          inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      });
-    }
-
+  
     // Add padding to prevent content from being hidden behind the form on mobile
     const content = document.querySelector('.container');
     if (content) {
       content.style.paddingBottom = '4.5rem'; // Match the form container height
     }
-  }
+  }  
 
   /**
    * Register the current visitor
