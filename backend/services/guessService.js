@@ -2,6 +2,7 @@ const supabase = require('../config/supabase');
 const { getTodayDate } = require('../utils/dateUtils');
 const {isSemanticMatch} = require('../utils/semanticUtils');
 const { normalizeText } = require('../utils/textUtils');
+const gameConstants = require('../config/gameConstants');
 
 async function getCurrentQuestion() {
     const todayDate = getTodayDate();
@@ -18,7 +19,7 @@ async function getCurrentQuestion() {
     return question;
 }
 
-async function getTopAnswers(questionId, limit = 5) {
+async function getTopAnswers(questionId, limit = gameConstants.DEFAULT_ANSWER_COUNT) {
     const { data: answers, error } = await supabase
         .from('top_answers')
         .select('*')
@@ -33,7 +34,7 @@ async function getTopAnswers(questionId, limit = 5) {
 async function checkGuess(guess, userId = null, visitorId = null) {
     const question = await getCurrentQuestion();
     // Now we only need to get the top 5 answers
-    const top5Answers = await getTopAnswers(question.id, 5);
+    const top5Answers = await getTopAnswers(question.id, gameConstants.DEFAULT_ANSWER_COUNT);
     
     const normalizedGuess = normalizeText(guess);
     let matchedAnswer = null;
@@ -83,7 +84,7 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     
     // Calculate the score based on percentage of top5 votes (out of 100)
     const score = (totalVotesTop5 > 0 && matchedAnswer) 
-        ? Math.round((matchedAnswer.vote_count / totalVotesTop5) * 100) 
+        ? Math.round((matchedAnswer.vote_count / totalVotesTop5) * gameConstants.MAX_POINTS) 
         : 0;
 
     // Record the guess in the database if we have an identifier

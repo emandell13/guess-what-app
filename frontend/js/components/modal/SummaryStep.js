@@ -1,5 +1,6 @@
 import eventService from '../../services/EventService.js';
 import authService from '../../services/AuthService.js';
+import gameConfig from '../../config/gameConfig.js';
 
 /**
  * Component representing the summary step of the game completion modal
@@ -24,7 +25,7 @@ class SummaryStep {
     // Game state cache
     this.gameData = {
       score: 0,
-      maxPoints: 100, // Hardcoded to 100
+      maxPoints: gameConfig.MAX_POINTS,
       correctAnswers: []
     };
 
@@ -167,9 +168,9 @@ class SummaryStep {
   * Updates the score displayed
   * @param {number} score - The score to display
   */
-  updateScore(score, maxPoints = 100) {
+  updateScore(score, maxPoints = gameConfig.MAX_POINTS) {
     this.gameData.score = score;
-    this.gameData.maxPoints = maxPoints; // Should always be 100
+    this.gameData.maxPoints = maxPoints;
 
     // Get the parent element of the digit boxes (container for all score boxes)
     const scoreBoxesContainer = this.onesDigitElement.closest('.score-boxes');
@@ -211,16 +212,15 @@ class SummaryStep {
       this.onesDigitElement.textContent = score.toString();
     }
 
-    // Always set the points total to 100
     if (this.pointsTotalElement) {
-      this.pointsTotalElement.textContent = '100';
+      this.pointsTotalElement.textContent = gameConfig.MAX_POINTS.toString();
     }
 
     // Only emit update event if the element is visible
     if (this.stepElement.style.display !== 'none') {
       eventService.emit('summary:score-updated', {
         score: score,
-        maxPoints: 100 // Always emit 100 as maxPoints
+        maxPoints: gameConfig.MAX_POINTS
       });
     }
   }

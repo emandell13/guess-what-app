@@ -3,6 +3,7 @@ const supabase = require('../config/supabase');
 const { groupSimilarAnswers } = require('../utils/semanticUtils');
 const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils'); // Add this missing import
+const gameConstants = require('../config/gameConstants');
 
 async function dailyUpdate() {
   console.log('Starting daily update process...');
@@ -94,7 +95,7 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   console.log('Sorted votes after grouping:', sortedVotes);
   
   // Take top 10 answers
-  const topAnswers = sortedVotes.slice(0, 10);
+  const topAnswers = sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT);
   
   console.log('Top answers to insert:', topAnswers);
   

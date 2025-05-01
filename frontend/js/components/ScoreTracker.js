@@ -1,4 +1,5 @@
 import eventService from '../services/EventService.js';
+import gameConfig from '../config/gameConfig.js';
 
 /**
  * Component representing the score display
@@ -13,15 +14,15 @@ class ScoreTracker {
     this.currentScoreElement = document.getElementById(currentScoreId);
     this.maxScoreElement = document.getElementById(maxScoreId);
     
-    // Initialize max score as 100
+    // Initialize the score display
     if (this.maxScoreElement) {
-      this.maxScoreElement.textContent = '100';
+      this.maxScoreElement.textContent = gameConfig.MAX_POINTS;
     }
     
     // Listen for score change events
     eventService.on('game:score-change', (event) => {
       const { currentScore } = event.detail;
-      this.updateScore(currentScore, 100); // Always use 100 as maxScore
+      this.updateScore(currentScore, gameConfig.MAX_POINTS); // Always use 100 as maxScore
     });
   }
   
@@ -30,7 +31,7 @@ class ScoreTracker {
    * @param {number} currentScore - The current score
    * @param {number} maxScore - The maximum possible score (always 100 now)
    */
-  updateScore(currentScore, maxScore = 100) {
+  updateScore(currentScore, maxScore = gameConfig.MAX_POINTS) {
     if (this.currentScoreElement) {
       this.currentScoreElement.textContent = currentScore;
     }

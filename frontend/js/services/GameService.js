@@ -1,6 +1,7 @@
 import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
 import eventService from './EventService.js';
+import gameConfig from '../config/gameConfig.js';
 
 /**
  * Service that manages game state and logic
@@ -9,12 +10,12 @@ class GameService {
   constructor() {
     // Game state
     this.correctGuesses = [];
-    this.maxPoints = 100; // Now hardcoded to 100
+    this.maxPoints = gameConfig.MAX_POINTS;
     this.currentScore = 0;
     this.strikes = 0;
-    this.MAX_STRIKES = 5;
+    this.MAX_STRIKES = gameConfig.MAX_STRIKES;
     this.question = null;
-    this.answerCount = 5; // Default
+    this.answerCount =  gameConfig.DEFAULT_ANSWER_COUNT;
   }
   
   /**

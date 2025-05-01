@@ -1,11 +1,12 @@
 import eventService from '../services/EventService.js';
 import { strikeReveal } from '../utils/animationUtils.js';
+import gameConfig from '../config/gameConfig.js';
 
 /**
  * Component representing the strike counter
  */
 class StrikeCounter {
-  constructor(strikesId, maxStrikes = 3) {
+  constructor(strikesId, maxStrikes = gameConfig.MAX_STRIKES) {
     this.strikesContainer = document.getElementById(strikesId);
     this.maxStrikes = maxStrikes;
     this.initialize();

@@ -3,6 +3,7 @@
 import AnswerBox from './AnswerBox.js';
 import { staggerAnimations } from '../utils/animationUtils.js';
 import eventService from '../services/EventService.js';
+import gameConfig from '../config/gameConfig.js';
 
 /**
  * Component representing the grid of answer boxes
@@ -39,7 +40,7 @@ class AnswerGrid {
     this.answerBoxes = [];
     
     // Create at most 5 answer boxes
-    const boxesToCreate = Math.min(count, 5);
+    const boxesToCreate = Math.min(count, gameConfig.DEFAULT_ANSWER_COUNT);
     
     // Create answer boxes
     for (let i = 1; i <= boxesToCreate; i++) {
@@ -58,7 +59,7 @@ class AnswerGrid {
    */
   revealAnswer(rank, answer, points, canonicalAnswer = null) {
     // Only reveal answers with rank 1-5
-    if (rank > 5) return;
+    if (rank > gameConfig.DEFAULT_ANSWER_COUNT) return;
     
     const answerBox = this.answerBoxes.find(box => box.rank === rank);
     if (answerBox) {
@@ -72,7 +73,7 @@ class AnswerGrid {
    */
   highlightAnswer(rank) {
     // Only highlight answers with rank 1-5
-    if (rank > 5) return;
+    if (rank > gameConfig.DEFAULT_ANSWER_COUNT) return;
     
     const answerBox = this.answerBoxes.find(box => box.rank === rank);
     if (answerBox) {
@@ -87,7 +88,7 @@ class AnswerGrid {
    */
   revealAllRemaining(remainingAnswers) {
     // Filter out answers with rank > 5
-    const topFiveAnswers = remainingAnswers.filter(answer => answer.rank <= 5);
+    const topFiveAnswers = remainingAnswers.filter(answer => answer.rank <= gameConfig.DEFAULT_ANSWER_COUNT);
     
     return staggerAnimations(
       topFiveAnswers,

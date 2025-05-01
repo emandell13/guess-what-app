@@ -3,6 +3,7 @@
  */
 import { getVisitorId } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
+import gameConfig from '../config/gameConfig.js';
 
 class GuessService {
   /**
@@ -55,7 +56,7 @@ class GuessService {
       
       // Ensure maxPoints is 100 even if the server responds differently
       if (data && !data.error) {
-        data.maxPoints = 100;
+        data.maxPoints = gameConfig.MAX_POINTS;
       }
       
       return data;

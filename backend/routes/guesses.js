@@ -4,12 +4,13 @@ const guessService = require('../services/guessService');
 const visitorService = require('../services/visitorService');
 const voteService = require('../services/voteService');
 const supabase = require('../config/supabase');
+const gameConstants = require('../config/gameConstants');
 
 router.get('/question', async (req, res) => {
     try {
         const question = await guessService.getCurrentQuestion();
         // Fetch only the top 5 answers now, since that's all we need
-        const top5Answers = await guessService.getTopAnswers(question.id, 5);
+        const top5Answers = await guessService.getTopAnswers(question.id, gameConstants.DEFAULT_ANSWER_COUNT);
         
         // Calculate total votes for the available top answers (might be fewer than 5)
         const totalVotesTop5 = top5Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
@@ -18,7 +19,7 @@ router.get('/question', async (req, res) => {
         const totalVotes = await voteService.getTotalVotes(question.id);
 
         // Max points is always 100 now
-        const maxPoints = 100;
+        const maxPoints = gameConstants.MAX_POINTS;
 
         const response = {
             id: question.id,

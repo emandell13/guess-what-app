@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../../config/supabase');
 const { groupSimilarAnswers } = require('../../utils/textUtils');
+const gameConstants = require('../../config/gameConstants');
 
 // Tally votes for a question
 router.post('/tally/:questionId', async (req, res) => {
     try {
         const { questionId } = req.params;
-        const { answerCount = 10 } = req.body; // Default to 10 answers
+        const { answerCount = gameConstants.TOP_ANSWER_COUNT } = req.body; // Default to 10 answers
         
         // Get all votes for this question
         const { data: votes, error: votesError } = await supabase
