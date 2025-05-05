@@ -5,6 +5,7 @@ const visitorService = require('../services/visitorService');
 const voteService = require('../services/voteService');
 const supabase = require('../config/supabase');
 const gameConstants = require('../config/gameConstants');
+const gameService = require('../services/gameService');
 
 router.get('/question', async (req, res) => {
     try {
@@ -86,6 +87,44 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error processing guess:', error);
         res.status(500).json({ error: 'Failed to process guess' });
+    }
+});
+
+// Add this route to the file
+router.post('/giveup', async (req, res) => {
+    try {
+        const { visitorId } = req.body;
+        
+        // Extract user ID from auth header if present
+        let userId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            const token = req.headers.authorization.split(' ')[1];
+            
+            try {
+                const { data, error } = await supabase.auth.getUser(token);
+                
+                if (!error && data && data.user) {
+                    userId = data.user.id;
+                    console.log("Successfully extracted userId for give up:", userId);
+                }
+            } catch (authError) {
+                console.error('Auth error (non-critical):', authError);
+                // Continue without user ID
+            }
+        }
+        
+        // Ensure visitor record exists if visitorId provided
+        if (visitorId) {
+            await visitorService.ensureVisitorExists(visitorId, userId);
+        }
+        
+        console.log(`Processing give up: userId=${userId}, visitorId=${visitorId}`);
+        
+        const result = await gameService.giveUp(userId, visitorId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error processing give up:', error);
+        res.status(500).json({ error: 'Failed to process give up' });
     }
 });
 

@@ -34,7 +34,7 @@ async function getTopAnswers(questionId, limit = gameConstants.DEFAULT_ANSWER_CO
 async function checkGuess(guess, userId = null, visitorId = null) {
     const question = await getCurrentQuestion();
     // Now we only need to get the top 5 answers
-    const top5Answers = await getTopAnswers(question.id, gameConstants.DEFAULT_ANSWER_COUNT);
+    const top5Answers = await getTopAnswers(question.id, 5);
     
     const normalizedGuess = normalizeText(guess);
     let matchedAnswer = null;
@@ -79,24 +79,17 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         }
     }
 
-    // Calculate total votes for the top 5 answers
-    const totalVotesTop5 = top5Answers.reduce((sum, answer) => sum + answer.vote_count, 0);
-    
-    // Calculate the score based on percentage of top5 votes (out of 100)
-    const score = (totalVotesTop5 > 0 && matchedAnswer) 
-        ? Math.round((matchedAnswer.vote_count / totalVotesTop5) * gameConstants.MAX_POINTS) 
-        : 0;
-
     // Record the guess in the database if we have an identifier
     if (userId || visitorId) {
         try {
             // First, find the game progress record or create one
             let gameProgressId = null;
+            let existingProgress = null;
             
             // Build query to find existing progress
             let query = supabase
                 .from('game_progress')
-                .select('id')
+                .select('id, total_guesses')
                 .eq('question_id', question.id);
                 
             if (userId) {
@@ -106,16 +99,18 @@ async function checkGuess(guess, userId = null, visitorId = null) {
             }
             
             // Try to get existing progress
-            const { data: existingProgress, error: progressError } = await query.single();
+            const { data: progressData, error: progressError } = await query.single();
             
-            if (!progressError && existingProgress) {
-                gameProgressId = existingProgress.id;
+            if (!progressError && progressData) {
+                gameProgressId = progressData.id;
+                existingProgress = progressData;
             } else {
                 // Create a new progress record
                 const progressData = {
                     question_id: question.id,
-                    final_score: matchedAnswer ? score : 0,
-                    strikes: matchedAnswer ? 0 : 1,
+                    total_guesses: 1, // First guess
+                    strikes: matchedAnswer ? 0 : 1, // Track incorrect guesses
+                    gave_up: false,
                     completed: false
                 };
                 
@@ -135,17 +130,32 @@ async function checkGuess(guess, userId = null, visitorId = null) {
                     
                 if (!createError && newProgress) {
                     gameProgressId = newProgress.id;
+                    existingProgress = { total_guesses: 1 };
                 } else {
                     console.error('Error creating game progress:', createError);
                 }
             }
 
-            // Now create the guess record with the game progress ID
+            // If we found existing progress, update it with the new guess
+            if (existingProgress) {
+                // Increment total guess count
+                const totalGuesses = (existingProgress.total_guesses || 0) + 1;
+                
+                // Update game progress
+                await supabase
+                    .from('game_progress')
+                    .update({ 
+                        total_guesses: totalGuesses,
+                        strikes: matchedAnswer ? supabase.raw('strikes') : supabase.raw('strikes + 1')
+                    })
+                    .eq('id', gameProgressId);
+            }
+
+            // Now create the guess record
             const guessData = {
                 question_id: question.id,
                 guess_text: guess,
                 is_correct: !!matchedAnswer,
-                points_earned: matchedAnswer ? score : 0,
                 matched_answer_id: matchedAnswer ? matchedAnswer.id : null,
                 game_progress_id: gameProgressId
             };
@@ -176,13 +186,14 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     return {
         isCorrect: !!matchedAnswer,
         rank: matchedAnswer?.rank || null,
-        points: score,
-        rawVotes: matchedAnswer?.vote_count || 0,
+        voteCount: matchedAnswer?.vote_count || 0, // Return vote count instead of points
         canonicalAnswer: matchedAnswer?.answer || null,
         message: matchedAnswer ? `Correct! This was answer #${matchedAnswer.rank}` : 'Try again!',
         answerId: matchedAnswer?.id || null
     };
 }
+
+
 
 module.exports = {
     getCurrentQuestion,

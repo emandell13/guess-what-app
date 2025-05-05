@@ -8,8 +8,7 @@ import eventService from './services/EventService.js';
 // Import components
 import AnswerGrid from './components/AnswerGrid.js';
 import GuessForm from './components/GuessForm.js';
-import ScoreTracker from './components/ScoreTracker.js';
-import StrikeCounter from './components/StrikeCounter.js';
+import GuessCounter from './components/GuessCounter.js'; // New component we'll create
 import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
 
@@ -21,8 +20,7 @@ class App {
     // Initialize components
     this.isGameOverModalPending = false;
     this.answerGrid = new AnswerGrid("answer-boxes");
-    this.scoreTracker = new ScoreTracker("current-score", "max-score");
-    this.strikeCounter = new StrikeCounter("strikes", 5);
+    this.guessCounter = new GuessCounter("guess-counter"); // New component for tracking guesses
     this.gameModal = new GameModal("gameCompleteModal");
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
@@ -48,46 +46,74 @@ class App {
     if (!window.matchMedia('(max-width: 767.98px)').matches) {
       return;
     }
-  
+
     // Get input element
     const inputElement = document.querySelector('#guess-form input');
-    if (!inputElement) return;
-    
-    // Add focus handling for smooth scrolling to input
     inputElement.addEventListener('focus', () => {
       setTimeout(() => {
         inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
     });
-  
-    // Use the VisualViewport API to handle keyboard position
+    if (!inputElement) return;
+
+    // Use the VisualViewport API which is specifically designed for handling mobile keyboards
     if (window.visualViewport) {
       const guessForm = document.getElementById('guess-form-container');
-      if (!guessForm) return;
-      
-      // Efficient viewport handler with debouncing
-      let vpTimeout;
       const updatePosition = () => {
+        if (!guessForm) return;
         const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
         guessForm.style.transform = offset > 0 ? `translateY(-${offset}px)` : 'translateY(0)';
       };
-      
+      let vpTimeout;
       const handleViewportChange = () => {
         clearTimeout(vpTimeout);
         vpTimeout = setTimeout(updatePosition, 10);
       };
-  
-      // Add event listeners for viewport changes
+
       window.visualViewport.addEventListener("resize", handleViewportChange);
       window.visualViewport.addEventListener("scroll", handleViewportChange);
     }
-  
+    // Fallback for browsers without VisualViewport API - use the CSS variable approach
+    else {
+      // Set initial viewport height
+      const setViewportHeight = () => {
+        // First we get the viewport height and multiply it by 1% to get a value for a vh unit
+        const vh = window.innerHeight * 0.01;
+        // Then we set the value in the --vh custom property to the root of the document
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+
+      // Set the height initially
+      setViewportHeight();
+
+      // Update the height on resize (with debounce for performance)
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(setViewportHeight, 150);
+      });
+
+      // Handle iOS specific issues by listening for orientation changes
+      window.addEventListener('orientationchange', () => {
+        // Small timeout to wait for the resize to finish
+        setTimeout(setViewportHeight, 200);
+      });
+
+      // Additional handling for input focus
+      inputElement.addEventListener('focus', () => {
+        // Delay scroll to allow keyboard to fully open
+        setTimeout(() => {
+          inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    }
+
     // Add padding to prevent content from being hidden behind the form on mobile
     const content = document.querySelector('.container');
     if (content) {
       content.style.paddingBottom = '4.5rem'; // Match the form container height
     }
-  }  
+  }
 
   /**
    * Register the current visitor
@@ -126,77 +152,71 @@ class App {
    * Set up event listeners for game events
    */
   setupEventListeners() {
-    // Score change events
-    eventService.on('game:score-change', (event) => {
-      const { currentScore, maxPoints } = event.detail;
-      this.scoreTracker.updateScore(currentScore, maxPoints);
+    // Listen for correct guesses
+    eventService.on('game:answer-revealed', (event) => {
+      const { guess, rank, voteCount, canonicalAnswer } = event.detail;
+      this.answerGrid.revealAnswer(rank, guess, voteCount, canonicalAnswer);
     });
 
-    // Strike added events
-    eventService.on('game:strike-added', async (event) => {
-      const { strikes } = event.detail;
-      this.strikeCounter.updateStrikes(strikes, true);
+    // Listen for incorrect guesses
+    eventService.on('game:incorrect-guess', (event) => {
+      const { totalGuesses } = event.detail;
+      // Update guess counter
+      this.guessCounter.updateGuessCount(totalGuesses);
+    });
 
-      // If max strikes reached, reveal all remaining answers
-      if (strikes >= 5) {
-        console.log("Max strikes reached, disabling form and revealing answers");
-
-        // Disable form immediately
-        if (this.guessForm) this.guessForm.disable();
-
-        // Signal that animations are in progress
-        document.body.dataset.revealingAnswers = 'true';
-
-        try {
-          // Wait for all reveals to complete
-          await this.revealAllRemainingAnswers();
-          console.log("All answers revealed, showing modal");
-
-          // Clear the flag - animations complete
-          document.body.dataset.revealingAnswers = 'false';
-
-          // Show the modal with the pending score (if game completed)
-          if (this.gameModal.pendingScore !== undefined) {
-            this.gameModal.show(this.gameModal.pendingScore);
-            this.gameModal.pendingScore = undefined;
-          }
-        } catch (error) {
-          console.error("Error in strike-out sequence:", error);
-          // Clean up in case of error
-          document.body.dataset.revealingAnswers = 'false';
-
-          // Show modal anyway if there was an error and game completed
-          if (this.gameModal.pendingScore !== undefined) {
-            this.gameModal.show(this.gameModal.pendingScore);
-            this.gameModal.pendingScore = undefined;
-          }
+    // Listen for user giving up
+    eventService.on('game:gave-up', async (event) => {
+      const { remainingAnswers } = event.detail;
+      console.log("User gave up, revealing all remaining answers");
+      
+      // Disable form
+      if (this.guessForm) this.guessForm.disable();
+      
+      // Signal that animations are in progress
+      document.body.dataset.revealingAnswers = 'true';
+      
+      try {
+        // Reveal all remaining answers with animations
+        await this.answerGrid.revealAllRemaining(remainingAnswers);
+        
+        // Clear the flag - animations complete
+        document.body.dataset.revealingAnswers = 'false';
+        
+        // Show the game over modal
+        if (this.gameModal.pendingScore !== undefined) {
+          this.gameModal.show(gameService.totalGuesses);
+          this.gameModal.pendingScore = undefined;
+        }
+      } catch (error) {
+        console.error("Error revealing answers:", error);
+        // Clean up in case of error
+        document.body.dataset.revealingAnswers = 'false';
+        
+        // Show modal anyway
+        if (this.gameModal.pendingScore !== undefined) {
+          this.gameModal.show(gameService.totalGuesses);
+          this.gameModal.pendingScore = undefined;
         }
       }
     });
 
     // Game completed events
     eventService.on('game:completed', (event) => {
-      const { currentScore } = event.detail;
-
-      // Check if we're in the middle of a strike-reveal sequence
-      if (this.isGameOverModalPending) {
-        console.log("game:completed event received but modal pending - not showing yet");
-        // Don't show the modal yet - the strike handler will do it after reveals
+      const { totalGuesses, gaveUp } = event.detail;
+      
+      // Check if we're in the middle of a reveal sequence
+      if (document.body.dataset.revealingAnswers === 'true') {
+        console.log("game:completed event received but animations in progress - not showing modal yet");
+        this.gameModal.pendingScore = totalGuesses;
         return;
       }
-
-      // Show game complete modal for normal completion
+      
       console.log("game:completed event showing modal");
-      this.gameModal.show(currentScore);
-
+      this.gameModal.show(totalGuesses, gaveUp);
+      
       // Disable guess form
       if (this.guessForm) this.guessForm.disable();
-    });
-
-    // Answer revealed events
-    eventService.on('game:answer-revealed', (event) => {
-      const { guess, rank, points, canonicalAnswer } = event.detail;
-      this.answerGrid.revealAnswer(rank, guess, points, canonicalAnswer);
     });
 
     // Already guessed events
@@ -252,8 +272,6 @@ class App {
         }
       }
     });
-
-
   }
 
   checkVerificationStatus() {
@@ -333,31 +351,28 @@ class App {
     // Create answer boxes
     this.answerGrid.initialize(answerCount);
 
-    // Update score display
-    this.scoreTracker.updateScore(gameService.currentScore, gameService.maxPoints);
-
-    // Update strikes display
-    this.strikeCounter.updateStrikes(gameService.strikes, false);
+    // Update guess counter display
+    this.guessCounter.updateGuessCount(gameService.totalGuesses);
 
     // If game is already restored as complete, handle accordingly
     if (gameService.isGameOver()) {
       console.log("Game is already over, showing completion modal");
 
-      // If strikes maxed out, reveal all remaining answers
-      if (gameService.strikes >= 3) {
+      // If game was given up, reveal all remaining answers
+      if (gameService.gaveUp) {
         this.revealAllRemainingAnswers();
       }
 
       // Disable form and show modal after a short delay
       setTimeout(() => {
         if (this.guessForm) this.guessForm.disable();
-        this.gameModal.show(gameService.currentScore);
+        this.gameModal.show(gameService.totalGuesses, gameService.gaveUp);
       }, 500);
     }
 
     // For any already guessed answers, reveal them in the UI
     gameService.correctGuesses.forEach(guess => {
-      this.answerGrid.revealAnswer(guess.rank, guess.guess, guess.points, guess.guess);
+      this.answerGrid.revealAnswer(guess.rank, guess.guess, guess.voteCount, guess.guess);
     });
   }
 
@@ -390,9 +405,9 @@ class App {
   }
 
   /**
- * Reveals all remaining answers when the game is over
- * @returns {Promise} A promise that resolves when all answers are revealed
- */
+   * Reveals all remaining answers when the game is over
+   * @returns {Promise} A promise that resolves when all answers are revealed
+   */
   async revealAllRemainingAnswers() {
     try {
       console.log("Starting reveal of remaining answers");
@@ -402,7 +417,11 @@ class App {
       // Filter out already guessed answers
       const remainingAnswers = data.answers.filter(answer =>
         !gameService.correctGuesses.some(guess => guess.rank === answer.rank)
-      );
+      ).map(answer => ({
+        rank: answer.rank,
+        answer: answer.answer,
+        voteCount: answer.rawVotes
+      }));
 
       console.log(`Revealing ${remainingAnswers.length} remaining answers`);
 

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const authMiddleware = require('../middleware/authMiddleware');
+const gameService = require('../services/gameService');
+
 
 // Save game progress route
 router.post('/save-game', async (req, res) => {
@@ -114,34 +116,8 @@ router.post('/save-game', async (req, res) => {
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-
-    // Get all completed games
-    const { data: games, error: gamesError } = await supabase
-      .from('game_progress')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('completed', true)
-      .order('created_at', { ascending: false });
-
-    if (gamesError) throw gamesError;
-
-    // Calculate statistics
-    const totalGames = games.length;
-    const totalScore = games.reduce((sum, game) => sum + game.final_score, 0);
-    const averageScore = totalGames > 0 ? Math.round(totalScore / totalGames) : 0;
-    const highScore = games.length > 0 ? Math.max(...games.map(g => g.final_score)) : 0;
-    const perfectGames = games.filter(g => g.strikes === 0).length;
-
-    res.json({
-      success: true,
-      stats: {
-        totalGames,
-        averageScore,
-        highScore,
-        perfectGames,
-        recentGames: games.slice(0, 5) // Return 5 most recent games
-      }
-    });
+    const result = await gameService.getUserStats(userId);
+    res.json(result);
   } catch (error) {
     console.error('Error getting user stats:', error);
     res.status(500).json({ error: 'Failed to get user statistics' });

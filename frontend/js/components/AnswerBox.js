@@ -46,16 +46,16 @@ class AnswerBox {
   /**
    * Reveals this answer with an animation
    * @param {string} answer - The text of the answer
-   * @param {number} points - The points for this answer
+   * @param {number} voteCount - The votes for this answer
    * @param {string} canonicalAnswer - Optional canonical version of the answer
    * @param {boolean} isSuccess - Whether this is a successful guess or a reveal
    */
-  reveal(answer, points, canonicalAnswer = null, isSuccess = true) {
+  reveal(answer, voteCount, canonicalAnswer = null, isSuccess = true) {
     if (this.revealed) return;
     
     const cardBody = this.element.querySelector(".card-body");
     const answerText = this.element.querySelector(".answer-text");
-    const pointsBadge = this.element.querySelector(".points");
+    const votesBadge = this.element.querySelector(".points");
     
     // Start with empty text
     answerText.textContent = "";
@@ -67,8 +67,11 @@ class AnswerBox {
       () => {
         answerText.textContent = canonicalAnswer || answer;
         answerText.classList.add('visible');
-        pointsBadge.textContent = `${points} pts`;
-        pointsBadge.classList.remove("d-none");
+        
+        // Update badge to show votes instead of points
+        votesBadge.textContent = `${voteCount} votes`;
+        votesBadge.classList.remove("d-none");
+        
         cardBody.classList.remove("bg-light");
         
         if (isSuccess) {

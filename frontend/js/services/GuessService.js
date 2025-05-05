@@ -3,7 +3,6 @@
  */
 import { getVisitorId } from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
-import gameConfig from '../config/gameConfig.js';
 
 class GuessService {
   /**
@@ -54,9 +53,13 @@ class GuessService {
       const response = await fetch("/guesses/question?includeAnswers=true");
       const data = await response.json();
       
-      // Ensure maxPoints is 100 even if the server responds differently
-      if (data && !data.error) {
-        data.maxPoints = gameConfig.MAX_POINTS;
+      // Update the answers to use voteCount instead of points
+      if (data && data.answers && !data.error) {
+        data.answers = data.answers.map(answer => ({
+          rank: answer.rank,
+          answer: answer.answer,
+          voteCount: answer.rawVotes
+        }));
       }
       
       return data;
