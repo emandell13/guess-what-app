@@ -13,9 +13,8 @@ function createGuessMatchingPrompt(guess, possibleAnswers, questionText) {
   User guessed: "${guess}"
   Possible answers: ${possibleAnswers.map(a => `"${a}"`).join(', ')}
   
-  Determine if the guess is the SAME EXACT ANSWER as any possible answer, considering the question context.
-  - Different names for the same thing should match (e.g., "Catan" matches "Settlers of Catan")
-  - Different items, even in the same category, must NOT match (e.g., "iced coffee" ≠ "iced tea")
+  Determine if the guess would be considered the SAME ANSWER as any of the possible answers in a survey or game show.
+  If most people would count them as the same answer, it's a match.
   
   Your response must be exactly ONE of these:
   ${possibleAnswers.map(a => `- ${a}`).join('\n')}
@@ -38,11 +37,12 @@ function createGuessMatchingPrompt(guess, possibleAnswers, questionText) {
   
   1. First, identify and exclude any answers that are:
      - Clearly inappropriate for the question
-     - Logically wrong or contradictory (e.g., "hot cocoa" for "best drink on a hot day")
+     - Logically wrong or contradictory
      - Offensive or nonsensical
   
-  2. Then, group the remaining valid answers that refer to the exact same item in everyday conversation.
-     Group different names for the same specific item, but keep distinct items separate.
+2. Then, group the remaining valid answers by considering whether they would be counted as the SAME answer in a survey or game show.
+   - If most people would consider them the same answer, group them together
+   - If most people would count them as different answers, keep them separate
   
   3. Use the exact number labels (1, 2, 3, etc.) from the answer list above in your response.
   
