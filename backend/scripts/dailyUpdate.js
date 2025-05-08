@@ -1,10 +1,18 @@
+// backend/scripts/dailyUpdate.js
+
 require('dotenv').config();
 const supabase = require('../config/supabase');
-const { groupSimilarAnswers } = require('../utils/semanticUtils');
 const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
-const { normalizeText } = require('../utils/textUtils'); // Add this missing import
+const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
+const { callLLM } = require('../services/llmService');
+const { createAnswerGroupingPrompt } = require('../services/promptTemplates');
 
+/**
+ * Daily update process that tallies votes for today's question
+ * and prepares for tomorrow's question
+ * @returns {Promise<Object>} Result of the daily update
+ */
 async function dailyUpdate() {
   console.log('Starting daily update process...');
   
@@ -28,10 +36,14 @@ async function dailyUpdate() {
   }
 }
 
+/**
+ * Tally votes for today's question and update top answers
+ * @param {string} todayDate - Today's date in YYYY-MM-DD format
+ */
 async function tallyVotesForTodaysQuestion(todayDate) {
   console.log(`Finding question to tally for today (${todayDate})`);
   
-  // This is the question that becomes active TODAY but was in voting yesterday
+  // Find today's active question that needs vote tallying
   const { data: question, error: questionError } = await supabase
     .from('questions')
     .select('*')
@@ -41,6 +53,7 @@ async function tallyVotesForTodaysQuestion(todayDate) {
     
   if (questionError) {
     console.error('Error finding question:', questionError);
+    return;
   }
     
   if (!question) {
@@ -58,21 +71,13 @@ async function tallyVotesForTodaysQuestion(todayDate) {
     
   if (votesError) {
     console.error('Error fetching votes:', votesError);
+    await markQuestionComplete(question.id);
+    return;
   }
     
   if (!votes || votes.length === 0) {
     console.log('No votes found');
-    // Mark as complete even with no votes
-    const { error: updateError } = await supabase
-      .from('questions')
-      .update({ voting_complete: true })
-      .eq('id', question.id);
-      
-    if (updateError) {
-      console.error('Error marking question as complete:', updateError);
-    } else {
-      console.log('Question marked as complete (no votes)');
-    }
+    await markQuestionComplete(question.id);
     return;
   }
   
@@ -81,63 +86,169 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   // Extract response text from votes
   const voteTexts = votes.map(vote => vote.response);
   
-  // Group similar answers using semantic matching
-  // Pass the question text as context for better matching
-  const { groupedAnswers, voteToAnswerMapping } = await groupSimilarAnswers(voteTexts, { // Change groupedVotes to groupedAnswers
-    questionContext: question.question_text
+  // Create a map of all unique responses and their original indices
+  const uniqueVotes = new Map();
+  voteTexts.forEach((vote, index) => {
+    // Use the normalized vote text as the key
+    const normalizedVote = normalizeText(vote);
+    if (!uniqueVotes.has(normalizedVote)) {
+      uniqueVotes.set(normalizedVote, []);
+    }
+    // Store original 1-based index
+    uniqueVotes.get(normalizedVote).push(index + 1);
   });
   
+  console.log(`Identified ${uniqueVotes.size} unique votes out of ${votes.length} total votes`);
+  
+  // Convert unique votes to array for LLM processing
+  const uniqueVoteTexts = Array.from(uniqueVotes.keys());
+  
+  // Group unique votes using LLM
+  const groupedUniqueVotes = await groupVotesWithLLM(uniqueVoteTexts, question.question_text);
+  
+  // If LLM grouping failed, mark question as complete and exit
+  if (!groupedUniqueVotes) {
+    console.log('LLM grouping failed, marking question as complete without grouping');
+    await markQuestionComplete(question.id);
+    return;
+  }
+  
+  // Expand groupings to include all original vote indices
+  const expandedGroups = {};
+  
+  // Process each group from LLM
+  Object.entries(groupedUniqueVotes).forEach(([canonicalAnswer, uniqueIndices]) => {
+    if (canonicalAnswer === 'EXCLUDED_ANSWERS') {
+      // Handle excluded answers specially
+      expandedGroups[canonicalAnswer] = [];
+      uniqueIndices.forEach(uniqueIndex => {
+        const normalizedVote = uniqueVoteTexts[uniqueIndex - 1];
+        expandedGroups[canonicalAnswer].push(...uniqueVotes.get(normalizedVote));
+      });
+    } else {
+      // For regular groups, expand indices
+      expandedGroups[canonicalAnswer] = [];
+      uniqueIndices.forEach(uniqueIndex => {
+        const normalizedVote = uniqueVoteTexts[uniqueIndex - 1];
+        expandedGroups[canonicalAnswer].push(...uniqueVotes.get(normalizedVote));
+      });
+    }
+  });
+  
+  // Store excluded answers for logging
+  let excludedAnswers = [];
+  if (expandedGroups.EXCLUDED_ANSWERS) {
+    const excludedIndices = expandedGroups.EXCLUDED_ANSWERS;
+    excludedAnswers = excludedIndices.map(idx => voteTexts[idx - 1]);
+    console.log(`Excluding ${excludedIndices.length} inappropriate answers:`, excludedAnswers);
+    delete expandedGroups.EXCLUDED_ANSWERS;
+  }
+  
   // Convert to array and sort by count
-  const sortedVotes = Object.entries(groupedAnswers) // Change groupedVotes to groupedAnswers
-    .map(([answer, count]) => ({ answer, count }))
+  const sortedVotes = Object.entries(expandedGroups)
+    .map(([canonicalAnswer, indices]) => ({
+      answer: canonicalAnswer,
+      count: indices.length,
+      voteIndices: indices
+    }))
     .sort((a, b) => b.count - a.count);
   
-  console.log('Sorted votes after grouping:', sortedVotes);
-  
-  // Take top 10 answers
+  // Take top answers
   const topAnswers = sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT);
   
   console.log('Top answers to insert:', topAnswers);
   
   // Clear any existing top answers first
-  const { error: deleteError } = await supabase
+  await clearExistingTopAnswers(question.id);
+  
+  // Insert top answers
+  const insertedAnswers = await insertTopAnswers(question.id, topAnswers);
+  
+  // Update votes with matched_answer_id
+  await updateVotesWithMatchedAnswers(votes, voteTexts, expandedGroups, insertedAnswers);
+  
+  // Mark question as voting complete
+  await markQuestionComplete(question.id);
+  
+  console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers`);
+}
+
+/**
+ * Mark a question as completed (voting is finished)
+ * @param {number} questionId - The question ID
+ */
+async function markQuestionComplete(questionId) {
+  const { error } = await supabase
+    .from('questions')
+    .update({ voting_complete: true })
+    .eq('id', questionId);
+    
+  if (error) {
+    console.error('Error marking question as complete:', error);
+  } else {
+    console.log('Question marked as complete');
+  }
+}
+
+/**
+ * Clear existing top answers for a question
+ * @param {number} questionId - The question ID
+ */
+async function clearExistingTopAnswers(questionId) {
+  const { error } = await supabase
     .from('top_answers')
     .delete()
-    .eq('question_id', question.id);
+    .eq('question_id', questionId);
     
-  if (deleteError) {
-    console.error('Error clearing existing top answers:', deleteError);
+  if (error) {
+    console.error('Error clearing existing top answers:', error);
   }
-  
-  // Insert into top_answers table
+}
+
+/**
+ * Insert top answers for a question
+ * @param {number} questionId - The question ID
+ * @param {Array} topAnswers - Array of top answers to insert
+ * @returns {Array} Array of inserted answers
+ */
+async function insertTopAnswers(questionId, topAnswers) {
   const insertedAnswers = [];
+  
   for (let i = 0; i < topAnswers.length; i++) {
     const { answer, count } = topAnswers[i];
     const rank = i + 1;
     
     console.log(`Inserting answer #${rank}: "${answer}" with ${count} votes`);
     
-    const { data: insertedAnswer, error: insertError } = await supabase
+    const { data, error } = await supabase
       .from('top_answers')
       .insert([{
-        question_id: question.id,
+        question_id: questionId,
         answer,
         vote_count: count,
         rank
       }])
       .select();
       
-    if (insertError) {
-      console.error(`Error inserting answer #${rank}:`, insertError);
-    } else {
-      console.log(`Answer #${rank} inserted:`, insertedAnswer);
-      if (insertedAnswer && insertedAnswer.length > 0) {
-        insertedAnswers.push(insertedAnswer[0]);
-      }
+    if (error) {
+      console.error(`Error inserting answer #${rank}:`, error);
+    } else if (data && data.length > 0) {
+      console.log(`Answer #${rank} inserted:`, data[0]);
+      insertedAnswers.push(data[0]);
     }
   }
   
-  // Update votes with matched_answer_id
+  return insertedAnswers;
+}
+
+/**
+ * Update votes with matched answer IDs
+ * @param {Array} votes - Array of vote objects
+ * @param {Array} voteTexts - Array of vote text strings
+ * @param {Object} groupedAnswers - Grouped answers from LLM
+ * @param {Array} insertedAnswers - Inserted top answers
+ */
+async function updateVotesWithMatchedAnswers(votes, voteTexts, groupedAnswers, insertedAnswers) {
   console.log('Updating votes with matched answer IDs...');
   
   // Create a mapping of canonical answers to top_answer IDs
@@ -146,42 +257,156 @@ async function tallyVotesForTodaysQuestion(todayDate) {
     answerToIdMap[answer.answer] = answer.id;
   });
   
-  // Update each vote with its matched answer ID
+  // Process each vote
   for (const vote of votes) {
-    const normalizedVote = normalizeText(vote.response);
-    const mappedAnswer = voteToAnswerMapping[normalizedVote];
+    // Get the index of this vote in the voteTexts array
+    const voteIndex = voteTexts.indexOf(vote.response);
+    if (voteIndex === -1) continue;
     
-    if (mappedAnswer && answerToIdMap[mappedAnswer]) {
-      const matchedAnswerId = answerToIdMap[mappedAnswer];
-      
-      console.log(`Updating vote: "${vote.response}" -> "${mappedAnswer}" (ID: ${matchedAnswerId})`);
-      
-      const { error: updateError } = await supabase
-        .from('votes')
-        .update({ matched_answer_id: matchedAnswerId })
-        .eq('id', vote.id);
-        
-      if (updateError) {
-        console.error(`Error updating vote ${vote.id}:`, updateError);
+    // LLM uses 1-based indices, so add 1
+    const voteIndexInLLM = voteIndex + 1;
+    
+    // Find the canonical answer for this vote
+    let matchedCanonicalAnswer = null;
+    for (const [canonicalAnswer, indices] of Object.entries(groupedAnswers)) {
+      if (indices.includes(voteIndexInLLM)) {
+        matchedCanonicalAnswer = canonicalAnswer;
+        break;
       }
     }
-  }
-  
-  // Mark question as voting complete
-  const { error: finalUpdateError } = await supabase
-    .from('questions')
-    .update({ voting_complete: true })
-    .eq('id', question.id);
     
-  if (finalUpdateError) {
-    console.error('Error marking question as complete:', finalUpdateError);
-  } else {
-    console.log('Question marked as complete');
-  }
+    // Skip if no canonical answer or it's not in our top answers
+    if (!matchedCanonicalAnswer || !answerToIdMap[matchedCanonicalAnswer]) {
+      continue;
+    }
     
-  console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers`);
+    // Update the vote record
+    const matchedAnswerId = answerToIdMap[matchedCanonicalAnswer];
+    const { error } = await supabase
+      .from('votes')
+      .update({ matched_answer_id: matchedAnswerId })
+      .eq('id', vote.id);
+      
+    if (error) {
+      console.error(`Error updating vote ${vote.id}:`, error);
+    }
+  }
 }
 
+/**
+ * Group votes using LLM with batch processing for large vote sets
+ * @param {Array<string>} votes - List of vote texts
+ * @param {string} questionText - The question text for context
+ * @returns {Object} - Grouped votes with canonical answers as keys and vote indices as values
+ */
+async function groupVotesWithLLM(uniqueVotes, questionText) {
+  try {
+    console.log(`Grouping ${uniqueVotes.length} unique votes with LLM`);
+    
+    // For large numbers of votes, we need to batch them
+    const BATCH_SIZE = 100; // Adjust based on token limits and performance
+    const batches = [];
+    
+    // Create batches of votes
+    for (let i = 0; i < uniqueVotes.length; i += BATCH_SIZE) {
+      batches.push(uniqueVotes.slice(i, Math.min(i + BATCH_SIZE, uniqueVotes.length)));
+    }
+    
+    console.log(`Processing votes in ${batches.length} batches`);
+    
+    // Process each batch
+    const batchResults = [];
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      const startIndex = i * BATCH_SIZE;
+      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} votes (indices ${startIndex+1}-${startIndex+batch.length})`);
+      
+      // Create the prompt
+      const prompt = createAnswerGroupingPrompt(batch, questionText);
+      
+      // Call the LLM with error handling
+      let result;
+      try {
+        result = await callLLM(prompt, { maxTokens: 4000 });
+      } catch (apiError) {
+        console.error(`Error calling LLM for batch ${i+1}:`, apiError);
+        continue; // Skip this batch if the API call fails
+      }
+      
+      // Parse the result with error handling
+      try {
+        // Extract JSON content in case there's any surrounding text
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[0] : result;
+        
+        const groupedBatch = JSON.parse(jsonStr);
+        batchResults.push({
+          groupedBatch,
+          startIndex
+        });
+      } catch (parseError) {
+        console.error(`Error parsing batch ${i+1} result:`, parseError);
+        console.error('Raw LLM output:', result);
+        continue; // Skip this batch if parsing fails
+      }
+    }
+    
+    // If all batches failed, return null
+    if (batchResults.length === 0) {
+      console.error('All batches failed to process');
+      return null;
+    }
+    
+    // Merge batch results
+    const mergedGroups = {};
+    const excludedAnswers = [];
+    
+    // Process each batch result
+    batchResults.forEach(({ groupedBatch, startIndex }) => {
+      // Handle excluded answers
+      if (groupedBatch.EXCLUDED_ANSWERS) {
+        // Convert batch-specific indices to global indices
+        // LLM returns 1-based indices, so we adjust to global 1-based indices
+        const globalExcludedIndices = groupedBatch.EXCLUDED_ANSWERS.map(idx => startIndex + idx);
+        excludedAnswers.push(...globalExcludedIndices);
+      }
+      
+      // Process each group in the batch
+      Object.entries(groupedBatch).forEach(([canonicalAnswer, indices]) => {
+        // Skip the EXCLUDED_ANSWERS key
+        if (canonicalAnswer === 'EXCLUDED_ANSWERS') {
+          return;
+        }
+        
+        // Convert batch-specific indices to global indices
+        // LLM returns 1-based indices, so we adjust to global 1-based indices
+        const globalIndices = indices.map(idx => startIndex + idx);
+        
+        // Add to merged groups or create new entry
+        if (mergedGroups[canonicalAnswer]) {
+          mergedGroups[canonicalAnswer].push(...globalIndices);
+        } else {
+          mergedGroups[canonicalAnswer] = globalIndices;
+        }
+      });
+    });
+    
+    // Add excluded answers to final result
+    if (excludedAnswers.length > 0) {
+      mergedGroups.EXCLUDED_ANSWERS = excludedAnswers;
+    }
+    
+    return mergedGroups;
+  } catch (error) {
+    console.error('Error grouping votes with LLM:', error);
+    return null;
+  }
+}
+
+/**
+ * Prepares tomorrow's question for voting if needed
+ * @param {string} tomorrowDate - Tomorrow's date in YYYY-MM-DD format
+ */
 async function prepareTomorrowsQuestion(tomorrowDate) {
   console.log(`Checking for tomorrow's question (${tomorrowDate})`);
   
