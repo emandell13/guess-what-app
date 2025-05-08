@@ -95,6 +95,31 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     let matchedAnswer = null;
     const normalizedGuess = normalizeText(guess);
     
+    // Step 0: Direct comparison with top answers (simplest, fastest)
+    if (normalizedGuess) {
+        console.log(`Checking direct match against top answers for: "${normalizedGuess}"`);
+        
+        // Direct case-insensitive comparison with top answers
+        matchedAnswer = top5Answers.find(answer => 
+            normalizeText(answer.answer) === normalizedGuess
+        );
+        
+        if (matchedAnswer) {
+            console.log(`Direct match found: "${normalizedGuess}" matches top answer "${matchedAnswer.answer}"`);
+            
+            // Rest of the code remains the same...
+            // Record guess, return result, etc.
+            return {
+                isCorrect: true,
+                rank: matchedAnswer.rank,
+                voteCount: matchedAnswer.vote_count,
+                canonicalAnswer: matchedAnswer.answer,
+                message: `Correct! This was answer #${matchedAnswer.rank}`,
+                answerId: matchedAnswer.id
+            };
+        }
+    }
+    
     // Step 1: Check for exact database matches first (fastest, no API cost)
     if (normalizedGuess) {
         const { data: matchingVotes, error: votesError } = await supabase
