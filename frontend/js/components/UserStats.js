@@ -115,79 +115,57 @@ updateStats(stats) {
     return;
   }
   
-  // Update stats values
-  document.getElementById('stats-total-games').textContent = stats.totalGames;
-  document.getElementById('stats-high-score').textContent = stats.highScore;
-  document.getElementById('stats-avg-score').textContent = stats.averageScore;
-  document.getElementById('stats-perfect-games').textContent = stats.perfectGames;
+  // Update the stats boxes
+  // 1. Games Played
+  const totalGamesElement = document.getElementById('stats-total-games');
+  if (totalGamesElement) {
+    totalGamesElement.textContent = stats.totalGames || 0;
+    // Try to update the title if it exists
+    const title = totalGamesElement.closest('.card')?.querySelector('.card-title');
+    if (title) title.textContent = 'Games Played';
+  }
   
-  // Update recent games list
-  this.updateRecentGames(stats.recentGames);
+  // 2. Wins (previously high score)
+  const winsElement = document.getElementById('stats-high-score');
+  if (winsElement) {
+    winsElement.textContent = stats.wins || 0;
+    winsElement.id = 'stats-wins'; // Update the ID for future references
+    // Update the label
+    const title = winsElement.closest('.card')?.querySelector('.card-title');
+    if (title) title.textContent = 'Wins';
+  }
+  
+  // 3. Average Guesses (previously average score)
+  const avgGuessesElement = document.getElementById('stats-avg-score');
+  if (avgGuessesElement) {
+    avgGuessesElement.textContent = stats.avgGuesses || 0;
+    avgGuessesElement.id = 'stats-avg-guesses'; // Update the ID for future references
+    // Update the label
+    const title = avgGuessesElement.closest('.card')?.querySelector('.card-title');
+    if (title) title.textContent = 'Average Guesses';
+  }
+  
+  // 4. Perfect Games (remains the same)
+  const perfectGamesElement = document.getElementById('stats-perfect-games');
+  if (perfectGamesElement) {
+    perfectGamesElement.textContent = stats.perfectGames || 0;
+    // Title remains the same
+  }
+  
+  // Hide the recent games section
+  const recentGamesHeader = this.container.querySelector('h3.mt-4.mb-3');
+  if (recentGamesHeader) {
+    recentGamesHeader.style.display = 'none';
+  }
+  
+  const recentGamesContainer = document.getElementById('recent-games-container');
+  if (recentGamesContainer) {
+    recentGamesContainer.style.display = 'none';
+  }
   
   // Show stats content, hide no games message
   if (noGamesMessage) noGamesMessage.style.display = 'none';
   if (statsContent) statsContent.style.display = 'block';
-}
-
-/**
- * Update the recent games list using the template
- * @param {Array} games - List of recent games
- */
-updateRecentGames(games) {
-  const recentGamesList = document.getElementById('recent-games-list');
-  const noRecentGames = document.getElementById('no-recent-games');
-  const recentGamesLoading = document.getElementById('recent-games-loading');
-  const gameTemplate = document.getElementById('recent-game-template');
-  
-  // Hide loading indicator
-  if (recentGamesLoading) recentGamesLoading.style.display = 'none';
-  
-  // Check if we have games
-  if (!games || games.length === 0) {
-    if (noRecentGames) noRecentGames.style.display = 'block';
-    return;
-  }
-  
-  // Hide no games message
-  if (noRecentGames) noRecentGames.style.display = 'none';
-  
-  // Remove any existing game items (except the template)
-  const existingItems = recentGamesList.querySelectorAll('.recent-game-item:not(#recent-game-template)');
-  existingItems.forEach(item => item.remove());
-  
-  // Create game items using the template
-  games.forEach(game => {
-    // Clone the template
-    const gameItem = gameTemplate.cloneNode(true);
-    gameItem.id = `game-${game.id || Date.now()}`; // Use ID or timestamp as fallback
-    gameItem.style.display = 'flex';
-    
-    // Update game date - convert to format like "Mar 17"
-    const gameDate = new Date(game.created_at);
-    const month = gameDate.toLocaleString('en-US', { month: 'short' });
-    const day = gameDate.getDate();
-    gameItem.querySelector('.game-date').textContent = `${month} ${day}`;
-    
-    // Update score
-    gameItem.querySelector('.game-score').textContent = `${game.final_score} pts`;
-    
-    // Get the strike circles and reset them all to empty first
-    const strikeCircles = gameItem.querySelectorAll('.game-strikes-container .strike-circle');
-    strikeCircles.forEach(circle => {
-      circle.classList.remove('filled');
-      circle.classList.add('empty');
-    });
-    
-    // Update only the necessary number of circles based on strikes
-    const strikesCount = game.strikes || 0; // Default to 0 if strikes is undefined
-    for (let i = 0; i < Math.min(strikesCount, strikeCircles.length); i++) {
-      strikeCircles[i].classList.remove('empty');
-      strikeCircles[i].classList.add('filled');
-    }
-    
-    // Add to the list
-    recentGamesList.appendChild(gameItem);
-  });
 }
 }
 

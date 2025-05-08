@@ -1,4 +1,4 @@
-import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes } from '../utils/visitorUtils.js';
+import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes, markTodayGaveUp, hasTodayGivenUp} from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
 import eventService from './EventService.js';
 
@@ -64,16 +64,16 @@ class GameService {
   restoreGameState() {
     // Load saved guesses
     const savedGuesses = getTodayGuesses();
-
+  
     if (savedGuesses && savedGuesses.length > 0) {
       // Restore saved guesses
       this.correctGuesses = savedGuesses.filter(guess => guess.isCorrect);
       this.incorrectGuesses = savedGuesses.filter(guess => !guess.isCorrect);
-
+  
       // Calculate total guesses
       this.totalGuesses = savedGuesses.length;
     }
-
+  
     // Load saved strikes (we'll repurpose this to track incorrect guesses count)
     const savedIncorrectGuesses = getTodayStrikes();
     if (savedIncorrectGuesses > 0) {
@@ -82,6 +82,9 @@ class GameService {
         this.incorrectGuesses = Array(savedIncorrectGuesses).fill({ isCorrect: false });
       }
     }
+  
+    // Restore gave up state
+    this.gaveUp = hasTodayGivenUp();
   }
 
   /**
@@ -204,6 +207,8 @@ class GameService {
       // Get visitor ID
       const visitorId = getVisitorId();
 
+      console.log("GameService.giveUp - Starting give up process");
+
       // Create headers
       const headers = {
         "Content-Type": "application/json",
@@ -227,6 +232,9 @@ class GameService {
       if (result.success) {
         // Mark as gave up
         this.gaveUp = true;
+        console.log("GameService.giveUp - Set gaveUp=true");
+        markTodayGaveUp();
+        markTodayCompleted();
 
         // Mark as completed
         markTodayCompleted();
@@ -234,13 +242,20 @@ class GameService {
         // Save final game state to server
         this.saveUserGameData();
 
-        // Emit gave up event
+        // Filter out already guessed answers
+        const alreadyGuessedRanks = this.correctGuesses.map(guess => guess.rank);
+        const filteredAnswers = result.answers.filter(answer =>
+          !alreadyGuessedRanks.includes(answer.rank)
+        );
+
+        // Emit gave up event with filtered answers
         eventService.emit('game:gave-up', {
-          remainingAnswers: result.answers,
+          remainingAnswers: filteredAnswers,
           totalGuesses: this.totalGuesses
         });
 
         // Also emit game completed event
+        console.log("GameService.giveUp - Emitting game:completed with gaveUp=true");
         eventService.emit('game:completed', {
           correctGuesses: this.correctGuesses,
           incorrectGuesses: this.incorrectGuesses,

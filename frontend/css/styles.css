@@ -225,16 +225,17 @@ h5,
     transition-delay: 0.5s;
 }
 
-/* Points styling */
+/* Points styling - fixed to properly handle "votes" text */
 #answer-boxes .points.badge {
-    flex: 0 0 3.5rem;
-    width: 3.5 rem;
-    margin: 0;
+    flex: 0 0 5rem; /* Increased from 3.5rem to accommodate "votes" text */
+    width: 5rem; /* Fixed width property (removed extra space) */
+    margin: 0 0.5rem 0 0; /* Added right margin for spacing */
     text-align: center;
     font-size: clamp(1.125rem, 2vw, 1.25rem);
     font-weight: 400;
-    padding: none !important;
+    padding: 0.25rem 0.5rem !important; /* Fixed invalid 'none' padding */
     color: #000;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 /* Desktop styles */
@@ -256,11 +257,11 @@ h5,
     }
 
     #answer-boxes .points.badge {
-        flex: 0 0 4rem;
-        width: 4rem;
+        flex: 0 0 5.5rem; /* Increased from 4rem to 5.5rem */
+        width: 5.5rem;
+        margin-right: 0.75rem; /* Added extra margin on desktop */
     }
 }
-
 
 /* Guess form styling */
 .guess-outer-container {
@@ -334,6 +335,12 @@ h5,
     justify-content: center;
 }
 
+/* Add a better class for handling keyboard visibility */
+body.keyboard-visible #guess-form-container {
+    position: fixed !important;
+    bottom: 0 !important;
+}
+
 /* Disabled state styling */
 #guess-form .form-control:disabled,
 #guess-form .form-control[readonly] {
@@ -381,9 +388,23 @@ h2.text-center.mb-4 {
     width: 100%;
   }
 
+body.keyboard-open #guess-form-container {
+    position: sticky;
+    bottom: 0;
+}
+
 .guess-outer-container {
     max-width: 100%;
 }
+
+:root {
+    --vh: 1vh;
+  }
+  
+  /* Adjust fixed positioning using the custom viewport height */
+  #guess-form-placeholder {
+    height: 4.5rem; /* Fixed height instead of relying on dynamic calculation */
+  }
 
 /* Desktop styles (overrides) */
 @media (min-width: 768px) {

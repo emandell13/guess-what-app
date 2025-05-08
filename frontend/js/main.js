@@ -179,24 +179,18 @@ class App {
       try {
         // Reveal all remaining answers with animations
         await this.answerGrid.revealAllRemaining(remainingAnswers);
-        
-        // Clear the flag - animations complete
-        document.body.dataset.revealingAnswers = 'false';
-        
-        // Show the game over modal
-        if (this.gameModal.pendingScore !== undefined) {
-          this.gameModal.show(gameService.totalGuesses);
-          this.gameModal.pendingScore = undefined;
-        }
       } catch (error) {
         console.error("Error revealing answers:", error);
-        // Clean up in case of error
+      } finally {
+        // IMPORTANT: Always reset the flag, even if there's an error
         document.body.dataset.revealingAnswers = 'false';
         
-        // Show modal anyway
-        if (this.gameModal.pendingScore !== undefined) {
-          this.gameModal.show(gameService.totalGuesses);
-          this.gameModal.pendingScore = undefined;
+        // Show the game over modal - passing gaveUp=true
+        if (this.gameModal.pendingGuesses !== undefined) {
+          this.gameModal.show(gameService.totalGuesses, true);
+          this.gameModal.pendingGuesses = undefined;
+        } else {
+          this.gameModal.show(gameService.totalGuesses, true);
         }
       }
     });
@@ -404,43 +398,53 @@ class App {
     }, 2000);
   }
 
-  /**
-   * Reveals all remaining answers when the game is over
-   * @returns {Promise} A promise that resolves when all answers are revealed
-   */
-  async revealAllRemainingAnswers() {
-    try {
-      console.log("Starting reveal of remaining answers");
-      const response = await fetch("/guesses/question?includeAnswers=true");
-      const data = await response.json();
+/**
+ * Reveals all remaining answers when the game is over
+ * @returns {Promise} A promise that resolves when all answers are revealed
+ */
+async revealAllRemainingAnswers() {
+  try {
+    console.log("Starting reveal of remaining answers");
+    const response = await fetch("/guesses/question?includeAnswers=true");
+    const data = await response.json();
 
-      // Filter out already guessed answers
-      const remainingAnswers = data.answers.filter(answer =>
-        !gameService.correctGuesses.some(guess => guess.rank === answer.rank)
-      ).map(answer => ({
-        rank: answer.rank,
-        answer: answer.answer,
-        voteCount: answer.rawVotes
-      }));
+    // Filter out already guessed answers
+    const alreadyGuessedRanks = gameService.correctGuesses.map(guess => guess.rank);
+    console.log("Already guessed ranks:", alreadyGuessedRanks);
+    
+    const remainingAnswers = data.answers.filter(answer => 
+      !alreadyGuessedRanks.includes(answer.rank)
+    ).map(answer => ({
+      rank: answer.rank,
+      answer: answer.answer,
+      voteCount: answer.rawVotes
+    }));
 
-      console.log(`Revealing ${remainingAnswers.length} remaining answers`);
+    console.log(`Revealing ${remainingAnswers.length} remaining answers`);
 
-      // Reveal all remaining answers with staggered animations
-      const promise = this.answerGrid.revealAllRemaining(remainingAnswers);
-
-      // Add these debug logs
-      promise.then(() => {
-        console.log("All answers revealed successfully");
-      }).catch(err => {
-        console.error("Error in reveal animation promise:", err);
-      });
-
-      return promise;
-    } catch (error) {
-      console.error('Error revealing remaining answers:', error);
-      return Promise.resolve(); // Return a resolved promise on error
+    // If no answers to reveal, return immediately
+    if (remainingAnswers.length === 0) {
+      console.log("No remaining answers to reveal");
+      return Promise.resolve();
     }
+
+    // Reveal all remaining answers with staggered animations
+    const promise = this.answerGrid.revealAllRemaining(remainingAnswers);
+
+    // Add these debug logs
+    promise.then(() => {
+      console.log("All answers revealed successfully");
+    }).catch(err => {
+      console.error("Error in reveal animation promise:", err);
+    });
+
+    return promise;
+  } catch (error) {
+    console.error('Error revealing remaining answers:', error);
+    return Promise.resolve(); // Return a resolved promise on error
   }
+  
+}
 }
 
 // Application initialization

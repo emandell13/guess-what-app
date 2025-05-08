@@ -39,16 +39,24 @@ class GameModal {
   setupEventListeners() {
     // Listen for game completed event
     eventService.on('game:completed', (event) => {
-      const { currentScore } = event.detail;
+      const { totalGuesses, gaveUp } = event.detail;
+      console.log("GameModal - Received game:completed event with:", { 
+        totalGuesses, 
+        gaveUp,
+        eventDetail: JSON.stringify(event.detail)
+      });  
       // Don't automatically show the modal on game completion
-      // Instead, store the score and check if we're pending animations
-      this.pendingScore = currentScore;
-
+      // Instead, store the information and check if we're pending animations
+      this.pendingGuesses = totalGuesses;  // Changed from pendingScore to pendingGuesses
+      this.pendingGaveUp = gaveUp;
+    
       // If there are no pending animations, show the modal immediately
-      if (!document.body.dataset.revealingAnswers) {
-        this.show(currentScore);
+      if (document.body.dataset.revealingAnswers !== 'true') {
+        console.log('No animations in progress, showing modal immediately');
+        this.show(totalGuesses, gaveUp);
+      } else {
+        console.log('Animations in progress, modal will show when complete');
       }
-      // Otherwise, the main.js animations will call show() when done
     });
 
     // Listen for step navigation events
@@ -58,17 +66,26 @@ class GameModal {
   }
 
   /**
-   * Shows the modal
-   * @param {number} score - The final score to display
-   */
-  show(score) {
+ * Shows the modal
+ * @param {number} totalGuesses - The number of guesses to display
+ * @param {boolean} gaveUp - Whether the user gave up
+ */
+  show(totalGuesses, gaveUp) {
+    console.log('GameModal.show - called with parameters', { totalGuesses, gaveUp });
+  
     // If animations are in progress, don't show yet
     if (document.body.dataset.revealingAnswers === 'true') {
-      // Store the score for later when animations complete
-      this.pendingScore = score;
+      // Store the data for later when animations complete
+      this.pendingScore = totalGuesses;
+      this.pendingGaveUp = gaveUp;
+      console.log('Animations in progress, delaying modal');
       return;
     }
-
+  
+    // Store gaveUp state so it can be used when showing the summary step
+    this.gaveUp = gaveUp;
+    console.log('GameModal.show - Stored gaveUp state:', this.gaveUp);
+    
     this.resetModal();
     this.modal.show();
   }
@@ -151,31 +168,42 @@ class GameModal {
   }
 
   resetModal() {
-    this.currentStep = 1;
-    this.updateProgress();
+    try {
+      this.currentStep = 1;
+      this.updateProgress();
 
-    // Hide vote and share steps, show summary step
-    this.voteStep.hide();
-    this.shareStep.hide();
-    this.summaryStep.show();
-
-    // Make sure progress bar is visible again
-    const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
-    if (progressContainer) {
-      progressContainer.style.display = '';
+      console.log('GameModal.resetModal - Before calling summaryStep.show, gaveUp state:', this.gaveUp);
+  
+      // Hide vote and share steps
+      this.voteStep.hide();
+      this.shareStep.hide();
+      
+      // Show summary step with gaveUp status
+      this.summaryStep.show(this.gaveUp);
+      console.log('GameModal.resetModal - After calling summaryStep.show');
+  
+      // Make sure progress bar is visible again
+      const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
+      if (progressContainer) {
+        progressContainer.style.display = '';
+      }
+  
+      // Reset close button positioning
+      const closeButton = document.querySelector('#gameCompleteModal .btn-close');
+      if (closeButton) {
+        closeButton.style.position = '';
+        closeButton.style.right = '';
+        closeButton.style.top = '';
+      }
+  
+      // Emit reset event
+      eventService.emit('modal:reset');
+    } catch (error) {
+      console.error("Error in resetModal:", error);
     }
-
-    // Reset close button positioning
-    const closeButton = document.querySelector('#gameCompleteModal .btn-close');
-    if (closeButton) {
-      closeButton.style.position = '';
-      closeButton.style.right = '';
-      closeButton.style.top = '';
-    }
-
-    // Emit reset event
-    eventService.emit('modal:reset');
   }
+  
+  
 }
 
 export default GameModal;

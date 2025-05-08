@@ -1,6 +1,6 @@
 import eventService from '../../services/EventService.js';
 import authService from '../../services/AuthService.js';
-import gameConfig from '../../config/gameConfig.js';
+import gameService from '../../services/GameService.js';
 
 /**
  * Component representing the summary step of the game completion modal
@@ -12,20 +12,16 @@ class SummaryStep {
    */
   constructor(stepId) {
     this.stepElement = document.getElementById(stepId);
-    this.hundredsDigitElement = this.stepElement.querySelector('#modalScoreHundreds');
-    this.tensDigitElement = this.stepElement.querySelector('#modalScoreTens');
     this.onesDigitElement = this.stepElement.querySelector('#modalScoreOnes');
-    this.pointsTotalElement = this.stepElement.querySelector('#modalPointsTotal');
+    this.pointsTotalElement = this.stepElement.querySelector('.score-text');
     this.nextButton = this.stepElement.querySelector('.btn-next');
     this.statsLink = this.stepElement.querySelector('.stats-link');
-
-    // Add these new lines to reference the answer boxes
-    this.answerBoxes = this.stepElement.querySelectorAll('.answer-box');
+    this.resultHeading = this.stepElement.querySelector('#result-heading');
+    this.resultHeadingLose = this.stepElement.querySelector('#result-heading-lose');
 
     // Game state cache
     this.gameData = {
       score: 0,
-      maxPoints: gameConfig.MAX_POINTS,
       correctAnswers: []
     };
 
@@ -46,11 +42,12 @@ class SummaryStep {
    * Sets up event listeners for game events
    */
   setupEventListeners() {
-    // Listen for score changes
-    eventService.on('game:score-change', (event) => {
-      const { currentScore } = event.detail;
-      this.gameData.score = currentScore;
-      this.updateScore(currentScore);
+    // Listen for guess counter updates
+    eventService.on('game:guess-counter-updated', (event) => {
+      const { totalGuesses } = event.detail;
+      if (totalGuesses !== undefined) {
+        this.gameData.score = totalGuesses;
+      }
     });
 
     // Listen for answers revealed
@@ -65,76 +62,169 @@ class SummaryStep {
 
     // Listen for game completed event
     eventService.on('game:completed', (event) => {
-      const { currentScore } = event.detail;
-      this.gameData.score = currentScore;
-      this.updateScore(currentScore);
+      // Add defensive check here
+      if (event.detail && event.detail.totalGuesses !== undefined) {
+        this.gameData.score = event.detail.totalGuesses;
+      }
 
       // Emit event that summary is ready
       eventService.emit('summary:ready', {
-        score: currentScore
+        score: this.gameData.score || 0
       });
     });
   }
 
-  updateAnswerBoxes() {
+  /**
+   * Updates the answer boxes display - only handles styling the answer boxes
+   * @param {Array} correctAnswers - Array of ranks of correct answers
+   * @param {boolean} gaveUp - Whether the user gave up
+   */
+  updateAnswerBoxes(correctAnswers, gaveUp) {
+    // Get all answer boxes
+    const answerBoxes = this.stepElement.querySelectorAll('.answer-box');
+
     // Reset all boxes first
-    this.answerBoxes.forEach(box => {
-      box.classList.remove('correct');
+    answerBoxes.forEach(box => {
+      box.classList.remove('correct', 'incorrect');
     });
+
+    // Mark correct ones with green
+    if (correctAnswers && correctAnswers.length > 0) {
+      correctAnswers.forEach(rank => {
+        const box = this.stepElement.querySelector(`.answer-box[data-rank="${rank}"]`);
+        if (box) {
+          box.classList.add('correct');
+        }
+      });
+    }
+
+    // If the user gave up, mark the remaining ones as incorrect/red
+    if (gaveUp) {
+      answerBoxes.forEach(box => {
+        if (!box.classList.contains('correct')) {
+          box.classList.add('incorrect');
+        }
+      });
+    }
+  }
   
-    // Mark the correct ones
-    this.gameData.correctAnswers.forEach(rank => {
-      const box = this.stepElement.querySelector(`.answer-box[data-rank="${rank}"]`);
-      if (box) {
-        box.classList.add('correct');
+  /**
+   * Updates the heading display based on game state
+   * @param {boolean} gaveUp - Whether the user gave up
+   * @param {Array} correctAnswers - Array of ranks of correct answers
+   */
+  updateHeading(gaveUp, correctAnswers) {
+    // Make sure we have the heading elements
+    if (!this.resultHeading || !this.resultHeadingLose) {
+      // Try to get them again, they might not have been available in constructor
+      this.resultHeading = this.stepElement.querySelector('#result-heading');
+      this.resultHeadingLose = this.stepElement.querySelector('#result-heading-lose');
+      
+      if (!this.resultHeading || !this.resultHeadingLose) {
+        console.error("Could not find heading elements");
+        return;
       }
-    });
+    }
+    
+    const shouldShowLoseHeading = gaveUp === true || (correctAnswers && correctAnswers.length < 5);
+    
+    // Force direct DOM manipulation with try/catch for safety
+    try {
+      if (shouldShowLoseHeading) {
+        // They lost or gave up - show "Better luck next time!"
+        this.resultHeading.classList.add('d-none');
+        this.resultHeadingLose.classList.remove('d-none');
+      } else {
+        // They won! - show "You win!"
+        this.resultHeading.classList.remove('d-none');
+        this.resultHeadingLose.classList.add('d-none');
+      }
+    } catch (error) {
+      console.error("Error toggling headings:", error);
+    }
+  }
+
+  /**
+   * Updates the guess counter display
+   * @param {number} guessCount - Number of guesses to display
+   */
+  updateScore(guessCount) {
+    // Ensure guessCount is a valid number
+    const totalGuesses = typeof guessCount === 'number' ? guessCount : 0;
+
+    this.gameData.score = totalGuesses;
+
+    // Simply update the one-digit box with the number of guesses
+    if (this.onesDigitElement) {
+      this.onesDigitElement.textContent = totalGuesses.toString();
+    }
+
+    // Update the text to say "Guesses" instead of points
+    if (this.pointsTotalElement) {
+      this.pointsTotalElement.textContent = "Guesses";
+    }
+
+    // Emit update event if the element is visible
+    if (this.stepElement && this.stepElement.style.display !== 'none') {
+      eventService.emit('summary:score-updated', {
+        guessCount: totalGuesses
+      });
+    }
   }
 
   /**
    * Shows this step
    */
-  show() {
+  show(forcedGaveUp) {
     this.stepElement.style.display = 'block';
-  
-    // Get the latest game score information
-    try {
-      const gameService = window.app ? window.app.gameService : null;
-      if (gameService) {
-        this.gameData.score = gameService.currentScore || 0;
-        this.gameData.maxPoints = gameService.maxPoints || 0;
-        if (gameService.correctGuesses) {
-          this.gameData.correctAnswers = gameService.correctGuesses.map(guess => guess.rank);
-        }
-      } else {
-        // Fallback if gameService isn't accessible
-        // Try to get data from the DOM if available
-        const currentScoreElement = document.getElementById('current-score');
-        const maxScoreElement = document.getElementById('max-score');
-        if (currentScoreElement) {
-          this.gameData.score = parseInt(currentScoreElement.textContent) || 0;
-        }
-        if (maxScoreElement) {
-          this.gameData.maxPoints = parseInt(maxScoreElement.textContent) || 0;
-        }
+
+    // Ensure we interpret forcedGaveUp as a boolean
+    const gaveUpParam = forcedGaveUp === true;
+
+    // CRITICAL: DIRECTLY SET HEADINGS HERE FIRST BASED ON FORCED GAVE UP
+    // This ensures the headings are set immediately without depending on gameService
+    if (gaveUpParam === true) {
+      if (this.resultHeading && this.resultHeadingLose) {
+        this.resultHeading.classList.add('d-none');
+        this.resultHeadingLose.classList.remove('d-none'); 
       }
+    }
+
+    // Get the latest game info directly from gameService
+    try {
+      // Get basic info
+      this.gameData.score = gameService.totalGuesses || 0;
+
+      // Get correct answers
+      const correctRanks = gameService.correctGuesses.map(guess => guess.rank);
+
+      // Update the guess counter display
+      this.updateScore(this.gameData.score);
+
+      // Use either the forced gaveUp parameter or the game service value
+      const gaveUp = gaveUpParam || (gameService.gaveUp === true);
+
+      // Update the answer boxes
+      this.updateAnswerBoxes(correctRanks, gaveUp);
+      
+      // Now update the heading separately
+      this.updateHeading(gaveUp, correctRanks);
     } catch (error) {
       console.error('Error getting game state:', error);
+      
+      // Even if there's an error, try to at least update the headings
+      if (gaveUpParam === true) {
+        this.updateHeading(true, []);
+      }
     }
-  
-    // Update score with latest value when shown
-    this.updateScore(this.gameData.score, this.gameData.maxPoints);
-    
-    // Update answer boxes
-    this.updateAnswerBoxes();
-  
+
     // Emit event when step is shown
     eventService.emit('summary:shown', {
-      score: this.gameData.score,
-      maxPoints: this.gameData.maxPoints
+      guessCount: this.gameData.score
     });
-  
-    if (this.statsLink) {  
+
+    // Handle stats link visibility
+    if (this.statsLink) {
       if (authService.isAuthenticated()) {
         this.statsLink.style.display = 'none';
       } else {
@@ -151,7 +241,6 @@ class SummaryStep {
         }
       }
     }
-
   }
 
   /**
@@ -162,67 +251,6 @@ class SummaryStep {
 
     // Emit event when step is hidden
     eventService.emit('summary:hidden');
-  }
-
-  /**
-  * Updates the score displayed
-  * @param {number} score - The score to display
-  */
-  updateScore(score, maxPoints = gameConfig.MAX_POINTS) {
-    this.gameData.score = score;
-    this.gameData.maxPoints = maxPoints;
-
-    // Get the parent element of the digit boxes (container for all score boxes)
-    const scoreBoxesContainer = this.onesDigitElement.closest('.score-boxes');
-    const hundredsDigitBox = this.hundredsDigitElement?.closest('.hundreds-digit-box');
-    const tensDigitBox = this.tensDigitElement?.closest('.tens-digit-box');
-
-
-    // Remove all digit-related classes
-    if (scoreBoxesContainer) {
-      scoreBoxesContainer.classList.remove('single-digit', 'double-digit', 'triple-digit');
-    }
-
-    // Split the score into digits and update display
-    if (score >= 100) {
-      // Triple digit scenario
-      if (scoreBoxesContainer) scoreBoxesContainer.classList.add('triple-digit');
-      if (hundredsDigitBox) hundredsDigitBox.style.display = 'flex';
-
-      const scoreStr = score.toString();
-      this.hundredsDigitElement.textContent = scoreStr[0];
-      this.tensDigitElement.textContent = scoreStr[1];
-      this.onesDigitElement.textContent = scoreStr[2];
-    } else if (score >= 10) {
-
-      // Double digit scenario
-      if (scoreBoxesContainer) scoreBoxesContainer.classList.add('double-digit');
-      if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';
-      if (tensDigitBox) tensDigitBox.style.display = 'flex'; // Make sure tens digit is visible
-
-      const scoreStr = score.toString();
-      this.tensDigitElement.textContent = scoreStr[0];
-      this.onesDigitElement.textContent = scoreStr[1];
-    } else {
-      // Single digit scenario
-      if (scoreBoxesContainer) scoreBoxesContainer.classList.add('single-digit');
-      if (hundredsDigitBox) hundredsDigitBox.style.display = 'none';
-      if (tensDigitBox) tensDigitBox.style.display = 'none';
-
-      this.onesDigitElement.textContent = score.toString();
-    }
-
-    if (this.pointsTotalElement) {
-      this.pointsTotalElement.textContent = gameConfig.MAX_POINTS.toString();
-    }
-
-    // Only emit update event if the element is visible
-    if (this.stepElement.style.display !== 'none') {
-      eventService.emit('summary:score-updated', {
-        score: score,
-        maxPoints: gameConfig.MAX_POINTS
-      });
-    }
   }
 }
 

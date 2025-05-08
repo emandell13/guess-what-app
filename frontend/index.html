@@ -87,11 +87,9 @@
     </div>
     </div>
 
-    <!-- Game Completion Modal - moved outside the container -->
     <div class="modal fade" id="gameCompleteModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
-                <!-- Progress Bar -->
                 <!-- Progress Bar -->
                 <div class="modal-header pb-0 pt-4 d-flex justify-content-between align-items-center">
                     <div class="progress-container">
@@ -103,26 +101,22 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
+    
                 <!-- Step 1: Game Summary -->
                 <div class="modal-body" id="summaryStep">
-                    <h3 class="text-center mb-4">Your score</h3>
-
+                    <!-- For win condition -->
+                    <h3 class="text-center mb-4" id="result-heading">You win!</h3>
+    
+                    <!-- For lose condition (initially hidden) -->
+                    <h3 class="text-center mb-4 d-none" id="result-heading-lose">Better luck next time!</h3>
+    
                     <div class="score-display">
-                        <div class="score-boxes">
-                            <div class="score-box hundreds-digit-box" style="display: none;">
-                                <span id="modalScoreHundreds">0</span>
-                            </div>
-                            <div class="score-box tens-digit-box">
-                                <span id="modalScoreTens">0</span>
-                            </div>
-                            <div class="score-box ones-digit-box">
-                                <span id="modalScoreOnes">0</span>
-                            </div>
+                        <div class="score-box single-digit">
+                            <span id="modalScoreOnes">0</span>
                         </div>
-                        <div class="score-text">out of <span id="modalPointsTotal">0</span> points</div>
+                        <div class="score-text">Guesses</div>
                     </div>
-
+    
                     <!-- Numbered Boxes -->
                     <div class="share-answer-boxes mb-4 mt-3">
                         <div class="answer-box-wrapper">
@@ -141,20 +135,20 @@
                             <div class="answer-box" data-rank="5">5</div>
                         </div>
                     </div>
-
+    
                     <button class="btn btn-next w-100">
                         Vote for tomorrow's question
                     </button>
-
+    
                     <div class="text-center mt-3">
-                        <a href="#" class="stats-link">Track your stats</a>
+                        <a href="#" class="stats-link">Track your stats →</a>
                     </div>
                 </div>
-
+    
                 <!-- Step 2: Vote -->
                 <div class="modal-body" id="voteStep" style="display: none;">
                     <h3 class="text-center mb-4">Help create tomorrow's game</h3>
-
+    
                     <div class="vote-container">
                         <div class="question-container mb-2">
                             <h4 class="question-text text-center mb-4"></h4>
@@ -181,23 +175,23 @@
                             <p class="mt-4 thanks-text">Come back tomorrow to see if others thought like you!</p>
                         </div>
                     </div>
-
+    
                     <div class="text-center">
                         <a href="#" class="skip-link">Skip</a>
                         <button class="btn btn-next" style="display: none;">Next</button>
                     </div>
                 </div>
-
+    
                 <!-- Step 3: Share -->
                 <div class="modal-body" id="shareStep" style="display: none;">
                     <h3 class="text-center mb-4">Never miss a game! Follow us on social.</h3>
-
+    
                     <!-- Logo -->
                     <div class="text-center mb-4">
                         <img src="images/logo.svg" alt="Guess What!" class="modal-logo-image"
                             style="width: 120px; height: auto;">
                     </div>
-
+    
                     <!-- Social Media Icons -->
                     <div class="social-follow-container text-center">
                         <div class="social-options">
@@ -209,8 +203,8 @@
                                 aria-label="Follow on Twitter">
                                 <i class="fab fa-twitter"></i>
                             </a>
-                            <a href="https://www.facebook.com/profile.php?id=61574626265708" target="_blank" class="social-button"
-                                aria-label="Follow on Facebook">
+                            <a href="https://www.facebook.com/profile.php?id=61574626265708" target="_blank"
+                                class="social-button" aria-label="Follow on Facebook">
                                 <i class="fab fa-facebook-f"></i>
                             </a>
                         </div>

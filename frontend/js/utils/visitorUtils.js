@@ -81,3 +81,15 @@ export function getTodayStrikes() {
   const strikesString = localStorage.getItem(`gwStrikes_${today}`);
   return strikesString ? parseInt(strikesString, 10) : 0;
 }
+
+// Save the gave up state for today
+export function markTodayGaveUp() {
+  const today = getTodayDate();
+  localStorage.setItem(`gwGaveUp_${today}`, 'true');
+}
+
+// Check if user gave up today
+export function hasTodayGivenUp() {
+  const today = getTodayDate();
+  return localStorage.getItem(`gwGaveUp_${today}`) === 'true';
+}
