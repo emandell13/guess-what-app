@@ -86,66 +86,26 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   // Extract response text from votes
   const voteTexts = votes.map(vote => vote.response);
   
-  // Create a map of all unique responses and their original indices
-  const uniqueVotes = new Map();
-  voteTexts.forEach((vote, index) => {
-    // Use the normalized vote text as the key
-    const normalizedVote = normalizeText(vote);
-    if (!uniqueVotes.has(normalizedVote)) {
-      uniqueVotes.set(normalizedVote, []);
-    }
-    // Store original 1-based index
-    uniqueVotes.get(normalizedVote).push(index + 1);
-  });
+  // Send ALL votes directly to the LLM
+  const groupedVotes = await groupAllVotesWithLLM(voteTexts, question.question_text);
   
-  console.log(`Identified ${uniqueVotes.size} unique votes out of ${votes.length} total votes`);
-  
-  // Convert unique votes to array for LLM processing
-  const uniqueVoteTexts = Array.from(uniqueVotes.keys());
-  
-  // Group unique votes using LLM
-  const groupedUniqueVotes = await groupVotesWithLLM(uniqueVoteTexts, question.question_text);
-  
-  // If LLM grouping failed, mark question as complete and exit
-  if (!groupedUniqueVotes) {
+  if (!groupedVotes) {
     console.log('LLM grouping failed, marking question as complete without grouping');
     await markQuestionComplete(question.id);
     return;
   }
   
-  // Expand groupings to include all original vote indices
-  const expandedGroups = {};
-  
-  // Process each group from LLM
-  Object.entries(groupedUniqueVotes).forEach(([canonicalAnswer, uniqueIndices]) => {
-    if (canonicalAnswer === 'EXCLUDED_ANSWERS') {
-      // Handle excluded answers specially
-      expandedGroups[canonicalAnswer] = [];
-      uniqueIndices.forEach(uniqueIndex => {
-        const normalizedVote = uniqueVoteTexts[uniqueIndex - 1];
-        expandedGroups[canonicalAnswer].push(...uniqueVotes.get(normalizedVote));
-      });
-    } else {
-      // For regular groups, expand indices
-      expandedGroups[canonicalAnswer] = [];
-      uniqueIndices.forEach(uniqueIndex => {
-        const normalizedVote = uniqueVoteTexts[uniqueIndex - 1];
-        expandedGroups[canonicalAnswer].push(...uniqueVotes.get(normalizedVote));
-      });
-    }
-  });
-  
   // Store excluded answers for logging
   let excludedAnswers = [];
-  if (expandedGroups.EXCLUDED_ANSWERS) {
-    const excludedIndices = expandedGroups.EXCLUDED_ANSWERS;
+  if (groupedVotes.EXCLUDED_ANSWERS) {
+    const excludedIndices = groupedVotes.EXCLUDED_ANSWERS;
     excludedAnswers = excludedIndices.map(idx => voteTexts[idx - 1]);
     console.log(`Excluding ${excludedIndices.length} inappropriate answers:`, excludedAnswers);
-    delete expandedGroups.EXCLUDED_ANSWERS;
+    delete groupedVotes.EXCLUDED_ANSWERS;
   }
   
   // Convert to array and sort by count
-  const sortedVotes = Object.entries(expandedGroups)
+  const sortedVotes = Object.entries(groupedVotes)
     .map(([canonicalAnswer, indices]) => ({
       answer: canonicalAnswer,
       count: indices.length,
@@ -153,10 +113,20 @@ async function tallyVotesForTodaysQuestion(todayDate) {
     }))
     .sort((a, b) => b.count - a.count);
   
+  // Validate total count
+  const totalGroupedVotes = sortedVotes.reduce((sum, group) => sum + group.count, 0) + 
+                           (groupedVotes.EXCLUDED_ANSWERS?.length || 0);
+  
+  if (totalGroupedVotes !== votes.length) {
+    console.warn(`Vote count mismatch: ${totalGroupedVotes} votes after grouping vs. ${votes.length} original votes`);
+  } else {
+    console.log(`Vote count validated: ${totalGroupedVotes} votes successfully processed`);
+  }
+  
+  console.log('Top answers to insert:', sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT));
+  
   // Take top answers
   const topAnswers = sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT);
-  
-  console.log('Top answers to insert:', topAnswers);
   
   // Clear any existing top answers first
   await clearExistingTopAnswers(question.id);
@@ -165,12 +135,120 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   const insertedAnswers = await insertTopAnswers(question.id, topAnswers);
   
   // Update votes with matched_answer_id
-  await updateVotesWithMatchedAnswers(votes, voteTexts, expandedGroups, insertedAnswers);
+  await updateVotesWithLLMGroups(votes, voteTexts, groupedVotes, insertedAnswers);
   
   // Mark question as voting complete
   await markQuestionComplete(question.id);
   
   console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers`);
+}
+
+/**
+ * Group all votes using LLM with batch processing for large vote sets
+ * @param {Array<string>} votes - List of all vote texts
+ * @param {string} questionText - The question text for context
+ * @returns {Object} - Grouped votes with canonical answers as keys and vote indices as values
+ */
+async function groupAllVotesWithLLM(votes, questionText) {
+  try {
+    console.log(`Grouping ${votes.length} votes with LLM`);
+    
+    // For large numbers of votes, we need to batch them
+    const BATCH_SIZE = 100; // Adjust based on token limits and performance
+    const batches = [];
+    
+    // Create batches of votes
+    for (let i = 0; i < votes.length; i += BATCH_SIZE) {
+      batches.push(votes.slice(i, Math.min(i + BATCH_SIZE, votes.length)));
+    }
+    
+    console.log(`Processing votes in ${batches.length} batches`);
+    
+    // Process each batch
+    const batchResults = [];
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      const startIndex = i * BATCH_SIZE;
+      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} votes (indices ${startIndex+1}-${startIndex+batch.length})`);
+      
+      // Create the prompt
+      const prompt = createAnswerGroupingPrompt(batch, questionText);
+      
+      // Call the LLM with error handling
+      let result;
+      try {
+        result = await callLLM(prompt, { maxTokens: 4000 });
+      } catch (apiError) {
+        console.error(`Error calling LLM for batch ${i+1}:`, apiError);
+        continue; // Skip this batch if the API call fails
+      }
+      
+      // Parse the result with error handling
+      try {
+        // Extract JSON content in case there's any surrounding text
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[0] : result;
+        
+        const groupedBatch = JSON.parse(jsonStr);
+        batchResults.push({
+          groupedBatch,
+          startIndex
+        });
+      } catch (parseError) {
+        console.error(`Error parsing batch ${i+1} result:`, parseError);
+        console.error('Raw LLM output:', result);
+        continue; // Skip this batch if parsing fails
+      }
+    }
+    
+    // If all batches failed, return null
+    if (batchResults.length === 0) {
+      console.error('All batches failed to process');
+      return null;
+    }
+    
+    // Merge batch results
+    const mergedGroups = {};
+    const excludedAnswers = [];
+    
+    // Process each batch result
+    batchResults.forEach(({ groupedBatch, startIndex }) => {
+      // Handle excluded answers
+      if (groupedBatch.EXCLUDED_ANSWERS) {
+        // Adjust indices to global vote array
+        const globalExcludedIndices = groupedBatch.EXCLUDED_ANSWERS.map(idx => startIndex + idx);
+        excludedAnswers.push(...globalExcludedIndices);
+      }
+      
+      // Process each group in the batch
+      Object.entries(groupedBatch).forEach(([canonicalAnswer, indices]) => {
+        // Skip the EXCLUDED_ANSWERS key
+        if (canonicalAnswer === 'EXCLUDED_ANSWERS') {
+          return;
+        }
+        
+        // Adjust indices to global vote array
+        const globalIndices = indices.map(idx => startIndex + idx);
+        
+        // Add to merged groups
+        if (mergedGroups[canonicalAnswer]) {
+          mergedGroups[canonicalAnswer].push(...globalIndices);
+        } else {
+          mergedGroups[canonicalAnswer] = globalIndices;
+        }
+      });
+    });
+    
+    // Add excluded answers to final result
+    if (excludedAnswers.length > 0) {
+      mergedGroups.EXCLUDED_ANSWERS = excludedAnswers;
+    }
+    
+    return mergedGroups;
+  } catch (error) {
+    console.error('Error grouping votes with LLM:', error);
+    return null;
+  }
 }
 
 /**
@@ -245,10 +323,10 @@ async function insertTopAnswers(questionId, topAnswers) {
  * Update votes with matched answer IDs
  * @param {Array} votes - Array of vote objects
  * @param {Array} voteTexts - Array of vote text strings
- * @param {Object} groupedAnswers - Grouped answers from LLM
+ * @param {Object} groupedVotes - Grouped votes from LLM
  * @param {Array} insertedAnswers - Inserted top answers
  */
-async function updateVotesWithMatchedAnswers(votes, voteTexts, groupedAnswers, insertedAnswers) {
+async function updateVotesWithLLMGroups(votes, voteTexts, groupedVotes, insertedAnswers) {
   console.log('Updating votes with matched answer IDs...');
   
   // Create a mapping of canonical answers to top_answer IDs
@@ -258,18 +336,17 @@ async function updateVotesWithMatchedAnswers(votes, voteTexts, groupedAnswers, i
   });
   
   // Process each vote
-  for (const vote of votes) {
-    // Get the index of this vote in the voteTexts array
-    const voteIndex = voteTexts.indexOf(vote.response);
-    if (voteIndex === -1) continue;
+  for (let i = 0; i < votes.length; i++) {
+    const vote = votes[i];
+    // LLM returns 1-based indices, so add 1 to our 0-based index
+    const voteIndex = i + 1;
     
-    // LLM uses 1-based indices, so add 1
-    const voteIndexInLLM = voteIndex + 1;
-    
-    // Find the canonical answer for this vote
+    // Find which group this vote belongs to
     let matchedCanonicalAnswer = null;
-    for (const [canonicalAnswer, indices] of Object.entries(groupedAnswers)) {
-      if (indices.includes(voteIndexInLLM)) {
+    for (const [canonicalAnswer, indices] of Object.entries(groupedVotes)) {
+      if (canonicalAnswer === 'EXCLUDED_ANSWERS') continue;
+      
+      if (indices.includes(voteIndex)) {
         matchedCanonicalAnswer = canonicalAnswer;
         break;
       }
@@ -290,116 +367,6 @@ async function updateVotesWithMatchedAnswers(votes, voteTexts, groupedAnswers, i
     if (error) {
       console.error(`Error updating vote ${vote.id}:`, error);
     }
-  }
-}
-
-/**
- * Group votes using LLM with batch processing for large vote sets
- * @param {Array<string>} votes - List of vote texts
- * @param {string} questionText - The question text for context
- * @returns {Object} - Grouped votes with canonical answers as keys and vote indices as values
- */
-async function groupVotesWithLLM(uniqueVotes, questionText) {
-  try {
-    console.log(`Grouping ${uniqueVotes.length} unique votes with LLM`);
-    
-    // For large numbers of votes, we need to batch them
-    const BATCH_SIZE = 100; // Adjust based on token limits and performance
-    const batches = [];
-    
-    // Create batches of votes
-    for (let i = 0; i < uniqueVotes.length; i += BATCH_SIZE) {
-      batches.push(uniqueVotes.slice(i, Math.min(i + BATCH_SIZE, uniqueVotes.length)));
-    }
-    
-    console.log(`Processing votes in ${batches.length} batches`);
-    
-    // Process each batch
-    const batchResults = [];
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      const startIndex = i * BATCH_SIZE;
-      console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} votes (indices ${startIndex+1}-${startIndex+batch.length})`);
-      
-      // Create the prompt
-      const prompt = createAnswerGroupingPrompt(batch, questionText);
-      
-      // Call the LLM with error handling
-      let result;
-      try {
-        result = await callLLM(prompt, { maxTokens: 4000 });
-      } catch (apiError) {
-        console.error(`Error calling LLM for batch ${i+1}:`, apiError);
-        continue; // Skip this batch if the API call fails
-      }
-      
-      // Parse the result with error handling
-      try {
-        // Extract JSON content in case there's any surrounding text
-        const jsonMatch = result.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? jsonMatch[0] : result;
-        
-        const groupedBatch = JSON.parse(jsonStr);
-        batchResults.push({
-          groupedBatch,
-          startIndex
-        });
-      } catch (parseError) {
-        console.error(`Error parsing batch ${i+1} result:`, parseError);
-        console.error('Raw LLM output:', result);
-        continue; // Skip this batch if parsing fails
-      }
-    }
-    
-    // If all batches failed, return null
-    if (batchResults.length === 0) {
-      console.error('All batches failed to process');
-      return null;
-    }
-    
-    // Merge batch results
-    const mergedGroups = {};
-    const excludedAnswers = [];
-    
-    // Process each batch result
-    batchResults.forEach(({ groupedBatch, startIndex }) => {
-      // Handle excluded answers
-      if (groupedBatch.EXCLUDED_ANSWERS) {
-        // Convert batch-specific indices to global indices
-        // LLM returns 1-based indices, so we adjust to global 1-based indices
-        const globalExcludedIndices = groupedBatch.EXCLUDED_ANSWERS.map(idx => startIndex + idx);
-        excludedAnswers.push(...globalExcludedIndices);
-      }
-      
-      // Process each group in the batch
-      Object.entries(groupedBatch).forEach(([canonicalAnswer, indices]) => {
-        // Skip the EXCLUDED_ANSWERS key
-        if (canonicalAnswer === 'EXCLUDED_ANSWERS') {
-          return;
-        }
-        
-        // Convert batch-specific indices to global indices
-        // LLM returns 1-based indices, so we adjust to global 1-based indices
-        const globalIndices = indices.map(idx => startIndex + idx);
-        
-        // Add to merged groups or create new entry
-        if (mergedGroups[canonicalAnswer]) {
-          mergedGroups[canonicalAnswer].push(...globalIndices);
-        } else {
-          mergedGroups[canonicalAnswer] = globalIndices;
-        }
-      });
-    });
-    
-    // Add excluded answers to final result
-    if (excludedAnswers.length > 0) {
-      mergedGroups.EXCLUDED_ANSWERS = excludedAnswers;
-    }
-    
-    return mergedGroups;
-  } catch (error) {
-    console.error('Error grouping votes with LLM:', error);
-    return null;
   }
 }
 
@@ -427,9 +394,6 @@ async function prepareTomorrowsQuestion(tomorrowDate) {
   }
   
   console.log('No question found for tomorrow');
-  
-  // Here you could add logic to create a default question for tomorrow
-  // or send an alert that a question needs to be created
 }
 
 module.exports = dailyUpdate;
