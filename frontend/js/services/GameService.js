@@ -1,6 +1,7 @@
 import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, saveTodayStrikes, getTodayStrikes, markTodayGaveUp, hasTodayGivenUp} from '../utils/visitorUtils.js';
 import authService from './AuthService.js';
 import eventService from './EventService.js';
+import { formatDisplayDate } from '../utils/dateUtils.js';
 
 /**
  * Service that manages game state and logic
@@ -14,6 +15,7 @@ class GameService {
     this.question = null;
     this.answerCount = 5; // Default
     this.gaveUp = false;
+    this.activeDate = null; // Store the active date
   }
 
   /**
@@ -29,7 +31,8 @@ class GameService {
       correctGuesses: this.correctGuesses,
       totalGuesses: this.totalGuesses,
       answerCount: this.answerCount,
-      gaveUp: this.gaveUp
+      gaveUp: this.gaveUp,
+      activeDate: this.activeDate // Include active date in the event
     });
 
     return {
@@ -49,6 +52,7 @@ class GameService {
       if (data.question) {
         this.question = data;
         this.answerCount = data.answerCount || 5;
+        this.activeDate = data.active_date; // Store the active date
         return true;
       }
       return false;
@@ -56,6 +60,23 @@ class GameService {
       console.error("Error fetching today's question:", error);
       return false;
     }
+  }
+
+  /**
+   * Returns the question text
+   */
+  getQuestionText() {
+    return this.question ?
+      `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${this.question.guessPrompt}` :
+      "No question available for guessing yet";
+  }
+
+  /**
+   * Returns the formatted active date
+   */
+  getFormattedActiveDate() {
+    if (!this.activeDate) return "";
+    return formatDisplayDate(this.activeDate);
   }
 
   /**

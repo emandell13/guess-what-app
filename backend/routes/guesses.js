@@ -31,7 +31,8 @@ router.get('/question', async (req, res) => {
             totalVotes,
             totalVotesTop5,
             maxPoints,
-            answerCount: top5Answers.length // This will correctly report available answers
+            answerCount: top5Answers.length, // This will correctly report available answers
+            active_date: question.active_date // Ensure this line is present
         };
 
         if (req.query.includeAnswers === 'true') {

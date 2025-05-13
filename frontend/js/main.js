@@ -171,13 +171,13 @@ class App {
     eventService.on('game:gave-up', async (event) => {
       const { remainingAnswers } = event.detail;
       console.log("User gave up, revealing all remaining answers");
-      
+
       // Disable form
       if (this.guessForm) this.guessForm.disable();
-      
+
       // Signal that animations are in progress
       document.body.dataset.revealingAnswers = 'true';
-      
+
       try {
         // Reveal all remaining answers with animations
         await this.answerGrid.revealAllRemaining(remainingAnswers);
@@ -186,7 +186,7 @@ class App {
       } finally {
         // IMPORTANT: Always reset the flag, even if there's an error
         document.body.dataset.revealingAnswers = 'false';
-        
+
         // Show the game over modal - passing gaveUp=true
         if (this.gameModal.pendingGuesses !== undefined) {
           this.gameModal.show(gameService.totalGuesses, true);
@@ -200,17 +200,17 @@ class App {
     // Game completed events
     eventService.on('game:completed', (event) => {
       const { totalGuesses, gaveUp } = event.detail;
-      
+
       // Check if we're in the middle of a reveal sequence
       if (document.body.dataset.revealingAnswers === 'true') {
         console.log("game:completed event received but animations in progress - not showing modal yet");
         this.gameModal.pendingScore = totalGuesses;
         return;
       }
-      
+
       console.log("game:completed event showing modal");
       this.gameModal.show(totalGuesses, gaveUp);
-      
+
       // Disable guess form
       if (this.guessForm) this.guessForm.disable();
     });
@@ -333,6 +333,26 @@ class App {
    * Update UI with initial game state
    */
   updateInitialUI(answerCount) {
+    // Create date display before setting question text
+    const questionContainer = this.questionHeading.parentElement;
+
+    // Check if date display already exists
+    let dateDisplay = document.getElementById('question-date');
+    if (!dateDisplay) {
+      dateDisplay = document.createElement('h5');
+      dateDisplay.className = 'text-center mb-3';
+      dateDisplay.id = 'question-date';
+
+      // Insert date display before the question heading
+      if (questionContainer) {
+        questionContainer.insertBefore(dateDisplay, this.questionHeading);
+      }
+    }
+
+    // Set the date text
+    dateDisplay.innerText = gameService.getFormattedActiveDate();
+
+    // Set the question text
     this.questionHeading.innerHTML = gameService.getQuestionText();
 
     // Add click event listener to the people count element
@@ -372,6 +392,7 @@ class App {
     });
   }
 
+
   /**
    * Shows a temporary message when an answer was already guessed
    */
@@ -400,53 +421,53 @@ class App {
     }, 2000);
   }
 
-/**
- * Reveals all remaining answers when the game is over
- * @returns {Promise} A promise that resolves when all answers are revealed
- */
-async revealAllRemainingAnswers() {
-  try {
-    console.log("Starting reveal of remaining answers");
-    const response = await fetch("/guesses/question?includeAnswers=true");
-    const data = await response.json();
+  /**
+   * Reveals all remaining answers when the game is over
+   * @returns {Promise} A promise that resolves when all answers are revealed
+   */
+  async revealAllRemainingAnswers() {
+    try {
+      console.log("Starting reveal of remaining answers");
+      const response = await fetch("/guesses/question?includeAnswers=true");
+      const data = await response.json();
 
-    // Filter out already guessed answers
-    const alreadyGuessedRanks = gameService.correctGuesses.map(guess => guess.rank);
-    console.log("Already guessed ranks:", alreadyGuessedRanks);
-    
-    const remainingAnswers = data.answers.filter(answer => 
-      !alreadyGuessedRanks.includes(answer.rank)
-    ).map(answer => ({
-      rank: answer.rank,
-      answer: answer.answer,
-      voteCount: answer.rawVotes
-    }));
+      // Filter out already guessed answers
+      const alreadyGuessedRanks = gameService.correctGuesses.map(guess => guess.rank);
+      console.log("Already guessed ranks:", alreadyGuessedRanks);
 
-    console.log(`Revealing ${remainingAnswers.length} remaining answers`);
+      const remainingAnswers = data.answers.filter(answer =>
+        !alreadyGuessedRanks.includes(answer.rank)
+      ).map(answer => ({
+        rank: answer.rank,
+        answer: answer.answer,
+        voteCount: answer.rawVotes
+      }));
 
-    // If no answers to reveal, return immediately
-    if (remainingAnswers.length === 0) {
-      console.log("No remaining answers to reveal");
-      return Promise.resolve();
+      console.log(`Revealing ${remainingAnswers.length} remaining answers`);
+
+      // If no answers to reveal, return immediately
+      if (remainingAnswers.length === 0) {
+        console.log("No remaining answers to reveal");
+        return Promise.resolve();
+      }
+
+      // Reveal all remaining answers with staggered animations
+      const promise = this.answerGrid.revealAllRemaining(remainingAnswers);
+
+      // Add these debug logs
+      promise.then(() => {
+        console.log("All answers revealed successfully");
+      }).catch(err => {
+        console.error("Error in reveal animation promise:", err);
+      });
+
+      return promise;
+    } catch (error) {
+      console.error('Error revealing remaining answers:', error);
+      return Promise.resolve(); // Return a resolved promise on error
     }
 
-    // Reveal all remaining answers with staggered animations
-    const promise = this.answerGrid.revealAllRemaining(remainingAnswers);
-
-    // Add these debug logs
-    promise.then(() => {
-      console.log("All answers revealed successfully");
-    }).catch(err => {
-      console.error("Error in reveal animation promise:", err);
-    });
-
-    return promise;
-  } catch (error) {
-    console.error('Error revealing remaining answers:', error);
-    return Promise.resolve(); // Return a resolved promise on error
   }
-  
-}
 }
 
 // Application initialization
