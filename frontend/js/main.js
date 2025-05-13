@@ -26,6 +26,7 @@ class App {
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
     this.hintButton = new HintButton();
+    this.hasCelebratedPerfectGame = false; // Flag to track if perfect game celebration has occurred
 
     // Setup event listeners
     this.setupEventListeners();
@@ -165,6 +166,10 @@ class App {
       const { totalGuesses } = event.detail;
       // Update guess counter
       this.guessCounter.updateGuessCount(totalGuesses);
+    });
+
+    eventService.on('game:perfect-game', () => {
+      this.celebratePerfectGame();
     });
 
     // Listen for user giving up
@@ -468,6 +473,93 @@ class App {
     }
 
   }
+
+  /**
+ * Displays a celebration animation for a perfect game - with design-matching colors
+ */
+  /**
+ * Displays a celebration animation for a perfect game - with bright but coordinated colors
+ */
+celebratePerfectGame() {
+  if (this.hasCelebratedPerfectGame) return; // Prevent multiple celebrations
+  this.hasCelebratedPerfectGame = true;
+  
+  console.log("Perfect game achieved! Celebrating...");
+  
+  // Brighter, more vibrant colors that still coordinate with your design
+  const colors = [
+    '#4CAF50', // Bright green (vibrant version of your success color)
+    '#FF5252', // Bright red (vibrant version of your alert color)
+    '#FFEB3B', // Bright yellow (vibrant version of your light yellow)
+    '#2196F3', // Bright blue (vibrant version of your light blue)
+    '#9C27B0', // Bright purple (for contrast and celebration)
+    '#FF9800'  // Bright orange (for variety and warmth)
+  ];
+  
+  // First burst of confetti
+  const count = 200;
+  const defaults = {
+    origin: { y: 0.7 },
+    zIndex: 2000,
+    colors: colors
+  };
+  
+  function fire(particleRatio, opts) {
+    confetti({
+      ...defaults,
+      ...opts,
+      particleCount: Math.floor(count * particleRatio)
+    });
+  }
+  
+  // Launch confetti from the sides
+  fire(0.25, {
+    spread: 26,
+    startVelocity: 55,
+    origin: { x: 0.1, y: 0.5 }
+  });
+  fire(0.25, {
+    spread: 26,
+    startVelocity: 55,
+    origin: { x: 0.9, y: 0.5 }
+  });
+  
+  // Launch confetti from the bottom
+  fire(0.2, {
+    spread: 60,
+    decay: 0.94,
+    scalar: 0.9
+  });
+  
+  // Delayed burst from the center
+  setTimeout(() => {
+    fire(0.3, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 1.2,
+      origin: { y: 0.6 }
+    });
+  }, 500);
+  
+  // Cannon shots from alternating sides
+  let intervalId = setInterval(() => {
+    const side = Math.random() > 0.5 ? 0.1 : 0.9;
+    confetti({
+      particleCount: 20,
+      angle: side === 0.1 ? 60 : 120,
+      spread: 50,
+      origin: { x: side, y: 0.6 },
+      zIndex: 2000,
+      colors: colors
+    });
+  }, 300);
+  
+  // Stop the interval after a few seconds
+  setTimeout(() => {
+    clearInterval(intervalId);
+  }, 4000);
+}
+
 }
 
 // Application initialization

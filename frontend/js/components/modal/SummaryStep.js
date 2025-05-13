@@ -1,3 +1,5 @@
+// frontend/js/components/modal/SummaryStep.js
+
 import eventService from '../../services/EventService.js';
 import authService from '../../services/AuthService.js';
 import gameService from '../../services/GameService.js';
@@ -18,6 +20,7 @@ class SummaryStep {
     this.statsLink = this.stepElement.querySelector('.stats-link');
     this.resultHeading = this.stepElement.querySelector('#result-heading');
     this.resultHeadingLose = this.stepElement.querySelector('#result-heading-lose');
+    this.resultHeadingPerfect = this.stepElement.querySelector('#result-heading-perfect');
 
     // Game state cache
     this.gameData = {
@@ -112,32 +115,63 @@ class SummaryStep {
    * Updates the heading display based on game state
    * @param {boolean} gaveUp - Whether the user gave up
    * @param {Array} correctAnswers - Array of ranks of correct answers
+   * @param {number} totalGuesses - Total number of guesses made
    */
-  updateHeading(gaveUp, correctAnswers) {
+  updateHeading(gaveUp, correctAnswers, totalGuesses) {
     // Make sure we have the heading elements
-    if (!this.resultHeading || !this.resultHeadingLose) {
+    if (!this.resultHeading || !this.resultHeadingLose || !this.resultHeadingPerfect) {
       // Try to get them again, they might not have been available in constructor
       this.resultHeading = this.stepElement.querySelector('#result-heading');
       this.resultHeadingLose = this.stepElement.querySelector('#result-heading-lose');
+      this.resultHeadingPerfect = this.stepElement.querySelector('#result-heading-perfect');
       
       if (!this.resultHeading || !this.resultHeadingLose) {
         console.error("Could not find heading elements");
         return;
       }
+      
+      // If perfect heading doesn't exist, create it
+      if (!this.resultHeadingPerfect) {
+        this.resultHeadingPerfect = document.createElement('h3');
+        this.resultHeadingPerfect.id = 'result-heading-perfect';
+        this.resultHeadingPerfect.className = 'text-center mb-4 d-none';
+        this.resultHeadingPerfect.textContent = 'Perfect Game!';
+        
+        // Insert after other headings
+        if (this.resultHeadingLose && this.resultHeadingLose.parentNode) {
+          this.resultHeadingLose.parentNode.insertBefore(this.resultHeadingPerfect, this.resultHeadingLose.nextSibling);
+        }
+      }
     }
+    
+    // Check for perfect game - all 5 answers correct with exactly 5 guesses (no incorrect guesses)
+    const isPerfectGame = correctAnswers && 
+                         correctAnswers.length === 5 && 
+                         totalGuesses === 5 && 
+                         !gaveUp;
     
     const shouldShowLoseHeading = gaveUp === true || (correctAnswers && correctAnswers.length < 5);
     
     // Force direct DOM manipulation with try/catch for safety
     try {
-      if (shouldShowLoseHeading) {
+      if (isPerfectGame) {
+        // Perfect game - show "Perfect Game!"
+        this.resultHeading.classList.add('d-none');
+        this.resultHeadingLose.classList.add('d-none');
+        this.resultHeadingPerfect.classList.remove('d-none');
+        
+        // Trigger perfect game celebration event
+        eventService.emit('game:perfect-game');
+      } else if (shouldShowLoseHeading) {
         // They lost or gave up - show "Better luck next time!"
         this.resultHeading.classList.add('d-none');
         this.resultHeadingLose.classList.remove('d-none');
+        this.resultHeadingPerfect.classList.add('d-none');
       } else {
-        // They won! - show "You win!"
+        // They won but not perfectly - show "You win!"
         this.resultHeading.classList.remove('d-none');
         this.resultHeadingLose.classList.add('d-none');
+        this.resultHeadingPerfect.classList.add('d-none');
       }
     } catch (error) {
       console.error("Error toggling headings:", error);
@@ -187,6 +221,10 @@ class SummaryStep {
       if (this.resultHeading && this.resultHeadingLose) {
         this.resultHeading.classList.add('d-none');
         this.resultHeadingLose.classList.remove('d-none'); 
+        
+        if (this.resultHeadingPerfect) {
+          this.resultHeadingPerfect.classList.add('d-none');
+        }
       }
     }
 
@@ -207,14 +245,14 @@ class SummaryStep {
       // Update the answer boxes
       this.updateAnswerBoxes(correctRanks, gaveUp);
       
-      // Now update the heading separately
-      this.updateHeading(gaveUp, correctRanks);
+      // Now update the heading separately with the totalGuesses parameter
+      this.updateHeading(gaveUp, correctRanks, this.gameData.score);
     } catch (error) {
       console.error('Error getting game state:', error);
       
       // Even if there's an error, try to at least update the headings
       if (gaveUpParam === true) {
-        this.updateHeading(true, []);
+        this.updateHeading(true, [], 0);
       }
     }
 
