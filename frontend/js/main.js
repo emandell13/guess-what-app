@@ -161,6 +161,10 @@ class App {
       this.answerGrid.revealAnswer(rank, guess, voteCount, canonicalAnswer);
     });
 
+    eventService.on('game:initialized', () => {
+      this.hasCelebratedPerfectGame = false;
+    });
+
     // Listen for incorrect guesses
     eventService.on('game:incorrect-guess', (event) => {
       const { totalGuesses } = event.detail;
@@ -310,29 +314,32 @@ class App {
   }
 
   /**
-   * Initialize the application
-   */
-  async initialize() {
-    // Initialize game
-    const gameInitResult = await gameService.initialize();
+ * Initialize the application
+ */
+async initialize() {
+  // Reset celebration flag for new games
+  this.hasCelebratedPerfectGame = false;
+  
+  // Initialize game
+  const gameInitResult = await gameService.initialize();
 
-    // Update the UI with initial game state
-    if (gameInitResult.success) {
-      this.updateInitialUI(gameInitResult.answerCount);
-    } else {
-      // No active question available
-      this.questionHeading.textContent = "No question available for guessing yet";
-    }
-
-    // Fetch tomorrow's question for voting
-    await voteService.fetchTomorrowsQuestion();
-
-    // Initialize guess form - using the new event-based system
-    this.guessForm = new GuessForm("guess-form");
-
-    // Check for verification parameter after everything is initialized
-    this.checkVerificationStatus();
+  // Update the UI with initial game state
+  if (gameInitResult.success) {
+    this.updateInitialUI(gameInitResult.answerCount);
+  } else {
+    // No active question available
+    this.questionHeading.textContent = "No question available for guessing yet";
   }
+
+  // Fetch tomorrow's question for voting
+  await voteService.fetchTomorrowsQuestion();
+
+  // Initialize guess form - using the new event-based system
+  this.guessForm = new GuessForm("guess-form");
+
+  // Check for verification parameter after everything is initialized
+  this.checkVerificationStatus();
+}
 
   /**
    * Update UI with initial game state
