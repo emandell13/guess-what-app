@@ -11,6 +11,7 @@ import GuessForm from './components/GuessForm.js';
 import GuessCounter from './components/GuessCounter.js'; // New component we'll create
 import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
+import HintButton from './components/HintButton.js';
 
 /**
  * Main application class
@@ -24,6 +25,7 @@ class App {
     this.gameModal = new GameModal("gameCompleteModal");
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
+    this.hintButton = new HintButton();
 
     // Setup event listeners
     this.setupEventListeners();

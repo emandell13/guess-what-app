@@ -1,4 +1,4 @@
-// AnswerGrid.js
+// frontend/js/components/AnswerGrid.js
 
 import AnswerBox from './AnswerBox.js';
 import { staggerAnimations } from '../utils/animationUtils.js';
@@ -15,6 +15,7 @@ class AnswerGrid {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.answerBoxes = [];
+    this.questionId = null;
     
     // Listen for answer events
     eventService.on('game:answer-revealed', (event) => {
@@ -26,6 +27,14 @@ class AnswerGrid {
     eventService.on('game:already-guessed', (event) => {
       const { rank } = event.detail;
       this.highlightAnswer(rank);
+    });
+    
+    // Listen for game initialization to load hints
+    eventService.on('game:initialized', async (event) => {
+      if (event.detail.question && event.detail.question.id) {
+        this.questionId = event.detail.question.id;
+        await this.loadHints(this.questionId);
+      }
     });
   }
   
@@ -46,6 +55,41 @@ class AnswerGrid {
       const answerBox = new AnswerBox(i);
       this.answerBoxes.push(answerBox);
       this.container.appendChild(answerBox.getElement());
+    }
+    
+    // If we already have the question ID, load hints
+    if (this.questionId) {
+      this.loadHints(this.questionId);
+    }
+  }
+  
+  /**
+   * Loads hints for answer boxes
+   * @param {number} questionId - The question ID
+   */
+  async loadHints(questionId) {
+    try {
+      const response = await fetch(`/guesses/hints/${questionId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hints');
+      }
+      
+      const data = await response.json();
+      
+      // Set hints on answer boxes
+      if (data.hints && data.hints.length > 0) {
+        data.hints.forEach(hint => {
+          if (hint.hint && hint.rank >= 1 && hint.rank <= this.answerBoxes.length) {
+            const answerBox = this.answerBoxes.find(box => box.rank === hint.rank);
+            if (answerBox) {
+              answerBox.setHint(hint.hint);
+              console.log(`Set hint for rank ${hint.rank}: ${hint.hint}`);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading hints:', error);
     }
   }
   

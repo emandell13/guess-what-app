@@ -1,3 +1,5 @@
+// backend/routes/guesses.js
+
 const express = require('express');
 const router = express.Router();
 const guessService = require('../services/guessService');
@@ -39,6 +41,7 @@ router.get('/question', async (req, res) => {
                     rank: answer.rank,
                     answer: answer.answer,
                     rawVotes: answer.vote_count,
+                    hint: answer.hint, // Include hint in response
                     points: Math.round((answer.vote_count / totalVotesTop5) * 100)
                 }));
             } else {
@@ -50,6 +53,30 @@ router.get('/question', async (req, res) => {
     } catch (error) {
         console.error('Error fetching question:', error);
         res.status(500).json({ error: 'Failed to fetch question' });
+    }
+});
+
+// New route to get hints for all answers
+router.get('/hints/:questionId', async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const hints = await guessService.getHintsForQuestion(questionId);
+        res.json({ hints });
+    } catch (error) {
+        console.error('Error fetching hints:', error);
+        res.status(500).json({ error: 'Failed to fetch hints' });
+    }
+});
+
+// New route to get a hint for a specific answer
+router.get('/hint/:answerId', async (req, res) => {
+    try {
+        const { answerId } = req.params;
+        const hint = await guessService.getAnswerHint(answerId);
+        res.json({ hint });
+    } catch (error) {
+        console.error('Error fetching hint:', error);
+        res.status(500).json({ error: 'Failed to fetch hint' });
     }
 });
 

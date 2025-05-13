@@ -4,8 +4,8 @@ const supabase = require('../config/supabase');
 const { getTodayDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
-const { callLLM } = require('./llmService'); // Add this import
-const { createGuessMatchingPrompt } = require('../services/promptTemplates'); // Add this import
+const { callLLM } = require('./llmService'); 
+const { createGuessMatchingPrompt } = require('../services/promptTemplates');
 
 // Create simple in-memory cache for LLM match results
 const matchCache = new Map();
@@ -27,7 +27,7 @@ async function getCurrentQuestion() {
 }
 
 async function getTopAnswers(questionId, limit = gameConstants.DEFAULT_ANSWER_COUNT) {
-    // Existing implementation unchanged
+    // Updated to include hint field
     const { data: answers, error } = await supabase
         .from('top_answers')
         .select('*')
@@ -37,6 +37,27 @@ async function getTopAnswers(questionId, limit = gameConstants.DEFAULT_ANSWER_CO
 
     if (error) throw new Error('Failed to fetch answers');
     return answers;
+}
+
+/**
+ * Get a hint for a specific answer
+ * @param {number} answerId - The ID of the answer
+ * @returns {Promise<string|null>} - The hint text or null if not found
+ */
+async function getAnswerHint(answerId) {
+    try {
+        const { data, error } = await supabase
+            .from('top_answers')
+            .select('hint')
+            .eq('id', answerId)
+            .single();
+            
+        if (error) throw error;
+        return data?.hint || null;
+    } catch (error) {
+        console.error('Error fetching hint:', error);
+        return null;
+    }
 }
 
 /**
@@ -113,6 +134,7 @@ async function checkGuess(guess, userId = null, visitorId = null) {
                 isCorrect: true,
                 rank: matchedAnswer.rank,
                 voteCount: matchedAnswer.vote_count,
+                hint: matchedAnswer.hint, // Include hint in response
                 canonicalAnswer: matchedAnswer.answer,
                 message: `Correct! This was answer #${matchedAnswer.rank}`,
                 answerId: matchedAnswer.id
@@ -162,14 +184,39 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         isCorrect: !!matchedAnswer,
         rank: matchedAnswer?.rank || null,
         voteCount: matchedAnswer?.vote_count || 0,
+        hint: matchedAnswer?.hint || null, // Include hint in response
         canonicalAnswer: matchedAnswer?.answer || null,
         message: matchedAnswer ? `Correct! This was answer #${matchedAnswer.rank}` : 'Try again!',
         answerId: matchedAnswer?.id || null
     };
 }
 
+/**
+ * Get hints for all top answers for a question
+ * @param {number} questionId - The question ID
+ * @returns {Promise<Array>} - Array of hints with answer IDs
+ */
+async function getHintsForQuestion(questionId) {
+    try {
+        const { data, error } = await supabase
+            .from('top_answers')
+            .select('id, rank, hint')
+            .eq('question_id', questionId)
+            .order('rank');
+            
+        if (error) throw error;
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching hints:', error);
+        return [];
+    }
+}
+
 module.exports = {
     getCurrentQuestion,
     getTopAnswers,
-    checkGuess
+    getAnswerHint,
+    checkGuess,
+    getHintsForQuestion
 };

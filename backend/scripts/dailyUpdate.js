@@ -6,7 +6,7 @@ const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('../services/llmService');
-const { createAnswerGroupingPrompt } = require('../services/promptTemplates');
+const { createAnswerGroupingPrompt, createHintGenerationPrompt } = require('../services/promptTemplates');
 
 /**
  * Daily update process that tallies votes for today's question
@@ -123,15 +123,28 @@ async function tallyVotesForTodaysQuestion(todayDate) {
     console.log(`Vote count validated: ${totalGroupedVotes} votes successfully processed`);
   }
   
-  console.log('Top answers to insert:', sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT));
-  
   // Take top answers
   const topAnswers = sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT);
+  console.log('Top answers to insert:', topAnswers.slice(0, gameConstants.TOP_ANSWER_COUNT));
+  
+  // Generate hints for top answers
+  console.log('Generating hints for top answers...');
+  for (const answerData of topAnswers) {
+    try {
+      const hint = await generateHintForAnswer(answerData.answer, question.question_text);
+      answerData.hint = hint;
+      console.log(`Generated hint for "${answerData.answer}": "${hint}"`);
+    } catch (error) {
+      console.error(`Error generating hint for "${answerData.answer}":`, error);
+      // Set a default hint if generation fails
+      answerData.hint = "Think about common responses to this question!";
+    }
+  }
   
   // Clear any existing top answers first
   await clearExistingTopAnswers(question.id);
   
-  // Insert top answers
+  // Insert top answers with hints
   const insertedAnswers = await insertTopAnswers(question.id, topAnswers);
   
   // Update votes with matched_answer_id
@@ -140,7 +153,28 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   // Mark question as voting complete
   await markQuestionComplete(question.id);
   
-  console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers`);
+  console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers with hints`);
+}
+
+/**
+ * Generates a hint for a top answer
+ * @param {string} answer - The canonical answer
+ * @param {string} questionText - The question text
+ * @returns {Promise<string>} - The generated hint
+ */
+async function generateHintForAnswer(answer, questionText) {
+  try {
+    const prompt = createHintGenerationPrompt(answer, questionText);
+    const result = await callLLM(prompt, { maxTokens: 100, skipCache: true });
+    
+    // Clean up the result (remove quotation marks if present)
+    const cleanedHint = result.replace(/^["']|["']$/g, '').trim();
+    
+    return cleanedHint;
+  } catch (error) {
+    console.error(`Error generating hint for "${answer}":`, error);
+    throw error;
+  }
 }
 
 /**
@@ -293,10 +327,10 @@ async function insertTopAnswers(questionId, topAnswers) {
   const insertedAnswers = [];
   
   for (let i = 0; i < topAnswers.length; i++) {
-    const { answer, count } = topAnswers[i];
+    const { answer, count, hint } = topAnswers[i];
     const rank = i + 1;
     
-    console.log(`Inserting answer #${rank}: "${answer}" with ${count} votes`);
+    console.log(`Inserting answer #${rank}: "${answer}" with ${count} votes and hint: "${hint}"`);
     
     const { data, error } = await supabase
       .from('top_answers')
@@ -304,7 +338,8 @@ async function insertTopAnswers(questionId, topAnswers) {
         question_id: questionId,
         answer,
         vote_count: count,
-        rank
+        rank,
+        hint
       }])
       .select();
       
