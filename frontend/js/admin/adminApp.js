@@ -4,6 +4,7 @@ import QuestionsManager from './modules/questionManager.js';
 import VotingManager from './modules/votingManager.js';
 import TextMatchingTester from './modules/textMatchingTester.js';
 import SystemOperations from './modules/systemOperations.js';
+import SocialImageManager from './modules/socialImageManager.js';
 
 class AdminApp {
     constructor() {
@@ -13,6 +14,7 @@ class AdminApp {
         this.votingManager = VotingManager;
         this.textMatchingTester = TextMatchingTester;
         this.systemOperations = SystemOperations;
+        this.socialImageManager = SocialImageManager;
         
         // Initialize the application
         this.init();
@@ -81,6 +83,12 @@ class AdminApp {
         
         // Initialize text matching tester
         this.textMatchingTester.setup();
+        
+        // Initialize social image manager if the container exists
+        const socialImageContainer = document.getElementById('social-image-container');
+        if (socialImageContainer) {
+            this.socialImageManager.init();
+        }
     }
     
     setupUIHandlers() {

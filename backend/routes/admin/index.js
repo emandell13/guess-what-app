@@ -9,10 +9,12 @@ router.use(adminAuth);
 const questionsRoutes = require('./questions');
 const votesRoutes = require('./votes');
 const toolsRoutes = require('./tools');
+const socialImageRoutes = require('./socialImage');
 
 // Register route modules
 router.use('/questions', questionsRoutes);
 router.use('/votes', votesRoutes);
 router.use('/tools', toolsRoutes);
+router.use('/social-image', socialImageRoutes);
 
 module.exports = router;
