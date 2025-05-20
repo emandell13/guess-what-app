@@ -1,0 +1,79 @@
+name: Generate Daily Social Image
+
+on:
+  schedule:
+    # Run at 1 AM UTC every day
+    - cron: '0 1 * * *'
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  generate_image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install @playwright/test
+          npx playwright install chromium
+          
+      - name: Run Image Generation Script
+        run: |
+          cat > generate-image.js << 'EOL'
+          const { chromium } = require('@playwright/test');
+
+          async function generateImage() {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            
+            console.log('Starting social image generation process');
+            
+            try {
+              // Navigate to the image generation page
+              console.log('Navigating to the image generation page');
+              await page.goto('${{ secrets.APP_URL }}/auto-generate-social-image');
+              console.log('Page loaded successfully');
+              
+              // Wait for initialization
+              await page.waitForSelector('#statusContainer', { timeout: 10000 });
+              console.log('Status container detected');
+              
+              // Wait for generation to complete (success or error)
+              const result = await Promise.race([
+                page.waitForSelector('.status-container.success', { timeout: 90000 })
+                  .then(() => ({ success: true })),
+                page.waitForSelector('.status-container.error', { timeout: 90000 })
+                  .then(() => ({ success: false }))
+              ]);
+              
+              if (result.success) {
+                const statusText = await page.textContent('.status-container.success');
+                console.log('✅ Generation complete successfully');
+                console.log('Status message:', statusText);
+              } else {
+                const errorText = await page.textContent('.status-container.error');
+                console.error('❌ Generation failed');
+                console.error('Error message:', errorText);
+                process.exit(1);
+              }
+              
+              // Take a screenshot for the log (helpful for debugging)
+              await page.screenshot({ path: 'generation-result.png' });
+              
+            } catch (error) {
+              console.error('Error during image generation process:', error);
+              process.exit(1);
+            } finally {
+              await browser.close();
+            }
+          }
+
+          generateImage();
+          EOL
+          
+          node generate-image.js
