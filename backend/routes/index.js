@@ -29,6 +29,14 @@ module.exports = (app) => {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
   });
 
+  // Auto-generate social image route (no auth required)
+  app.get('/auto-generate-social-image', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/auto-generate-social-image.html'));
+  });
+
+  const socialImageRoutes = require('./socialImage');
+  app.use('/api/social-image', socialImageRoutes);
+
   // Handle email verification redirect
   app.get('/auth/verify', (req, res) => {
     // Redirect to main page with a verification success parameter

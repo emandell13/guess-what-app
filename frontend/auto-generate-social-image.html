@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Generate Social Image</title>
+    <!-- React and dependencies -->
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Font for consistent rendering -->
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .status-container {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .hidden {
+            display: none;
+        }
+        .log-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .log-entry {
+            margin: 5px 0;
+        }
+        .log-time {
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        .log-error {
+            color: #dc3545;
+        }
+        .log-success {
+            color: #28a745;
+        }
+        .log-info {
+            color: #17a2b8;
+        }
+        .debug-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            overflow: auto;
+            max-height: 100px;
+        }
+        
+        /* Shareable image styles - include here for simplicity */
+        .shareable-card {
+            width: 1080px;
+            height: 1080px;
+            background-color: #ffffff;
+            padding: 50px;
+            color: #000000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Libre Franklin', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auto Generate Social Image</h1>
+        
+        <div id="statusContainer" class="status-container loading">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            <span id="statusMessage">Initializing...</span>
+        </div>
+        
+        <div id="logContainer" class="log-container">
+            <!-- Log entries will be added here -->
+        </div>
+        
+        <div id="debugControls" class="mt-4 mb-4">
+            <button id="testApiBtn" class="btn btn-sm btn-outline-primary">Test API Endpoint</button>
+            <button id="generateImageBtn" class="btn btn-sm btn-outline-success ms-2">Generate Image Directly</button>
+            <button id="restartBtn" class="btn btn-sm btn-outline-danger ms-2">Restart Process</button>
+        </div>
+        
+        <div id="socialImageContainer" class="hidden">
+            <!-- Social image will be rendered here -->
+        </div>
+    </div>
+    
+    <!-- Debug banner -->
+    <div id="debugBanner" class="debug-banner">Ready to debug...</div>
+
+    <!-- Skip Babel for debugging controls -->
+    <script>
+        // Simple debug helper
+        function debug(message) {
+            const banner = document.getElementById('debugBanner');
+            if (banner) {
+                banner.textContent = message;
+                console.log("DEBUG:", message);
+            }
+        }
+        
+        // Log helper function
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            
+            const logContainer = document.getElementById('logContainer');
+            if (!logContainer) return;
+            
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            
+            // Scroll to bottom
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Update status helper function
+        function updateStatus(message, type) {
+            const statusContainer = document.getElementById('statusContainer');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            if (!statusContainer || !statusMessage) return;
+            
+            // Remove all status classes
+            statusContainer.classList.remove('loading', 'success', 'error');
+            
+            // Add the correct class
+            statusContainer.classList.add(type);
+            
+            // Update message
+            statusMessage.innerHTML = message;
+            
+            // Log the status change
+            log(message, type);
+        }
+        
+        // Function to capitalize each word in a string
+        function capitalizeWords(text) {
+            return text.replace(/\b\w/g, char => char.toUpperCase());
+        }
+        
+        // Function to format date
+        function formatDateForDisplay(dateString) {
+            if (!dateString || !dateString.includes('-')) return dateString;
+            
+            try {
+                const date = new Date(dateString + 'T00:00:00'); 
+                
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        // Setup debug controls
+        document.addEventListener('DOMContentLoaded', function() {
+            debug("Page loaded, setting up debug controls");
+            
+            // Test API endpoint
+            document.getElementById('testApiBtn').addEventListener('click', async function() {
+                debug("Testing API endpoint...");
+                try {
+                    const response = await fetch('/api/social-image/today-data');
+                    const status = response.status;
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        debug(`API success: ${status}. Data received for question: ${data.question || 'unknown'}`);
+                    } else {
+                        debug(`API error: ${status}. ${response.statusText}`);
+                    }
+                } catch (error) {
+                    debug(`Fetch error: ${error.message}`);
+                }
+            });
+            
+            // Direct generation button
+            document.getElementById('generateImageBtn').addEventListener('click', async function() {
+                debug("Triggering direct image generation...");
+                try {
+                    const data = await fetchTodayData();
+                    generateImageDirectly(data);
+                } catch (error) {
+                    debug(`Error starting direct generation: ${error.message}`);
+                }
+            });
+            
+            // Restart the process
+            document.getElementById('restartBtn').addEventListener('click', function() {
+                debug("Restarting process...");
+                location.reload();
+            });
+            
+            // Auto-start the process
+            setTimeout(startProcess, 500);
+        });
+        
+        // Function to fetch today's data
+        async function fetchTodayData() {
+            log('Fetching today\'s data for social image');
+            
+            try {
+                const response = await fetch('/api/social-image/today-data');
+                log(`Server responded with status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch today\'s data');
+                }
+                
+                const answersLength = data.answers ? data.answers.length : 0;
+                log(`Successfully fetched data for question: "${data.question}"`, 'success');
+                log(`Data details: ${data.totalVotes} votes, ${answersLength} answers, date: ${data.date}`);
+                
+                return data;
+            } catch (error) {
+                log(`Error fetching today's data: ${error.message}`, 'error');
+                updateStatus(`Failed to fetch data: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Function to directly generate the image without using React component
+        async function generateImageDirectly(data) {
+            try {
+                log('Generating image directly using HTML/CSS approach');
+                updateStatus('<i class="fas fa-spinner fa-spin me-2"></i> Generating image...', 'loading');
+                
+                const container = document.getElementById('socialImageContainer');
+                
+                if (!container) {
+                    throw new Error('Social image container not found');
+                }
+                
+                // Clear previous content
+                container.innerHTML = '';
+                
+                // Extract data for the image
+                const question = data.guessPrompt || "today's question";
+                const totalVotes = data.totalVotes || 0;
+                const displayDate = formatDateForDisplay(data.date);
+                const answers = data.answers || [];
+                
+                // Calculate vote percentages
+                const totalTopVotes = answers.reduce((sum, answer) => sum + answer.voteCount, 0);
+                const answersWithPercentage = answers.map(answer => ({
+                    ...answer,
+                    percentage: Math.round((answer.voteCount / totalTopVotes) * 100)
+                }));
+                
+                // Create image HTML directly (no React)
+                container.innerHTML = `
+                    <div class="shareable-card">
+                        <!-- Logo -->
+                        <div style="text-align:center; padding-top:20px; padding-bottom:20px;">
+                            <img src="/images/logo.svg" alt="Guess What!" style="width:180px; height:auto;" crossorigin="anonymous" id="logoImage">
+                        </div>
+                        
+                        <!-- Date and Question -->
+                        <div style="text-align:center; display:flex; flex-direction:column; align-items:center; padding-top:20px; padding-bottom:20px;">
+                            <div style="font-size:24px; font-family:'Libre Franklin',Arial,sans-serif; margin-bottom:25px; color:#333333;">
+                                ${displayDate}
+                            </div>
+                            <div style="font-size:40px; font-weight:bold; text-align:center; max-width:850px; line-height:1.2; font-family:'Libre Franklin',Arial,sans-serif;">
+                                What did <span style="font-weight:bold;">${totalVotes} people</span> say was ${question}?
+                            </div>
+                        </div>
+                        
+                        <!-- Answers -->
+                        <div style="width:100%; display:flex; flex-direction:column; align-items:center; padding-top:20px; padding-bottom:20px;">
+                            <div style="width:100%; max-width:850px;">
+                                ${answersWithPercentage.map((answer, index) => `
+                                    <div style="margin-bottom:${index < answersWithPercentage.length - 1 ? '16px' : '0'}; background-color:#CBE5D9; border-radius:12px; border:2px solid #A6CCBB; padding:16px 24px; text-align:center; position:relative;">
+                                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                                            <div style="font-size:28px; font-weight:bold; font-family:'Libre Franklin',Arial,sans-serif; width:50px; text-align:left;">
+                                                ${index + 1}
+                                            </div>
+                                            <div style="font-size:28px; font-weight:bold; font-family:'Libre Franklin',Arial,sans-serif; flex:1; text-align:center; padding:0 15px;">
+                                                ${capitalizeWords(answer.answer)}
+                                            </div>
+                                            <div style="font-size:22px; font-weight:bold; font-family:'Libre Franklin',Arial,sans-serif; width:110px; text-align:right;">
+                                                ${answer.voteCount} ${answer.voteCount === 1 ? 'Vote' : 'Votes'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="font-size:26px; font-family:'Libre Franklin',Arial,sans-serif; color:#555555; text-align:center; padding-top:20px; padding-bottom:20px;">
+                            Play today at <span style="font-weight:bold;">playguesswhat.com</span>!
+                        </div>
+                    </div>
+                `;
+                
+                // Make container visible (but off-screen for capturing)
+                container.classList.remove('hidden');
+                container.style.position = 'absolute';
+                container.style.left = '-9999px';
+                
+                // Wait for logo to load before proceeding
+                log('Waiting for logo image to load...');
+                const logoImage = document.getElementById('logoImage');
+                
+                await new Promise((resolve) => {
+                    if (logoImage.complete) {
+                        log('Logo already loaded');
+                        resolve();
+                    } else {
+                        logoImage.onload = () => {
+                            log('Logo loaded');
+                            resolve();
+                        };
+                        logoImage.onerror = () => {
+                            log('Error loading logo, continuing anyway', 'error');
+                            resolve();
+                        };
+                        
+                        // Failsafe timeout
+                        setTimeout(resolve, 3000);
+                    }
+                });
+                
+                // Extra delay to ensure rendering
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Generate image using html2canvas
+                log('Capturing with html2canvas...');
+                const shareableCard = container.querySelector('.shareable-card');
+                
+                const canvas = await html2canvas(shareableCard, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    backgroundColor: '#ffffff',
+                    allowTaint: true
+                });
+                
+                log('Image captured, converting to blob...');
+                
+                // Convert to image
+                const imageUrl = canvas.toDataURL('image/png', 1.0);
+                
+                // Create blob
+                const imageBlob = await fetch(imageUrl).then(r => r.blob());
+                
+                log(`Image blob created, size: ${Math.round(imageBlob.size / 1024)}KB`, 'success');
+                
+                // Upload the image
+                await uploadImage(imageBlob);
+                
+            } catch (error) {
+                log(`Error in direct image generation: ${error.message}`, 'error');
+                updateStatus(`Failed to generate image: ${error.message}`, 'error');
+            }
+        }
+        
+        // Function to upload the image
+        async function uploadImage(imageBlob) {
+            try {
+                log('Uploading image to server...');
+                updateStatus('<i class="fas fa-spinner fa-spin me-2"></i> Uploading image to server...', 'loading');
+                
+                const formData = new FormData();
+                formData.append('image', imageBlob, 'social-image.png');
+                
+                const response = await fetch('/api/social-image/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to upload image');
+                }
+                
+                log(`Image uploaded successfully! URL: ${data.publicUrl}`, 'success');
+                updateStatus(`<i class="fas fa-check-circle me-2"></i> Image generated and uploaded successfully! <a href="${data.publicUrl}" target="_blank">View Image</a>`, 'success');
+                
+                return data;
+            } catch (error) {
+                log(`Error uploading image: ${error.message}`, 'error');
+                updateStatus(`Failed to upload image: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Main process function
+        async function startProcess() {
+            try {
+                log('Starting automated social image generation process');
+                updateStatus('<i class="fas fa-spinner fa-spin me-2"></i> Starting image generation', 'loading');
+                
+                // Check if html2canvas is available
+                if (!window.html2canvas) {
+                    throw new Error('html2canvas is not loaded');
+                }
+                
+                // Fetch data
+                const data = await fetchTodayData();
+                
+                // Generate image directly
+                await generateImageDirectly(data);
+                
+            } catch (error) {
+                log(`Error in auto-generate process: ${error.message}`, 'error');
+                updateStatus(`Failed to generate social image: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
