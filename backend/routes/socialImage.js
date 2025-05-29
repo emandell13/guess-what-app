@@ -13,6 +13,81 @@ const upload = multer({
     }
 });
 
+// Function to notify Make.com webhook about new image
+async function notifyMakeWebhook(imageData) {
+    try {
+        const webhookUrl = process.env.MAKE_WEBHOOK_URL;
+        if (!webhookUrl) {
+            console.log('No Make.com webhook URL configured, skipping notification');
+            return false;
+        }
+
+        // Get question details for dynamic caption
+        const date = imageData.date;
+        
+        // Calculate yesterday's date to get the question data
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayFormatted = yesterday.toISOString().split('T')[0];
+        
+        const { data: question, error: questionError } = await supabase
+            .from('questions')
+            .select('*')
+            .eq('active_date', yesterdayFormatted)
+            .eq('voting_complete', true)
+            .single();
+
+        let questionText = "today's challenge";
+        let totalVotes = 0;
+        
+        if (!questionError && question) {
+            questionText = question.guess_prompt || question.question_text;
+            
+            // Get vote count
+            const { count } = await supabase
+                .from('votes')
+                .select('*', { count: 'exact', head: true })
+                .eq('question_id', question.id);
+                
+            totalVotes = count || 0;
+        }
+
+        // Prepare payload with all the data Make.com needs
+        const payload = {
+            image_url: imageData.public_url,
+            date: date,
+            formatted_date: new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            question_text: questionText,
+            total_votes: totalVotes,
+            filename: imageData.filename
+        };
+
+        console.log('Sending data to Make.com webhook:', payload);
+
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Make.com webhook failed: ${response.status} ${response.statusText}`);
+        }
+
+        console.log('Make.com webhook notification sent successfully');
+        return true;
+    } catch (error) {
+        console.error('Error notifying Make.com webhook:', error);
+        return false;
+    }
+}
+
 // Upload social image endpoint (no auth)
 router.post('/upload', upload.single('image'), async (req, res) => {
     try {
@@ -43,7 +118,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
         }
         
         // Get public URL
-        const { publicURL, error: urlError } = supabase.storage
+        const { data: { publicUrl }, error: urlError } = supabase.storage
             .from('social-assets')
             .getPublicUrl(filename);
             
@@ -55,26 +130,17 @@ router.post('/upload', upload.single('image'), async (req, res) => {
             });
         }
         
-        // Save image metadata to database
-        const { error: dbError } = await supabase
-            .from('social_images')
-            .insert([
-                {
-                    date: today,
-                    filename,
-                    public_url: publicURL
-                }
-            ]);
-            
-        if (dbError) {
-            console.error('Error saving to database:', dbError);
-            // Continue anyway since the image is already uploaded
-        }
+        // Notify Make.com about the new image
+        await notifyMakeWebhook({
+            date: today,
+            filename,
+            public_url: publicUrl
+        });
         
         return res.json({
             success: true,
             message: 'Image uploaded successfully',
-            publicUrl: publicURL
+            publicUrl: publicUrl
         });
     } catch (error) {
         console.error('Error processing image upload:', error);

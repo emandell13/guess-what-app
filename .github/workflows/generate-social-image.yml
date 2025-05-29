@@ -2,8 +2,8 @@ name: Generate Daily Social Image
 
 on:
   schedule:
-    # Run at 1 AM UTC every day
-    - cron: '0 1 * * *'
+    # Run at 11 AM UTC every day
+    - cron: '0 11 * * *'
   # Allow manual triggering for testing
   workflow_dispatch:
 
