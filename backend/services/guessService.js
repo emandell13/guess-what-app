@@ -1,4 +1,4 @@
-// backend/services/guessService.js (simplified approach)
+// backend/services/guessService.js (updated sections for streak integration)
 
 const supabase = require('../config/supabase');
 const { getTodayDate } = require('../utils/dateUtils');
@@ -6,9 +6,9 @@ const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('./llmService'); 
 const { createGuessMatchingPrompt } = require('../services/promptTemplates');
+const gameService = require('./gameService'); // Import gameService for streak updates
 
-// Create simple in-memory cache for LLM match results
-const matchCache = new Map();
+// ... existing functions (getCurrentQuestion, getTopAnswers, etc.) remain the same ...
 
 async function getCurrentQuestion() {
     // Existing implementation unchanged
@@ -76,6 +76,7 @@ async function checkGuessWithLLM(guess, topAnswers, questionText) {
         const cacheKey = `${questionText}|${normalizedGuess}`;
         
         // Check cache first
+        const matchCache = new Map(); // You might want to make this module-level
         if (matchCache.has(cacheKey)) {
             const cachedResult = matchCache.get(cacheKey);
             console.log(`Match cache hit: "${normalizedGuess}" -> ${cachedResult ? cachedResult.answer : 'NO_MATCH'}`);
@@ -127,23 +128,11 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         
         if (matchedAnswer) {
             console.log(`Direct match found: "${normalizedGuess}" matches top answer "${matchedAnswer.answer}"`);
-            
-            // Rest of the code remains the same...
-            // Record guess, return result, etc.
-            return {
-                isCorrect: true,
-                rank: matchedAnswer.rank,
-                voteCount: matchedAnswer.vote_count,
-                hint: matchedAnswer.hint, // Include hint in response
-                canonicalAnswer: matchedAnswer.answer,
-                message: `Correct! This was answer #${matchedAnswer.rank}`,
-                answerId: matchedAnswer.id
-            };
         }
     }
     
     // Step 1: Check for exact database matches first (fastest, no API cost)
-    if (normalizedGuess) {
+    if (!matchedAnswer && normalizedGuess) {
         const { data: matchingVotes, error: votesError } = await supabase
             .from('votes')
             .select('matched_answer_id')
@@ -169,11 +158,129 @@ async function checkGuess(guess, userId = null, visitorId = null) {
     }
 
     // Record the guess in the database if we have an identifier
+    let gameCompletedThisGuess = false;
+    
     if (userId || visitorId) {
-        // [Existing database recording logic unchanged]
         try {
             // First, find the game progress record or create one
-            // ...existing code...
+            let query = supabase
+                .from('game_progress')
+                .select('id, total_guesses, completed, gave_up')
+                .eq('question_id', question.id);
+                
+            if (userId) {
+                query = query.eq('user_id', userId);
+            } else if (visitorId) {
+                query = query.eq('visitor_id', visitorId);
+            }
+            
+            const { data: progressData, error: progressError } = await query.single();
+            
+            let gameProgress;
+            
+            if (progressError || !progressData) {
+                // Create new game progress record
+                const newProgressData = {
+                    question_id: question.id,
+                    total_guesses: 1,
+                    strikes: matchedAnswer ? 0 : 1,
+                    completed: false,
+                    gave_up: false
+                };
+                
+                if (userId) newProgressData.user_id = userId;
+                if (visitorId) newProgressData.visitor_id = visitorId;
+                
+                const { data: newProgress, error: insertError } = await supabase
+                    .from('game_progress')
+                    .insert([newProgressData])
+                    .select()
+                    .single();
+                    
+                if (insertError) {
+                    console.error('Error creating game progress:', insertError);
+                } else {
+                    gameProgress = newProgress;
+                }
+            } else {
+                // Update existing game progress
+                const newTotalGuesses = (progressData.total_guesses || 0) + 1;
+                const newStrikes = matchedAnswer ? 
+                    progressData.strikes : 
+                    (progressData.strikes || 0) + 1;
+                
+                const { data: updatedProgress, error: updateError } = await supabase
+                    .from('game_progress')
+                    .update({
+                        total_guesses: newTotalGuesses,
+                        strikes: newStrikes
+                    })
+                    .eq('id', progressData.id)
+                    .select()
+                    .single();
+                    
+                if (updateError) {
+                    console.error('Error updating game progress:', updateError);
+                } else {
+                    gameProgress = updatedProgress;
+                }
+            }
+            
+            // Check if game is now complete (found all 5 answers)
+            if (gameProgress && matchedAnswer) {
+                // Count how many unique answers have been found
+                const { data: guessData, error: guessError } = await supabase
+                    .from('guesses')
+                    .select('matched_answer_id')
+                    .eq('question_id', question.id)
+                    .not('matched_answer_id', 'is', null);
+                    
+                if (userId) {
+                    guessData && guessData.filter(g => g.user_id === userId);
+                } else if (visitorId) {
+                    guessData && guessData.filter(g => g.visitor_id === visitorId);
+                }
+                
+                const uniqueAnswersFound = new Set(
+                    guessData ? guessData.map(g => g.matched_answer_id) : []
+                );
+                uniqueAnswersFound.add(matchedAnswer.id); // Add this answer
+                
+                if (uniqueAnswersFound.size >= top5Answers.length) {
+                    // Game is complete! Update progress and process streak
+                    await supabase
+                        .from('game_progress')
+                        .update({ completed: true })
+                        .eq('id', gameProgress.id);
+                    
+                    gameCompletedThisGuess = true;
+                    
+                    // Update streak - this is a win (only for authenticated users)
+                    if (userId) {
+                        await gameService.updateStreakForGameCompletion(
+                            userId, 
+                            question.active_date, 
+                            true // isWin = true
+                        );
+                    }
+                }
+            }
+            
+            // Record the individual guess
+            const guessData = {
+                question_id: question.id,
+                guess_text: guess,
+                matched_answer_id: matchedAnswer ? matchedAnswer.id : null,
+                is_correct: !!matchedAnswer
+            };
+            
+            if (userId) guessData.user_id = userId;
+            if (visitorId) guessData.visitor_id = visitorId;
+            
+            await supabase
+                .from('guesses')
+                .insert([guessData]);
+                
         } catch (error) {
             console.error('Exception when recording guess:', error);
             // Don't throw here - we still want to return the guess result
@@ -184,10 +291,11 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         isCorrect: !!matchedAnswer,
         rank: matchedAnswer?.rank || null,
         voteCount: matchedAnswer?.vote_count || 0,
-        hint: matchedAnswer?.hint || null, // Include hint in response
+        hint: matchedAnswer?.hint || null,
         canonicalAnswer: matchedAnswer?.answer || null,
         message: matchedAnswer ? `Correct! This was answer #${matchedAnswer.rank}` : 'Try again!',
-        answerId: matchedAnswer?.id || null
+        answerId: matchedAnswer?.id || null,
+        gameCompleted: gameCompletedThisGuess
     };
 }
 
@@ -219,4 +327,4 @@ module.exports = {
     getAnswerHint,
     checkGuess,
     getHintsForQuestion
-};
+}
