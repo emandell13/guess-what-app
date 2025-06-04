@@ -49,7 +49,7 @@ class UserStats {
         return;
       }
       
-      // Fetch user stats
+      // Fetch user stats (without streak data)
       const response = await fetch('/user/stats', {
         headers: authService.getAuthHeaders()
       });
@@ -64,10 +64,10 @@ class UserStats {
         throw new Error(data.error || 'Failed to load statistics');
       }
       
-      // Display stats
+      // Display stats (game stats only)
       this.updateStats(data.stats);
       
-      // Load and display streak data
+      // Load and display streak data from StreakService
       await this.updateStreakDisplay();
       
       // Emit an event when stats are loaded
@@ -108,21 +108,15 @@ class UserStats {
    * Update the streak display with current data
    */
   async updateStreakDisplay() {
-    // Get streak elements
+          // Get streak element (only current streak now)
     const currentStreakElement = document.getElementById('stats-current-streak');
-    const bestStreakElement = document.getElementById('stats-best-streak');
     
     if (!authService.isAuthenticated()) {
       // User not authenticated - clear streak display
       if (currentStreakElement) {
         currentStreakElement.textContent = '0';
         const title = currentStreakElement.closest('.card')?.querySelector('.card-title');
-        if (title) title.textContent = 'Current Streak';
-      }
-      if (bestStreakElement) {
-        bestStreakElement.textContent = '0';
-        const title = bestStreakElement.closest('.card')?.querySelector('.card-title');
-        if (title) title.textContent = 'Best Streak';
+        if (title) title.textContent = 'Win Streak';
       }
       return;
     }
@@ -136,21 +130,13 @@ class UserStats {
         if (currentStreakElement) {
           currentStreakElement.textContent = streakData.current || 0;
           const title = currentStreakElement.closest('.card')?.querySelector('.card-title');
-          if (title) title.textContent = 'Current Streak';
-        }
-        
-        // Update best streak
-        if (bestStreakElement) {
-          bestStreakElement.textContent = streakData.best || 0;
-          const title = bestStreakElement.closest('.card')?.querySelector('.card-title');
-          if (title) title.textContent = 'Best Streak';
+          if (title) title.textContent = 'Win Streak';
         }
       }
     } catch (error) {
       console.error('Error updating streak display:', error);
       // Set to 0 on error
       if (currentStreakElement) currentStreakElement.textContent = '0';
-      if (bestStreakElement) bestStreakElement.textContent = '0';
     }
   }
   
@@ -172,43 +158,29 @@ updateStats(stats) {
     return;
   }
   
-  // Update the existing stats boxes (keep all original stats)
-  // 1. Games Played
+  // Update the stats boxes - they're already in the correct layout in HTML
+  // Row 1: Games Played | Total Wins
+  // Row 2: Win Streak | Perfect Games
+  
+  // 1. Games Played (top left)
   const totalGamesElement = document.getElementById('stats-total-games');
   if (totalGamesElement) {
     totalGamesElement.textContent = stats.totalGames || 0;
-    const title = totalGamesElement.closest('.card')?.querySelector('.card-title');
-    if (title) title.textContent = 'Games Played';
   }
   
-  // 2. Wins (previously high score)
+  // 2. Total Wins (top right)
   const winsElement = document.getElementById('stats-high-score');
   if (winsElement) {
     winsElement.textContent = stats.wins || 0;
-    winsElement.id = 'stats-wins';
-    const title = winsElement.closest('.card')?.querySelector('.card-title');
-    if (title) title.textContent = 'Wins';
   }
   
-  // 3. Average Guesses (keep this one)
-  const avgGuessesElement = document.getElementById('stats-avg-score');
-  if (avgGuessesElement) {
-    avgGuessesElement.textContent = stats.avgGuesses || 0;
-    avgGuessesElement.id = 'stats-avg-guesses';
-    const title = avgGuessesElement.closest('.card')?.querySelector('.card-title');
-    if (title) title.textContent = 'Average Guesses';
-  }
+  // 3. Win Streak (bottom left) - will be updated by updateStreakDisplay()
   
-  // 4. Perfect Games (keep this one too)
+  // 4. Perfect Games (bottom right)
   const perfectGamesElement = document.getElementById('stats-perfect-games');
   if (perfectGamesElement) {
     perfectGamesElement.textContent = stats.perfectGames || 0;
-    const title = perfectGamesElement.closest('.card')?.querySelector('.card-title');
-    if (title) title.textContent = 'Perfect Games';
   }
-  
-  // Add the new streak boxes to the stats container
-  this.addStreakBoxes();
   
   // Hide the recent games section
   const recentGamesHeader = this.container.querySelector('h3.mt-4.mb-3');
@@ -224,42 +196,6 @@ updateStats(stats) {
   // Show stats content, hide no games message
   if (noGamesMessage) noGamesMessage.style.display = 'none';
   if (statsContent) statsContent.style.display = 'block';
-}
-
-/**
- * Add streak stat boxes to the stats grid
- */
-addStreakBoxes() {
-  const statsRow = this.container.querySelector('.stats-content .row');
-  if (!statsRow) return;
-  
-  // Create Current Streak box
-  const currentStreakCol = document.createElement('div');
-  currentStreakCol.className = 'col-6 mb-3';
-  currentStreakCol.innerHTML = `
-    <div class="stat-card card">
-      <div class="card-body text-center card-current-streak">
-        <h6 class="card-title">Current Streak</h6>
-        <p class="mb-0" id="stats-current-streak">0</p>
-      </div>
-    </div>
-  `;
-  
-  // Create Best Streak box
-  const bestStreakCol = document.createElement('div');
-  bestStreakCol.className = 'col-6 mb-3';
-  bestStreakCol.innerHTML = `
-    <div class="stat-card card">
-      <div class="card-body text-center card-best-streak">
-        <h6 class="card-title">Best Streak</h6>
-        <p class="mb-0" id="stats-best-streak">0</p>
-      </div>
-    </div>
-  `;
-  
-  // Add them to the stats row
-  statsRow.appendChild(currentStreakCol);
-  statsRow.appendChild(bestStreakCol);
 }
 }
 

@@ -3,6 +3,7 @@
 import eventService from '../../services/EventService.js';
 import authService from '../../services/AuthService.js';
 import gameService from '../../services/GameService.js';
+import streakService from '../../services/StreakService.js';
 
 /**
  * Component representing the summary step of the game completion modal
@@ -21,6 +22,7 @@ class SummaryStep {
     this.resultHeading = this.stepElement.querySelector('#result-heading');
     this.resultHeadingLose = this.stepElement.querySelector('#result-heading-lose');
     this.resultHeadingPerfect = this.stepElement.querySelector('#result-heading-perfect');
+    this.streakIndicator = null; // Will be created dynamically
 
     // Game state cache
     this.gameData = {
@@ -261,24 +263,110 @@ class SummaryStep {
       guessCount: this.gameData.score
     });
 
-    // Handle stats link visibility
-    if (this.statsLink) {
-      if (authService.isAuthenticated()) {
-        this.statsLink.style.display = 'none';
-      } else {
-        this.statsLink.style.display = 'inline-block';
+    // Create and show streak indicator (positioned below header)
+    this.updateStreakIndicator(gaveUpParam || (gameService.gaveUp === true));
 
-        // Add click handler if not already added
-        if (!this.statsLink.hasClickHandler) {
-          this.statsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Emit an event to open the login modal
-            eventService.emit('ui:open-login-modal');
-          });
-          this.statsLink.hasClickHandler = true;
-        }
-      }
+    // Handle stats link visibility based on auth status
+    this.updateStatsLinkVisibility();
+  }
+
+  /**
+   * Updates the stats link visibility - now always hidden since streak indicator replaces it
+   */
+  updateStatsLinkVisibility() {
+    // Always hide stats link - streak indicator serves this purpose better
+    if (this.statsLink) {
+      this.statsLink.style.display = 'none';
     }
+  }
+
+  /**
+   * Creates and updates the streak indicator based on auth status and game outcome
+   */
+  async updateStreakIndicator(gaveUp = false) {
+    // Remove existing streak indicator if it exists
+    if (this.streakIndicator) {
+      this.streakIndicator.remove();
+      this.streakIndicator = null;
+    }
+
+    // Create streak indicator element
+    this.streakIndicator = document.createElement('div');
+    this.streakIndicator.className = 'text-center mt-3 mb-3 streak-indicator';
+    
+    if (authService.isAuthenticated()) {
+      // Authenticated users - show actual streak status
+      await this.showAuthenticatedStreakStatus(gaveUp);
+    } else {
+      // Anonymous users - show signup prompt
+      this.showAnonymousStreakPrompt(gaveUp);
+    }
+
+    // Insert streak indicator after the header (before score display)
+    const scoreDisplay = this.stepElement.querySelector('.score-display');
+    if (scoreDisplay && scoreDisplay.parentNode) {
+      scoreDisplay.parentNode.insertBefore(this.streakIndicator, scoreDisplay);
+    }
+  }
+
+  /**
+   * Shows streak status for authenticated users
+   */
+  async showAuthenticatedStreakStatus(gaveUp) {
+    try {
+      const streakData = await streakService.getStreakInfo();
+      const currentStreak = streakData?.current || 0;
+      
+      // Don't add to the streak - the backend has already updated it by now
+      let displayStreak = currentStreak;
+      
+      let streakText = '';
+      let streakClass = 'streak-indicator-auth';
+      
+      if (gaveUp || displayStreak === 0) {
+        streakText = 'Streak reset. Start again tomorrow 🔥';
+        streakClass += ' streak-reset';
+      } else if (displayStreak <= 4) {
+        streakText = `${displayStreak} day streak 🔥`;
+        streakClass += ' streak-active';
+      } else {
+        streakText = `${displayStreak} day streak - keep it up! 🔥🔥`;
+        streakClass += ' streak-milestone';
+      }
+      
+      this.streakIndicator.textContent = streakText;
+      this.streakIndicator.className += ` ${streakClass}`;
+      
+    } catch (error) {
+      console.error('Error fetching streak for indicator:', error);
+      // Fallback message
+      this.streakIndicator.textContent = 'Great game! 🔥';
+      this.streakIndicator.className += ' streak-indicator-auth';
+    }
+  }
+
+  /**
+   * Shows signup prompt for anonymous users
+   */
+  showAnonymousStreakPrompt(gaveUp) {
+    let promptText = '';
+    let streakClass = 'streak-indicator-anon';
+    
+    if (gaveUp) {
+      promptText = 'Track your stats';
+    } else {
+      promptText = '1 day streak! Create an account to keep your streak alive 🔥';
+    }
+    
+    this.streakIndicator.textContent = promptText;
+    this.streakIndicator.className += ` ${streakClass}`;
+    this.streakIndicator.style.cursor = 'pointer';
+    this.streakIndicator.style.textDecoration = 'underline';
+    
+    // Add click handler to open registration modal
+    this.streakIndicator.addEventListener('click', () => {
+      eventService.emit('ui:open-register-modal');
+    });
   }
 
   /**

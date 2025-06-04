@@ -765,6 +765,11 @@
     background: #E6EAFF;
 }
 
+/* New win streak color - orange */
+.card-win-streak {
+    background: #F5E6D3;
+}
+
 /* Recent games styling */
 .recent-games-list {
     margin-top: 1rem;

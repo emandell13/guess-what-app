@@ -84,7 +84,7 @@ async function giveUp(userId = null, visitorId = null) {
 }
 
 /**
- * Gets user stats based on the new scoring system, including streak information
+ * Gets user stats based on the new scoring system (NO streak information)
  */
 async function getUserStats(userId) {
     try {
@@ -110,10 +110,7 @@ async function getUserStats(userId) {
         // Perfect games: Won and no incorrect guesses
         const perfectGames = games.filter(g => !g.gave_up && g.strikes === 0).length;
 
-        // Get streak information (only for authenticated users)
-        const streakResult = await streakService.getStreakInfo(userId);
-        const streakInfo = streakResult.success ? streakResult.streak : { current: 0, best: 0 };
-
+        // NO STREAK DATA - let StreakService handle that
         return {
             success: true,
             stats: {
@@ -121,8 +118,6 @@ async function getUserStats(userId) {
                 wins,
                 avgGuesses,
                 perfectGames,
-                currentWinStreak: streakInfo.current,
-                bestWinStreak: streakInfo.best,
                 recentGames: games.slice(0, 5) // Return 5 most recent games
             }
         };

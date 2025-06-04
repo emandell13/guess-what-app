@@ -230,6 +230,14 @@ class App {
       this.showAlreadyGuessedMessage(guess);
     });
 
+    // Listen for game completed event and refresh streaks
+    eventService.on('game:completed', async () => {
+      // Refresh streak data for authenticated users
+      if (authService.isAuthenticated()) {
+        await streakService.handleGameCompletion();
+      }
+    });
+
     // Listen for open login modal events
     eventService.on('ui:open-login-modal', () => {
       // Close the game modal first if it's open
@@ -245,6 +253,25 @@ class App {
       setTimeout(() => {
         if (this.authModal) {
           this.authModal.showLogin();
+        }
+      }, 400); // Short delay to allow the game modal to close
+    });
+
+    // Listen for open register modal events (for streak signup)
+    eventService.on('ui:open-register-modal', () => {
+      // Close the game modal first if it's open
+      if (this.gameModal) {
+        const modalElement = document.getElementById('gameCompleteModal');
+        const bsModal = bootstrap.Modal.getInstance(modalElement);
+        if (bsModal) {
+          bsModal.hide();
+        }
+      }
+
+      // Then show the registration modal
+      setTimeout(() => {
+        if (this.authModal) {
+          this.authModal.showRegister();
         }
       }, 400); // Short delay to allow the game modal to close
     });
@@ -316,30 +343,30 @@ class App {
   /**
  * Initialize the application
  */
-async initialize() {
-  // Reset celebration flag for new games
-  this.hasCelebratedPerfectGame = false;
-  
-  // Initialize game
-  const gameInitResult = await gameService.initialize();
+  async initialize() {
+    // Reset celebration flag for new games
+    this.hasCelebratedPerfectGame = false;
 
-  // Update the UI with initial game state
-  if (gameInitResult.success) {
-    this.updateInitialUI(gameInitResult.answerCount);
-  } else {
-    // No active question available
-    this.questionHeading.textContent = "No question available for guessing yet";
+    // Initialize game
+    const gameInitResult = await gameService.initialize();
+
+    // Update the UI with initial game state
+    if (gameInitResult.success) {
+      this.updateInitialUI(gameInitResult.answerCount);
+    } else {
+      // No active question available
+      this.questionHeading.textContent = "No question available for guessing yet";
+    }
+
+    // Fetch tomorrow's question for voting
+    await voteService.fetchTomorrowsQuestion();
+
+    // Initialize guess form - using the new event-based system
+    this.guessForm = new GuessForm("guess-form");
+
+    // Check for verification parameter after everything is initialized
+    this.checkVerificationStatus();
   }
-
-  // Fetch tomorrow's question for voting
-  await voteService.fetchTomorrowsQuestion();
-
-  // Initialize guess form - using the new event-based system
-  this.guessForm = new GuessForm("guess-form");
-
-  // Check for verification parameter after everything is initialized
-  this.checkVerificationStatus();
-}
 
   /**
    * Update UI with initial game state
@@ -487,85 +514,85 @@ async initialize() {
   /**
  * Displays a celebration animation for a perfect game - with bright but coordinated colors
  */
-celebratePerfectGame() {
-  if (this.hasCelebratedPerfectGame) return; // Prevent multiple celebrations
-  this.hasCelebratedPerfectGame = true;
-  
-  console.log("Perfect game achieved! Celebrating...");
-  
-  // Brighter, more vibrant colors that still coordinate with your design
-  const colors = [
-    '#4CAF50', // Bright green (vibrant version of your success color)
-    '#FF5252', // Bright red (vibrant version of your alert color)
-    '#FFEB3B', // Bright yellow (vibrant version of your light yellow)
-    '#2196F3', // Bright blue (vibrant version of your light blue)
-    '#9C27B0', // Bright purple (for contrast and celebration)
-    '#FF9800'  // Bright orange (for variety and warmth)
-  ];
-  
-  // First burst of confetti
-  const count = 200;
-  const defaults = {
-    origin: { y: 0.7 },
-    zIndex: 2000,
-    colors: colors
-  };
-  
-  function fire(particleRatio, opts) {
-    confetti({
-      ...defaults,
-      ...opts,
-      particleCount: Math.floor(count * particleRatio)
-    });
-  }
-  
-  // Launch confetti from the sides
-  fire(0.25, {
-    spread: 26,
-    startVelocity: 55,
-    origin: { x: 0.1, y: 0.5 }
-  });
-  fire(0.25, {
-    spread: 26,
-    startVelocity: 55,
-    origin: { x: 0.9, y: 0.5 }
-  });
-  
-  // Launch confetti from the bottom
-  fire(0.2, {
-    spread: 60,
-    decay: 0.94,
-    scalar: 0.9
-  });
-  
-  // Delayed burst from the center
-  setTimeout(() => {
-    fire(0.3, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 1.2,
-      origin: { y: 0.6 }
-    });
-  }, 500);
-  
-  // Cannon shots from alternating sides
-  let intervalId = setInterval(() => {
-    const side = Math.random() > 0.5 ? 0.1 : 0.9;
-    confetti({
-      particleCount: 20,
-      angle: side === 0.1 ? 60 : 120,
-      spread: 50,
-      origin: { x: side, y: 0.6 },
+  celebratePerfectGame() {
+    if (this.hasCelebratedPerfectGame) return; // Prevent multiple celebrations
+    this.hasCelebratedPerfectGame = true;
+
+    console.log("Perfect game achieved! Celebrating...");
+
+    // Brighter, more vibrant colors that still coordinate with your design
+    const colors = [
+      '#4CAF50', // Bright green (vibrant version of your success color)
+      '#FF5252', // Bright red (vibrant version of your alert color)
+      '#FFEB3B', // Bright yellow (vibrant version of your light yellow)
+      '#2196F3', // Bright blue (vibrant version of your light blue)
+      '#9C27B0', // Bright purple (for contrast and celebration)
+      '#FF9800'  // Bright orange (for variety and warmth)
+    ];
+
+    // First burst of confetti
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
       zIndex: 2000,
       colors: colors
+    };
+
+    function fire(particleRatio, opts) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      });
+    }
+
+    // Launch confetti from the sides
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+      origin: { x: 0.1, y: 0.5 }
     });
-  }, 300);
-  
-  // Stop the interval after a few seconds
-  setTimeout(() => {
-    clearInterval(intervalId);
-  }, 4000);
-}
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+      origin: { x: 0.9, y: 0.5 }
+    });
+
+    // Launch confetti from the bottom
+    fire(0.2, {
+      spread: 60,
+      decay: 0.94,
+      scalar: 0.9
+    });
+
+    // Delayed burst from the center
+    setTimeout(() => {
+      fire(0.3, {
+        spread: 100,
+        decay: 0.91,
+        scalar: 1.2,
+        origin: { y: 0.6 }
+      });
+    }, 500);
+
+    // Cannon shots from alternating sides
+    let intervalId = setInterval(() => {
+      const side = Math.random() > 0.5 ? 0.1 : 0.9;
+      confetti({
+        particleCount: 20,
+        angle: side === 0.1 ? 60 : 120,
+        spread: 50,
+        origin: { x: side, y: 0.6 },
+        zIndex: 2000,
+        colors: colors
+      });
+    }, 300);
+
+    // Stop the interval after a few seconds
+    setTimeout(() => {
+      clearInterval(intervalId);
+    }, 4000);
+  }
 
 }
 
