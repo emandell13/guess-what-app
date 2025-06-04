@@ -22,14 +22,13 @@ async function notifyMakeWebhook(imageData) {
             return false;
         }
 
-        // Get question details for dynamic caption
-        const date = imageData.date;
-        
-        // Calculate yesterday's date to get the question data
-        const yesterday = new Date(date);
+        // Calculate yesterday's date for the caption (since we're posting about yesterday's game)
+        const today = new Date(imageData.date);
+        const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayFormatted = yesterday.toISOString().split('T')[0];
         
+        // Get question details for dynamic caption
         const { data: question, error: questionError } = await supabase
             .from('questions')
             .select('*')
@@ -52,11 +51,11 @@ async function notifyMakeWebhook(imageData) {
             totalVotes = count || 0;
         }
 
-        // Prepare payload with all the data Make.com needs
+        // Prepare payload with yesterday's date for the caption
         const payload = {
             image_url: imageData.public_url,
-            date: date,
-            formatted_date: new Date(date).toLocaleDateString('en-US', {
+            date: yesterdayFormatted, // Send yesterday's date for the caption
+            formatted_date: yesterday.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -130,9 +129,9 @@ router.post('/upload', upload.single('image'), async (req, res) => {
             });
         }
         
-        // Notify Make.com about the new image
+        // Notify Make.com about the new image (filename uses today's date, but webhook will send yesterday's date for caption)
         await notifyMakeWebhook({
-            date: today,
+            date: today, // This is still today for the filename/storage, but webhook will calculate yesterday for caption
             filename,
             public_url: publicUrl
         });
