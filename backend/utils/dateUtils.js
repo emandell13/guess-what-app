@@ -47,7 +47,7 @@ function formatDateForDisplay(dateString, options = {}) {
   const defaultOptions = {
     timeZone: 'America/Los_Angeles',
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric'
   };
 

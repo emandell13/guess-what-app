@@ -292,7 +292,7 @@ class SummaryStep {
 
     // Create streak indicator element
     this.streakIndicator = document.createElement('div');
-    this.streakIndicator.className = 'text-center mt-3 mb-3 streak-indicator';
+    this.streakIndicator.className = 'text-center mt-3 mb-3';
     
     if (authService.isAuthenticated()) {
       // Authenticated users - show actual streak status
@@ -350,21 +350,26 @@ class SummaryStep {
    */
   showAnonymousStreakPrompt(gaveUp) {
     let promptText = '';
-    let streakClass = 'streak-indicator-anon';
     
     if (gaveUp) {
       promptText = 'Track your stats';
     } else {
-      promptText = '1 day streak! Create an account to keep your streak alive 🔥';
+      promptText = 'Track your streak - Sign up 🔥';
     }
     
-    this.streakIndicator.textContent = promptText;
-    this.streakIndicator.className += ` ${streakClass}`;
-    this.streakIndicator.style.cursor = 'pointer';
-    this.streakIndicator.style.textDecoration = 'underline';
+    // Create a link element that matches the original stats-link styling
+    const linkElement = document.createElement('a');
+    linkElement.href = '#';
+    linkElement.className = 'stats-link';
+    linkElement.textContent = promptText;
+    
+    // Clear the streak indicator and add the properly styled link
+    this.streakIndicator.innerHTML = '';
+    this.streakIndicator.appendChild(linkElement);
     
     // Add click handler to open registration modal
-    this.streakIndicator.addEventListener('click', () => {
+    linkElement.addEventListener('click', (e) => {
+      e.preventDefault();
       eventService.emit('ui:open-register-modal');
     });
   }
