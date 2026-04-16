@@ -2,6 +2,7 @@ import { getVisitorId, saveTodayGuesses, getTodayGuesses, markTodayCompleted, sa
 import authService from './AuthService.js';
 import eventService from './EventService.js';
 import { formatDisplayDate } from '../utils/dateUtils.js';
+import gameConfig from '../config/gameConfig.js';
 
 /**
  * Service that manages game state and logic
@@ -204,20 +205,52 @@ class GameService {
     // Save progress to server
     this.saveUserGameData();
 
-    // Emit incorrect guess event
+    const strikes = this.incorrectGuesses.length;
+
     eventService.emit('game:incorrect-guess', {
       guess: guess,
       totalGuesses: this.totalGuesses,
-      incorrectGuesses: this.incorrectGuesses.length
+      incorrectGuesses: strikes
+    });
+
+    eventService.emit('game:strike-added', {
+      strikes
     });
 
     eventService.emit('game:guess-counter-updated', {
       totalGuesses: this.totalGuesses
     });
 
+    // Check for strike-out (game over via max strikes)
+    if (this.hasStruckOut()) {
+      markTodayCompleted();
+      this.saveUserGameData();
+
+      eventService.emit('game:struck-out', {
+        totalGuesses: this.totalGuesses,
+        incorrectGuesses: this.incorrectGuesses
+      });
+
+      eventService.emit('game:completed', {
+        correctGuesses: this.correctGuesses,
+        incorrectGuesses: this.incorrectGuesses,
+        totalGuesses: this.totalGuesses,
+        gaveUp: this.gaveUp,
+        struckOut: true
+      });
+    }
+
     return {
-      success: true
+      success: true,
+      struckOut: this.hasStruckOut()
     };
+  }
+
+  /**
+   * Returns true if the player has hit max strikes
+   */
+  hasStruckOut() {
+    return this.incorrectGuesses.length >= gameConfig.MAX_STRIKES;
   }
 
   /**
@@ -311,10 +344,9 @@ class GameService {
    * Checks if the game is over
    */
   isGameOver() {
-    // Game is over if all answers are found or player gave up
     const allAnswersFound = this.correctGuesses.length >= this.answerCount;
 
-    return this.gaveUp || allAnswersFound;
+    return this.gaveUp || allAnswersFound || this.hasStruckOut();
   }
 
   /**

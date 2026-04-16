@@ -8,7 +8,7 @@ import eventService from './services/EventService.js';
 // Import components
 import AnswerGrid from './components/AnswerGrid.js';
 import GuessForm from './components/GuessForm.js';
-import GuessCounter from './components/GuessCounter.js'; // New component we'll create
+import StrikeCounter from './components/StrikeCounter.js';
 import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
 import HintButton from './components/HintButton.js';
@@ -21,7 +21,7 @@ class App {
     // Initialize components
     this.isGameOverModalPending = false;
     this.answerGrid = new AnswerGrid("answer-boxes");
-    this.guessCounter = new GuessCounter("guess-counter"); // New component for tracking guesses
+    this.strikeCounter = new StrikeCounter("strikes");
     this.gameModal = new GameModal("gameCompleteModal");
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
@@ -165,11 +165,22 @@ class App {
       this.hasCelebratedPerfectGame = false;
     });
 
-    // Listen for incorrect guesses
-    eventService.on('game:incorrect-guess', (event) => {
-      const { totalGuesses } = event.detail;
-      // Update guess counter
-      this.guessCounter.updateGuessCount(totalGuesses);
+    // Listen for strike-out (3 strikes = game over)
+    eventService.on('game:struck-out', async () => {
+      console.log("Player struck out, revealing all remaining answers");
+
+      if (this.guessForm) this.guessForm.disable();
+
+      document.body.dataset.revealingAnswers = 'true';
+
+      try {
+        await this.revealAllRemainingAnswers();
+      } catch (error) {
+        console.error("Error revealing answers after strike-out:", error);
+      } finally {
+        document.body.dataset.revealingAnswers = 'false';
+        this.gameModal.show(gameService.totalGuesses, false);
+      }
     });
 
     eventService.on('game:perfect-game', () => {
@@ -406,15 +417,15 @@ class App {
     // Create answer boxes
     this.answerGrid.initialize(answerCount);
 
-    // Update guess counter display
-    this.guessCounter.updateGuessCount(gameService.totalGuesses);
+    // Restore strike display for resumed games
+    this.strikeCounter.updateStrikes(gameService.incorrectGuesses.length, false);
 
     // If game is already restored as complete, handle accordingly
     if (gameService.isGameOver()) {
       console.log("Game is already over, showing completion modal");
 
-      // If game was given up, reveal all remaining answers
-      if (gameService.gaveUp) {
+      // Reveal remaining answers if game ended without all answers found
+      if (gameService.gaveUp || gameService.hasStruckOut()) {
         this.revealAllRemainingAnswers();
       }
 

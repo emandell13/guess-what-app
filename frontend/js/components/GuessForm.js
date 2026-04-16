@@ -104,6 +104,9 @@ class GuessForm {
           result.canonicalAnswer
         );
       } else {
+        // Shake the input for wrong-guess feedback
+        this.shakeInput();
+
         // Record incorrect guess
         gameService.recordIncorrectGuess(userGuess);
       }
@@ -156,6 +159,17 @@ class GuessForm {
         giveUpButton.textContent = 'Give Up';
       }
     }
+  }
+
+  /**
+   * Plays a red shake animation on the input to signal a wrong guess
+   */
+  shakeInput() {
+    const inputGroup = this.input.closest('.input-group') || this.input;
+    inputGroup.classList.remove('wrong-shake');
+    // Force reflow so the animation restarts on rapid wrong guesses
+    void inputGroup.offsetWidth;
+    inputGroup.classList.add('wrong-shake');
   }
 
   /**

@@ -143,6 +143,27 @@ h5,
     animation: strikeReveal 0.8s ease-in-out forwards;
 }
 
+/* Wrong-guess shake animation on the input */
+@keyframes wrongShake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-10px); }
+    30% { transform: translateX(10px); }
+    45% { transform: translateX(-8px); }
+    60% { transform: translateX(8px); }
+    75% { transform: translateX(-4px); }
+    90% { transform: translateX(4px); }
+}
+
+.wrong-shake {
+    animation: wrongShake 0.5s ease-in-out;
+}
+
+.wrong-shake .guess-input {
+    border-color: #E57373 !important;
+    background-color: #FFF0F0;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
 /* Spacing adjustments */
 .container {
     padding-top: 1rem !important;
