@@ -167,9 +167,10 @@ class AnswerBox {
         answerText.textContent = canonicalAnswer || answer;
         answerText.classList.add('visible');
 
-        // Update badge to show votes instead of points
-        votesBadge.textContent = `${voteCount} votes`;
+        // Count the vote number up from 0 to its final value
+        votesBadge.textContent = `0 votes`;
         votesBadge.classList.remove("d-none");
+        this.countUpVotes(votesBadge, voteCount, 700);
 
         cardBody.classList.remove("bg-light");
 
@@ -196,6 +197,22 @@ class AnswerBox {
         }, 200);
       }
     );
+  }
+
+  /**
+   * Animates the vote count up from 0 to target with ease-out
+   */
+  countUpVotes(el, target, duration) {
+    const start = performance.now();
+    const tick = (now) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.round(target * eased);
+      el.textContent = `${current} votes`;
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   /**
