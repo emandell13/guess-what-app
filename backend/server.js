@@ -7,6 +7,7 @@ dotenv.config();
 
 // Import daily update script
 const dailyUpdate = require('./scripts/dailyUpdate'); // Add this line
+const { replenishPipeline } = require('./services/contentEngine');
 
 // Setup middleware
 require('./middleware')(app);
@@ -18,11 +19,21 @@ const votesRouter = require('./routes/votes');
 app.use('/votes', votesRouter);
 
 // Add cron job for daily updates at midnight ET (5am UTC)
-cron.schedule('0 8 * * *', () => {
+cron.schedule('0 8 * * *', async () => {
   console.log('Running scheduled daily update...');
-  dailyUpdate()
-    .then(result => console.log('Daily update result:', result))
-    .catch(err => console.error('Error in daily update:', err));
+  try {
+    const updateResult = await dailyUpdate();
+    console.log('Daily update result:', updateResult);
+  } catch (err) {
+    console.error('Error in daily update:', err);
+  }
+
+  try {
+    const pipelineResult = await replenishPipeline();
+    console.log('Content pipeline result:', pipelineResult);
+  } catch (err) {
+    console.error('Error in content replenishment:', err);
+  }
 });
 
 const os = require('os');

@@ -10,11 +10,13 @@ router.use(adminAuth);
 const questionsRoutes = require('./questions');
 const votesRoutes = require('./votes');
 const toolsRoutes = require('./tools');
+const contentRoutes = require('./content');
 
 // Register route modules
 router.use('/questions', questionsRoutes);
 router.use('/votes', votesRoutes);
 router.use('/tools', toolsRoutes);
+router.use('/content', contentRoutes);
 
 // Add route for auto-generate social image page
 router.get('/auto-generate-social-image', (req, res) => {

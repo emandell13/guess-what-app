@@ -89,6 +89,9 @@ class AdminApp {
         if (socialImageContainer) {
             this.socialImageManager.init();
         }
+
+        // Load content pipeline status
+        this.systemOperations.loadPipelineStatus();
     }
     
     setupUIHandlers() {
@@ -108,6 +111,12 @@ class AdminApp {
         const runUpdateBtn = document.getElementById('run-update-btn');
         if (runUpdateBtn) {
             runUpdateBtn.addEventListener('click', () => this.systemOperations.runDailyUpdate());
+        }
+
+        // Run content replenishment button
+        const runReplenishBtn = document.getElementById('run-replenish-btn');
+        if (runReplenishBtn) {
+            runReplenishBtn.addEventListener('click', () => this.systemOperations.runReplenishment());
         }
         
         // Add votes button

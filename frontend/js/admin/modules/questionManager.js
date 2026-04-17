@@ -16,18 +16,23 @@ const QuestionsManager = {
             const questionsList = document.getElementById('questionsList');
 
             if (data.questions && data.questions.length > 0) {
-                questionsList.innerHTML = data.questions.map(question => `
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                questionsList.innerHTML = data.questions.map(question => {
+                    const sourceBadge = question.source === 'generated'
+                        ? '<span class="badge bg-success me-1" title="AI-generated"><i class="fas fa-magic"></i></span>'
+                        : '';
+                    return `
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                        data-id="${question.id}" onclick="window.app.questionManager.loadQuestionDetails('${question.id}'); return false;">
                         <div>
-                            <div class="fw-bold">${escapeHtml(question.question_text)}</div>
+                            <div class="fw-bold">${sourceBadge}${escapeHtml(question.question_text)}</div>
                             <small class="text-muted">Active Date: ${formatDisplayDate(question.active_date)}</small>
                         </div>
                         <span class="badge ${getStatusBadgeClass(question.status)} rounded-pill">
                             ${getStatusText(question.status)}
                         </span>
                     </a>
-                `).join('');
+                `;
+                }).join('');
             } else {
                 questionsList.innerHTML = '<div class="list-group-item text-center py-3">No questions found</div>';
             }
