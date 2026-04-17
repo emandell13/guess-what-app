@@ -59,6 +59,10 @@ h5,
     font-size: clamp(1rem, 2vw, 1.25rem);
 }
 
+#game-chrome-row h5 {
+    font-size: 0.875rem;
+}
+
 /* Make score numbers bolder */
 .score-value {
     font-weight: 700;
@@ -787,7 +791,7 @@ body.keyboard-open #guess-form-container {
     align-items: center;
     padding: 0.25rem 0.75rem;
     border-radius: 0.375rem;
-    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.5;
     cursor: pointer;
