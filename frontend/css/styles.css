@@ -230,20 +230,16 @@ body > .container.py-5 > .row {
     flex: 1;
     align-items: stretch;
 }
-/* Vertically center the entire play space inside col-lg-6 on tall
-   viewports. `safe center` falls back to flex-start when content
-   exceeds the col so shorter viewports don't render content above the
-   viewport edge (which was producing phantom scroll). We also drop
-   min-height: 0 from col/wrapper/row — those were letting the col be
-   sized smaller than its content under flex-stretch, producing the
-   same overflow-above-the-top bug. */
+/* Content stacks from the top naturally (no vertical centering). Extra
+   vertical space on tall viewports sits below the guess form; margins
+   between sections scale up via the clamp-based mb-* overrides so
+   content still breathes as the viewport gets taller. */
 .container .col-lg-6 {
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;
     width: 100%;
     max-width: 700px;
-    justify-content: safe center;
 }
 .answer-boxes-wrapper {
     display: flex;
@@ -282,43 +278,30 @@ body > .container.py-5 > .row {
     width: 100%;
 }
 
-/* Modest container padding — the heavy lifting for tall-viewport top
-   breathing now comes from justify-content: center on col-lg-6. Mobile
-   margins are fluid so narrow-tall viewports (phones in portrait) get
-   visible breathing room between sections. */
+/* Fluid spacing: floors give small/short viewports breathing room so
+   sections don't feel cramped together, ceilings let tall viewports
+   grow the gaps (soaking up vertical space that would otherwise pile
+   up at the bottom now that centering is gone). */
 .container {
-    padding-top: 0.5rem !important;
+    padding-top: clamp(0.875rem, 2vh, 1.5rem) !important;
     padding-bottom: 0.5rem !important;
 }
 
 .mb-4 {
-    margin-bottom: clamp(0.875rem, 1.5vh, 1.5rem) !important;
+    margin-bottom: clamp(1.25rem, 2vh, 1.75rem) !important;
 }
 
 .mb-3 {
-    margin-bottom: clamp(0.625rem, 1vh, 1rem) !important;
+    margin-bottom: clamp(0.875rem, 1.2vh, 1.25rem) !important;
 }
 
 .container .position-relative.mb-5 {
-    margin-bottom: clamp(1rem, 2vh, 1.75rem) !important;
+    margin-bottom: clamp(1.5rem, 2.5vh, 2.25rem) !important;
 }
 
-@media (min-width: 768px) {
-    /* Fluid vertical spacing on desktop — kept modest because the
-       col-lg-6 justify-content: center handles tall-viewport top space. */
-    .container {
-        padding-top: clamp(0.75rem, 1.8vh, 1.25rem) !important;
-        padding-bottom: clamp(0.75rem, 1.8vh, 1.25rem) !important;
-    }
-
-    .mb-4 {
-        margin-bottom: clamp(1rem, 2.5vh, 1.75rem) !important;
-    }
-
-    .container .position-relative.mb-5 {
-        margin-bottom: clamp(1.25rem, 2.8vh, 2rem) !important;
-    }
-}
+/* Desktop previously had tighter container padding / mb-4 / mb-5
+   overrides; they've been dropped so the base clamps above apply
+   everywhere, giving consistent breathing room across widths. */
 
 .card-body .d-flex {
     position: relative;
