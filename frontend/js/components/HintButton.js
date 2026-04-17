@@ -136,9 +136,32 @@ class HintButton {
   }
 
   async performGiveUp() {
-    if (!confirm('Are you sure you want to give up? All remaining answers will be revealed.')) {
+    const modalEl = document.getElementById('giveUpModal');
+    if (!modalEl || typeof bootstrap === 'undefined') {
+      // Fallback: run it without the custom modal if Bootstrap isn't ready.
+      await this.runGiveUp();
       return;
     }
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    const confirmBtn = document.getElementById('give-up-confirm');
+    if (!confirmBtn) {
+      bsModal.hide();
+      await this.runGiveUp();
+      return;
+    }
+
+    const onConfirm = async () => {
+      confirmBtn.removeEventListener('click', onConfirm);
+      bsModal.hide();
+      await this.runGiveUp();
+    };
+    confirmBtn.addEventListener('click', onConfirm, { once: true });
+
+    bsModal.show();
+  }
+
+  async runGiveUp() {
     try {
       const result = await gameService.giveUp();
       if (!result || !result.success) {

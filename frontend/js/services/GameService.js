@@ -67,9 +67,9 @@ class GameService {
    * Returns the question text
    */
   getQuestionText() {
-    return this.question ?
-      `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${this.question.guessPrompt}` :
-      "No question available for guessing yet";
+    if (!this.question) return "No question available for guessing yet";
+    const prompt = (this.question.guessPrompt || '').replace(/[?.!\s]+$/, '');
+    return `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${prompt}?`;
   }
 
   /**
@@ -353,9 +353,9 @@ class GameService {
    * Returns the question text
    */
   getQuestionText() {
-    return this.question ?
-      `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${this.question.guessPrompt}` :
-      "No question available for guessing yet";
+    if (!this.question) return "No question available for guessing yet";
+    const prompt = (this.question.guessPrompt || '').replace(/[?.!\s]+$/, '');
+    return `What did <span class="clickable-number" id="people-count">${this.question.totalVotes} people</span> say was ${prompt}?`;
   }
 
   /**

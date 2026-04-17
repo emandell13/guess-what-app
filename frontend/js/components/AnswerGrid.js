@@ -1,7 +1,6 @@
 // frontend/js/components/AnswerGrid.js
 
 import AnswerBox from './AnswerBox.js';
-import { staggerAnimations } from '../utils/animationUtils.js';
 import eventService from '../services/EventService.js';
 
 /**
@@ -82,24 +81,43 @@ class AnswerGrid {
   }
   
   /**
-   * Reveals all remaining answers with staggered animations
+   * Reveals all remaining answers with staggered animations.
+   * Used for give-up and strike-out. Runs as a single coordinated sequence
+   * rather than per-card drama: one overlay pass, no z-index lifts (so
+   * cards don't stack/overlap awkwardly), tighter timing.
    * @param {Array} remainingAnswers - Array of answer data to reveal
    * @returns {Promise} - Resolves when all reveals are complete
    */
   revealAllRemaining(remainingAnswers) {
-    // Filter out answers with rank > 5
-    const topFiveAnswers = remainingAnswers.filter(answer => answer.rank <= 5);
-    
-    return staggerAnimations(
-      topFiveAnswers,
-      (answer) => {
-        const answerBox = this.answerBoxes.find(box => box.rank === answer.rank);
-        if (answerBox) {
-          answerBox.reveal(answer.answer, answer.voteCount, null, false);
-        }
-      },
-      800
-    );
+    const topFive = remainingAnswers
+      .filter(a => a.rank <= 5)
+      .sort((a, b) => b.rank - a.rank); // reveal #5 → #1 for anticipation
+
+    if (topFive.length === 0) return Promise.resolve();
+
+    const overlay = document.getElementById('reveal-dim-overlay');
+    if (overlay) overlay.classList.add('active-soft');
+
+    const stagger = 450;
+    const revealHold = 700;
+
+    return new Promise(resolve => {
+      topFive.forEach((answer, i) => {
+        setTimeout(() => {
+          const box = this.answerBoxes.find(b => b.rank === answer.rank);
+          if (box) {
+            box.reveal(answer.answer, answer.voteCount, null, false, { batch: true });
+          }
+        }, i * stagger);
+      });
+
+      // Clear overlay once the last reveal has finished its hold.
+      const totalMs = (topFive.length - 1) * stagger + revealHold + 150;
+      setTimeout(() => {
+        if (overlay) overlay.classList.remove('active-soft', 'active');
+        resolve();
+      }, totalMs);
+    });
   }
 }
 

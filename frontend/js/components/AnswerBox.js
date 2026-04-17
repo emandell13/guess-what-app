@@ -58,9 +58,13 @@ class AnswerBox {
    * @param {number} voteCount - The votes for this answer
    * @param {string} canonicalAnswer - Optional canonical version of the answer
    * @param {boolean} isSuccess - Whether this is a successful guess or a reveal
+   * @param {object} opts - { batch: true } skips the per-card overlay/lift so
+   *   a caller (e.g. batch reveal on give-up) can manage staging itself.
    */
-  reveal(answer, voteCount, canonicalAnswer = null, isSuccess = true) {
+  reveal(answer, voteCount, canonicalAnswer = null, isSuccess = true, opts = {}) {
     if (this.revealed) return;
+
+    const { batch = false } = opts;
 
     if (this.rank === 1) {
       eventService.emit('game:rank-one-revealed', {
@@ -74,20 +78,26 @@ class AnswerBox {
     const answerText = this.element.querySelector(".answer-text");
     const votesBadge = this.element.querySelector(".points");
 
-    // Dim the page during reveal: soft for supporting ranks, full for #1
+    // Dim the page during reveal: soft for supporting ranks, full for #1.
+    // Batch reveals skip this — the caller manages a single overlay pass.
     const isBigReveal = this.rank === 1;
     const overlay = document.getElementById("reveal-dim-overlay");
-    if (overlay) {
+    if (overlay && !batch) {
       overlay.classList.add(isBigReveal ? "active" : "active-soft");
     }
 
-    // Lift the card
-    card.classList.add("revealing");
+    // Lift the card (skipped in batch so cards don't fight each other's z)
+    if (!batch) card.classList.add("revealing");
 
-    // Swap card style to the correct (or incorrect-fill) color
+    // Swap card style to the correct (or incorrect-fill) color.
+    // Yellow when the answer was hinted then solved — partial credit.
     cardBody.classList.remove("bg-light", "hinted");
     if (isSuccess) {
-      cardBody.classList.add("bg-success", "bg-opacity-25");
+      if (this.hintShown) {
+        cardBody.classList.add("solved-with-hint");
+      } else {
+        cardBody.classList.add("bg-success", "bg-opacity-25");
+      }
     } else {
       cardBody.classList.add("bg-danger", "bg-opacity-25");
     }
@@ -101,20 +111,23 @@ class AnswerBox {
     votesBadge.classList.remove("d-none");
     // Small delay so the lift + dim settle before the numbers start rolling
     setTimeout(() => {
-      this.countUpVotes(votesBadge, voteCount, 750);
-    }, 250);
+      this.countUpVotes(votesBadge, voteCount, batch ? 500 : 750);
+    }, batch ? 120 : 250);
 
     // Hold the moment, then ease back to rest.
     // Fade the overlay first so it fully clears before the card loses
     // its z-index lift, otherwise the card briefly falls behind the
     // dimming layer and looks like it "drops".
+    const holdMs = batch ? 700 : 1300;
     setTimeout(() => {
       this.revealed = true;
-      if (overlay) overlay.classList.remove("active", "active-soft");
-      setTimeout(() => {
-        card.classList.remove("revealing");
-      }, 200);
-    }, 1300);
+      if (overlay && !batch) overlay.classList.remove("active", "active-soft");
+      if (!batch) {
+        setTimeout(() => {
+          card.classList.remove("revealing");
+        }, 200);
+      }
+    }, holdMs);
   }
 
   /**

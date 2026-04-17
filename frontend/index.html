@@ -27,6 +27,26 @@
 
     <!-- Host commentary: centered card + its own dim layer, appears after #1 reveal -->
     <div id="commentary-dim" class="commentary-dim" aria-hidden="true"></div>
+
+    <!-- Give Up confirmation modal -->
+    <div class="modal fade" id="giveUpModal" tabindex="-1" aria-labelledby="giveUpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body give-up-body text-center">
+                    <h3 class="mb-2">Give up?</h3>
+                    <p class="give-up-copy mb-4">
+                        We'll reveal the remaining answers and end today's game.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <button type="button" id="give-up-confirm" class="btn btn-give-up">Yes, give up</button>
+                        <button type="button" class="btn btn-link give-up-cancel" data-bs-dismiss="modal">Keep playing</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Host commentary bubble that appears after the #1 answer is revealed -->
     <div id="commentary-overlay" class="commentary-overlay" aria-live="polite">
       <span class="commentary-avatar" aria-hidden="true">🎙️</span>
       <span class="commentary-bubble"></span>
