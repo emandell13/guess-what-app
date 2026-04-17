@@ -37,7 +37,7 @@ class CommentaryOverlay {
       this.bubble.textContent = this.buildQuip(answer);
       this.element.classList.add('in');
       clearTimeout(this.hideTimer);
-      this.hideTimer = setTimeout(() => this.hide(), 2200);
+      this.hideTimer = setTimeout(() => this.hide(), 2000);
     }, 1950);
   }
 
