@@ -36,7 +36,7 @@ class ClosenessFeedback {
       this.copy.textContent = line;
       this.element.classList.add('in');
       clearTimeout(this.hideTimer);
-      this.hideTimer = setTimeout(() => this.hide(), 3300);
+      this.hideTimer = setTimeout(() => this.hide(), 3500);
     }, 350);
   }
 
