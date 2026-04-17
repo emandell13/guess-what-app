@@ -8,7 +8,9 @@
       "Bash(claude *)",
       "Bash(claude)",
       "Bash(find *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(ls *)",
+      "Bash(cp /Users/ericmandell/Coding\\ Projects/guess-what-app/.env .env*)"
     ]
   }
 }
