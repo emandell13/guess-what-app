@@ -136,11 +136,11 @@ class AnswerBox {
     setTimeout(() => {
       answerText.textContent = formatted;
       answerText.classList.add('visible');
-    }, 200);
+    }, 350);
 
     setTimeout(() => {
       cardBody.classList.remove("hint-flip");
-    }, 400);
+    }, 700);
 
     this.hintShown = true;
   }
