@@ -22,16 +22,17 @@ class CommentaryOverlay {
   }
 
   show(answer) {
-    // Wait until the #1 reveal is fully settled — card has fallen back,
-    // count-up is long done, reveal dim has cleared — before taking over.
-    // Firing mid-animation makes the reveal feel cut off.
+    // Fire right as the reveal's own dim starts fading out (1300ms in), so
+    // the commentary dim picks up where it leaves off — no bright gap in
+    // between. Count-up has already finished (~1000ms), so the reveal has
+    // its moment first.
     setTimeout(() => {
       this.bubble.textContent = this.buildQuip(answer);
       this.element.classList.add('in');
       this.dim?.classList.add('in');
       clearTimeout(this.hideTimer);
-      this.hideTimer = setTimeout(() => this.hide(), 4500);
-    }, 1800);
+      this.hideTimer = setTimeout(() => this.hide(), 3000);
+    }, 1300);
   }
 
   hide() {

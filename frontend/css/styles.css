@@ -640,7 +640,7 @@ body.keyboard-open #guess-form-container {
     background: rgba(0, 0, 0, 0.45);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.25s ease;
     z-index: 40;
 }
 .commentary-dim.in { opacity: 1; }
