@@ -19,7 +19,6 @@ class HintButton {
   constructor() {
     this.hintsByRank = new Map();
     this.revealedRanks = new Set();
-    this.hintsUsed = 0;
 
     this.button = document.getElementById('hint-button');
 
@@ -74,33 +73,27 @@ class HintButton {
   }
 
   /**
-   * Hint budget = one per unsolved rank with a hint defined.
+   * True when no more hints can be revealed — the next click triggers Give Up.
    */
-  hintBudget() {
-    return this.getUnsolvedRanksWithHints().length;
+  isGiveUpState() {
+    return this.getHintCandidates().length === 0;
   }
 
   /**
-   * True when the player has used up all their hints and the next click
-   * should trigger Give Up.
+   * Unsolved ranks with a hint defined that haven't been revealed yet,
+   * ordered #5 → #1.
    */
-  isGiveUpState() {
-    return this.hintsUsed >= this.hintBudget();
-  }
-
-  getUnsolvedRanksWithHints() {
+  getHintCandidates() {
     const guessedRanks = new Set(
       (gameService.correctGuesses || []).map((g) => g.rank)
     );
-    // #5 down to #1, only ranks with a hint defined and not already solved
     return Array.from(this.hintsByRank.keys())
-      .filter((rank) => !guessedRanks.has(rank))
+      .filter((rank) => !guessedRanks.has(rank) && !this.revealedRanks.has(rank))
       .sort((a, b) => b - a);
   }
 
   revealNextHint() {
-    const candidates = this.getUnsolvedRanksWithHints()
-      .filter((rank) => !this.revealedRanks.has(rank));
+    const candidates = this.getHintCandidates();
     if (candidates.length === 0) return;
 
     const nextRank = candidates[0];
@@ -108,7 +101,6 @@ class HintButton {
     if (!hintText) return;
 
     this.revealedRanks.add(nextRank);
-    this.hintsUsed += 1;
     saveTodayHintedRanks(Array.from(this.revealedRanks));
 
     // Let the corresponding answer box flip and show the hint in-place
@@ -121,8 +113,7 @@ class HintButton {
    * Replays hint state from a prior same-day session. AnswerBox constructors
    * have already seeded their hintShown flag from localStorage (so solved
    * ranks re-render yellow via reveal()). Here we just re-emit hint:revealed
-   * for unsolved hinted ranks so the hint text reappears in the box, and
-   * catch the button state up to the right spend count.
+   * for unsolved hinted ranks so the hint text reappears in the box.
    */
   restoreHintedRanks() {
     const stored = getTodayHintedRanks();
@@ -134,7 +125,6 @@ class HintButton {
 
     stored.forEach((rank) => {
       this.revealedRanks.add(rank);
-      this.hintsUsed += 1;
       if (!solvedRanks.has(rank)) {
         const hintText = this.hintsByRank.get(rank);
         if (hintText) {
@@ -147,16 +137,11 @@ class HintButton {
   updateButtonState() {
     if (!this.button) return;
 
-    // Budget can shrink as the player solves answers on their own, so
-    // recompute each time. hintsUsed >= budget means give-up mode.
-    const inGiveUpMode = this.isGiveUpState();
-    const budget = this.hintBudget();
-
     // The button is always clickable while the game is in progress —
     // either it reveals a hint, or it triggers give-up.
     this.button.disabled = false;
 
-    if (inGiveUpMode) {
+    if (this.isGiveUpState()) {
       this.button.setAttribute('data-state', '3');
       this.button.textContent = 'Give Up';
     } else {
