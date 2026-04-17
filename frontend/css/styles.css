@@ -453,6 +453,13 @@ body.keyboard-visible #guess-form-container {
     /* Maintain no right border to connect cleanly to button */
 }
 
+/* Keep the spinner at full opacity while a guess is in flight */
+#guess-form .btn.is-loading,
+#guess-form .btn.is-loading:disabled {
+    opacity: 1;
+    cursor: progress;
+}
+
 #guess-form .btn:disabled,
 #guess-form .btn.disabled {
     background-color: #000 !important;

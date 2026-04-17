@@ -89,8 +89,13 @@ class GuessForm {
       return;
     }
 
+    // Guard against double-submit via Enter while a request is in flight
+    if (this.isSubmitting) return;
+
     const userGuess = this.input.value.trim();
     if (!userGuess) return;  // Don't submit empty guesses
+
+    this.setSubmitLoading(true);
 
     try {
       const result = await guessService.submitGuess(userGuess);
@@ -112,10 +117,41 @@ class GuessForm {
       }
     } catch (error) {
       console.error("Error:", error);
+    } finally {
+      this.setSubmitLoading(false);
     }
 
     // Reset form
     this.form.reset();
+  }
+
+  /**
+   * Swaps the submit button between idle and in-flight states.
+   * Only the button changes — we leave the input alone so the mobile keyboard
+   * stays up. Re-entry is blocked via the isSubmitting flag in handleGuess.
+   */
+  setSubmitLoading(loading) {
+    this.isSubmitting = loading;
+    if (loading) {
+      this.submitButton.disabled = true;
+      this.submitButton.classList.add('is-loading');
+      if (!this.submitButton.dataset.idleLabel) {
+        this.submitButton.dataset.idleLabel = this.submitButton.innerHTML;
+      }
+      this.submitButton.innerHTML =
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>' +
+        '<span class="visually-hidden">Checking…</span>';
+    } else {
+      // Skip re-enable if the game ended while the request was in flight —
+      // game:completed will own the disabled state.
+      if (!gameService.isGameOver()) {
+        this.submitButton.disabled = false;
+      }
+      this.submitButton.classList.remove('is-loading');
+      if (this.submitButton.dataset.idleLabel) {
+        this.submitButton.innerHTML = this.submitButton.dataset.idleLabel;
+      }
+    }
   }
 
   /**
