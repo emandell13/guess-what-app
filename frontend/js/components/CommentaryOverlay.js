@@ -9,6 +9,7 @@ class CommentaryOverlay {
   constructor() {
     this.element = document.getElementById('commentary-overlay');
     this.bubble = this.element?.querySelector('.commentary-bubble');
+    this.dim = document.getElementById('commentary-dim');
     this.hideTimer = null;
 
     if (!this.element || !this.bubble) return;
@@ -21,11 +22,12 @@ class CommentaryOverlay {
   }
 
   show(answer) {
-    // Delay so the bubble lands after the #1 card's count-up finishes,
+    // Delay so the card lands after the #1 reveal's count-up finishes,
     // not on top of it.
     setTimeout(() => {
       this.bubble.textContent = this.buildQuip(answer);
       this.element.classList.add('in');
+      this.dim?.classList.add('in');
       clearTimeout(this.hideTimer);
       this.hideTimer = setTimeout(() => this.hide(), 4500);
     }, 1050);
@@ -33,6 +35,7 @@ class CommentaryOverlay {
 
   hide() {
     this.element.classList.remove('in');
+    this.dim?.classList.remove('in');
   }
 
   buildQuip(answer) {
