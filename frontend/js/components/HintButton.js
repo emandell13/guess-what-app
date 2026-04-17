@@ -5,17 +5,14 @@ import gameService from '../services/GameService.js';
 /**
  * Combined "Get a hint" + "Give Up" escalating button.
  *
- * Clicks 1..MAX_HINTS reveal one hint each. The button progressively
- * darkens with each click. After the last hint, the button turns red
+ * One hint is available per unsolved answer. After the player has
+ * used hints on every remaining unsolved rank, the button turns red
  * and flips to "Give Up" — the only way to abandon the game is to
- * exhaust your hints first.
+ * exhaust every hint first.
  *
  * Hints are revealed in highest-rank-first order (#5, #4, #3, ...),
- * skipping any ranks the player has already solved. Max hints are
- * capped at MAX_HINTS or the number of unsolved ranks, whichever is
- * smaller.
+ * skipping any ranks the player has already solved on their own.
  */
-const MAX_HINTS = 1;
 
 class HintButton {
   constructor() {
@@ -76,11 +73,10 @@ class HintButton {
   }
 
   /**
-   * Max hints allowed this game = min(MAX_HINTS, number of unsolved ranks)
+   * Hint budget = one per unsolved rank with a hint defined.
    */
   hintBudget() {
-    const unsolvedRanks = this.getUnsolvedRanksWithHints().length;
-    return Math.min(MAX_HINTS, unsolvedRanks);
+    return this.getUnsolvedRanksWithHints().length;
   }
 
   /**
