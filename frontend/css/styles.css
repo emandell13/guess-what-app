@@ -143,7 +143,7 @@ h5,
     animation: strikeReveal 0.8s ease-in-out forwards;
 }
 
-/* Wrong-guess shake animation on the input */
+/* Wrong-guess shake + flash animation on the guess form */
 @keyframes wrongShake {
     0%, 100% { transform: translateX(0); }
     15% { transform: translateX(-10px); }
@@ -154,14 +154,26 @@ h5,
     90% { transform: translateX(4px); }
 }
 
+/* Smooth return to original colors when the flash ends */
+#guess-form .guess-input,
+#guess-form .btn {
+    transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+}
+
 .wrong-shake {
     animation: wrongShake 0.5s ease-in-out;
 }
 
 .wrong-shake .guess-input {
-    border-color: #E57373 !important;
+    border-color: #E57373;
     background-color: #FFF0F0;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    color: #C62828;
+}
+
+.wrong-shake .btn {
+    border-color: #E57373 !important;
+    background-color: #E57373 !important;
+    color: #FFFFFF !important;
 }
 
 /* Spacing adjustments */

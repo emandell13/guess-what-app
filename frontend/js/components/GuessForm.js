@@ -170,6 +170,12 @@ class GuessForm {
     // Force reflow so the animation restarts on rapid wrong guesses
     void inputGroup.offsetWidth;
     inputGroup.classList.add('wrong-shake');
+
+    const onEnd = () => {
+      inputGroup.classList.remove('wrong-shake');
+      inputGroup.removeEventListener('animationend', onEnd);
+    };
+    inputGroup.addEventListener('animationend', onEnd);
   }
 
   /**

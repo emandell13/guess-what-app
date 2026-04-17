@@ -41,6 +41,9 @@ Fewer strikes, no hints, maybe a time limit — for repeat players who finish to
 ### Feedback loop on question quality
 A way to learn per-question whether it landed (engagement, completion rate, play time, share rate) so Claude can self-improve over time.
 
+### Revisit "you already guessed that" UI
+Currently shows as a floating Bootstrap alert at the top of the page. Should feel more integrated with the guess input — inline message near the input, subtle animation, no banner.
+
 ---
 
 ## 2. Retention
