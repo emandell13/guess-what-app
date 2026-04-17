@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(heroku releases *)",
+      "Bash(git fetch *)",
+      "Bash(heroku logs *)"
+    ]
+  }
+}
