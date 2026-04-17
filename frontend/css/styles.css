@@ -51,7 +51,7 @@ h1,
 h2,
 .h2 {
     font-weight: 700;
-    font-size: clamp(1.25rem, 3vw, 2rem);
+    font-size: clamp(1.625rem, 3vw, 2rem);
 }
 
 h5,
@@ -203,6 +203,84 @@ h5,
     transform: scale(1.05);
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.22);
     border-radius: 0.5rem;
+}
+
+/* Page fills the viewport so the answer grid can absorb empty vertical
+   space instead of letting it pile up below the last answer. Cards inside
+   share the remaining height, floored by their own min-height on short
+   viewports so the layout still fits above the pinned guess form. */
+html, body {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+body {
+    display: flex;
+    flex-direction: column;
+}
+body > .container.py-5 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+body > .container.py-5 > .row {
+    flex: 1;
+    align-items: stretch;
+}
+.container .col-lg-6 {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+/* Widen the content column at lg+ so the question heading typically fits
+   on two lines and we use more of the available horizontal space instead
+   of hugging a 50%-of-container width that crams the title to 3 lines. */
+@media (min-width: 992px) {
+    .container > .row > .col-lg-6 {
+        flex: 0 0 auto;
+        width: min(700px, 100%);
+    }
+}
+.answer-boxes-wrapper {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.answer-boxes-wrapper > #answer-boxes.row {
+    flex: 1 1 auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    min-height: 0;
+    justify-content: center;
+    --bs-gutter-y: 0;
+    gap: 0.5rem;
+}
+@media (min-width: 768px) {
+    .answer-boxes-wrapper > #answer-boxes.row {
+        gap: 0.625rem;
+    }
+}
+/* Cards grow from their min-height floor up to a capped max so they never
+   balloon into chunky bars on tall/narrow viewports. Leftover vertical
+   space stays outside the card via justify-content: center above. */
+#answer-boxes > .col-12 {
+    flex: 1 1 auto;
+    max-height: 4rem;
+    display: flex;
+}
+@media (min-width: 768px) {
+    #answer-boxes > .col-12 {
+        max-height: 5rem;
+    }
+}
+#answer-boxes > .col-12 > * {
+    flex: 1;
+    width: 100%;
+    display: flex;
+}
+#answer-boxes .card .card-body {
+    flex: 1;
+    width: 100%;
 }
 
 /* Spacing adjustments — tightened so the full board fits without scrolling */
