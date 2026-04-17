@@ -20,81 +20,81 @@ Fewer strikes, no hints, maybe a time limit — for repeat players who finish to
 ### 3. Feedback loop on question quality
 A way to learn per-question whether it landed (engagement, completion rate, play time, share rate) so Claude can self-improve over time.
 
-### 4. Automated question-quality eval + prompt iteration
+### 4. Feedback mechanism on hints
+Now that hints are generated via a candidate-and-rate flow, we need a way to learn which hints actually land with players. Simplest version: a thumbs up / thumbs down on the hint card after reveal. Richer signal: infer from behavior — did the player solve after revealing? How quickly? Did they give up right after? Feeds back into the rater pass (eventually training the rater on real preferences instead of only anchor examples) and into the generation prompt itself.
+
+### 5. Automated question-quality eval + prompt iteration
 An automated process that grades generated questions against Family Feud-style criteria (specificity, punchiness, plausible answer spread, answerability) — likely LLM-as-judge plus a few heuristic checks — and feeds the grades back into the question-generation prompt so it self-tunes over time. Complements #3: that one learns from real player behavior *after* a question ships; this one is an offline eval loop that catches bad questions *before* they ship and measures whether prompt changes are actually making things better.
 
-### 5. Revisit "you already guessed that" UI
+### 6. Revisit "you already guessed that" UI
 Currently shows as a floating Bootstrap alert at the top of the page. Should feel more integrated with the guess input — inline message near the input, subtle animation, no banner.
 
-### 6. Differentiate hint-assisted answers in the completion module
+### 7. Differentiate hint-assisted answers in the completion module
 End-of-game summary currently shows clean solves and hint-assisted solves identically. Mark hint-assisted answers visually (icon, dimmer fill, label) so players see what they actually earned. Also sets up a more accurate Wordle-style share grid.
 
-### 7. Personality pass on completion-module headings
+### 8. Personality pass on completion-module headings
 "You win!" / "Better luck next time!" / "Perfect Game!" are generic and drop the host voice the rest of the game has. Replace with a variety pool of host-style lines that vary by performance (and ideally by question), so the modal feels like the same host who's been talking to players all game.
 
-### 8. Contextualize the guess count in the summary
-Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #13 (post-game insights).
+### 9. Contextualize the guess count in the summary
+Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #14 (post-game insights).
 
-### 9. Theatrical perfect-game moment
+### 10. Theatrical perfect-game moment
 Code already emits `game:perfect-game` but the modal just swaps text to "Perfect Game!". Add a celebration worthy of the achievement — confetti, distinct animation, maybe a "shareable highlight" beat. Rare event, so it should feel earned.
 
-### 10. Distinguish the give-up state from losing
+### 11. Distinguish the give-up state from losing
 Today both show "Better luck next time!". A give-up deserves its own acknowledgement — not punitive, not identical to running out of strikes. Something that says "no shame, see you tomorrow" without treating it as a loss.
 
-### 11. Add context to the vote form (Step 2)
+### 12. Add context to the vote form (Step 2)
 Players get a bare input asking them to respond to tomorrow's question, with no explanation of what it does or why they should bother. One line of context ("You're helping seed the answer pool for tomorrow — your response plus others decide the top 5") and maybe a quick example would likely lift submission rates meaningfully.
 
-### 12. Rebuild Step 3 around the share grid once #17 ships
-Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#17) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed).
+### 13. Rebuild Step 3 around the share grid once #18 ships
+Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#18) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed).
 
 ---
 
 ## 2. Retention
 
-### 13. Post-game insights
+### 14. Post-game insights
 After finishing, show context — "You scored better than 62% of today's players", "Your first guess matched the most popular first guess", "#3 was the hardest answer today (only 18% got it)." Cheap to compute, shareable, builds player identity.
 
-### 14. Streak freezes
+### 15. Streak freezes
 Duolingo-style. One per month so a missed day doesn't nuke a long streak. Reduces the "life got in the way and now I'm starting over" churn.
 
-### 15. Archive of past questions
+### 16. Archive of past questions
 Let players replay old questions. A page where someone who just discovered the game can catch up on yesterday's or last week's.
 
-### 16. Strengthen the anon streak prompt in the completion module
+### 17. Strengthen the anon streak prompt in the completion module
 Today anonymous players see "Track your streak - Sign up 🔥" — vague and low-conversion. Show what they'd unlock — e.g. "You'd have a 2-day streak if you signed in" — or a richer preview of what signed-in users get. Higher-signal ask, same real estate.
 
 ---
 
 ## 3. Growth
 
-### 17. Wordle-style share grid
+### 18. Wordle-style share grid
 Spoiler-free emoji result after each game (e.g. `Guess What 2026-04-16 — 4/5 ⬛🟩⬛🟩🟩`) paste-able anywhere. The single feature that made Wordle viral; near-zero cost, highest-leverage growth hook on the list.
 
-### 18. Challenge-a-friend link
+### 19. Challenge-a-friend link
 "I got 4/5, can you beat me?" — direct 1:1 growth loop. Complements the share grid but more personal/targeted.
 
-### 19. Categories / themed verticals
+### 20. Categories / themed verticals
 Branded spin-offs ("Guess What Politics!", "Guess What Pop Culture!", "Guess What Sports!"). Each category gets its own daily question and audience. Opens product surface, makes sponsorship targeting easier, gives a natural expansion path.
 
-### 20. Player-submitted questions (with Claude as editor)
+### 21. Player-submitted questions (with Claude as editor)
 Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time.
 
 ---
 
 ## Monetization (cross-cutting)
 
-### 21. Sponsored questions
+### 22. Sponsored questions
 Branded themed weeks ("Name a Netflix show everyone's watching"). Pairs naturally with categories — a sponsor owns a themed week inside a specific vertical. Use sparingly (~1/month) to avoid cheapening the experience.
 
-### 22. Paid hints
+### 23. Paid hints
 Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for unlimited. Simple, respects the player.
 
 ---
 
 ## In progress
-
-### Improve hint quality
-Current seeded hints are often too literal or too generic ("the classic remedy"). Hints should be sharp, specific, and on-brand with the Family Feud tone — clever enough to help without giving the answer away. Prompt-tuning pass on the Claude content engine.
 
 ### Iterate on host commentary (reveals + wrong guesses)
 Host commentary is live on both #1 reveals and wrong-guess closeness feedback, but the copy needs tuning — tone, timing, and variety across question types. Should feel like a host, not a bit. Needs a variety pool so quips don't repeat across sessions, and Claude-generated lines per question rather than today's hardcoded placeholders.
@@ -102,6 +102,9 @@ Host commentary is live on both #1 reveals and wrong-guess closeness feedback, b
 ---
 
 ## Done
+
+### Hint quality overhaul
+Replaced single-shot hint generation with a two-pass flow: Claude generates 3 candidates per answer, then a separate rating call picks the best using anchor "good" and "too easy" examples drawn from actual user taste feedback. Also routed hint calls specifically to Opus 4.7 (other LLM calls still use the env default) — the creative task benefits from the stronger model, cost impact is pennies per day. The rater pass is what finally prevented the direct-object-naming failures the generator alone kept falling into.
 
 ### "Closeness" feedback on wrong guesses
 Wrong guesses now get a host-bubble response instead of silent rejection. If others said the same thing, show "Ooh — 12 people said that too. Didn't crack top 5." If nobody did, "Not a soul said that. Bold." Shares the .host-bubble aesthetic with #1-reveal commentary — both float above the guess form, no dim layer, ~2.5s on-screen. Backend counts matching `votes.response` rows; frontend emits `poolCount` through `game:incorrect-guess` to a new `ClosenessFeedback` component.

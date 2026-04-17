@@ -56,33 +56,167 @@ Return JSON: {
 }
 
 /**
- * Prompt template for generating hints for top answers
- * @param {string} answer - The answer to generate a hint for
- * @param {string} questionText - The original question text for context
+ * Shared good/bad example pairs used by both the generation and rating prompts.
+ * Keeping them in one place so the two calls judge against the same taste anchor.
+ */
+const HINT_GOOD_EXAMPLES = [
+  { q: "Name something on a coworker's desk that makes you judge them", a: "energy drink cans", hint: "Aluminum anxiety" },
+  { q: "Name something on a coworker's desk that makes you judge them", a: "inspirational quote", hint: "The pep talk you didn't ask for" },
+  { q: "Name something people fake having in their twenties", a: "liking your job", hint: "The office romance illusion" },
+  { q: "Name something that ruins a road trip", a: "a snoring passenger", hint: "Shotgun becomes a sawmill" },
+  { q: "Name something that ruins a road trip", a: "traffic on day one", hint: "Vacation stalls before it starts" },
+  { q: "Name something your dad has strong opinions about", a: "the thermostat", hint: "Touch the dial, face the wrath" }
+];
+
+const HINT_BAD_EXAMPLES = [
+  {
+    q: "Name something your dad has strong opinions about",
+    a: "local weather",
+    hint: "His personal forecast beats the meteorologist",
+    why: 'uses "forecast" and "meteorologist" — direct synonyms of weather'
+  },
+  {
+    q: "Name something your dad has strong opinions about",
+    a: "how to load the dishwasher",
+    hint: "Tetris, but with plates and forks",
+    why: 'names "plates and forks" — the exact objects being loaded'
+  },
+  {
+    q: "Name something your dad has strong opinions about",
+    a: "how to grill",
+    hint: "Flame whisperer, tongs in hand",
+    why: 'names "flame" and "tongs" — the tools and material of grilling'
+  }
+];
+
+function formatGoodExamples() {
+  return HINT_GOOD_EXAMPLES.map(e =>
+    `- Q: "${e.q}"\n  A: "${e.a}" → "${e.hint}"`
+  ).join('\n');
+}
+
+function formatBadExamples() {
+  return HINT_BAD_EXAMPLES.map(e =>
+    `- Q: "${e.q}"\n  A: "${e.a}" → "${e.hint}"\n  (${e.why})`
+  ).join('\n');
+}
+
+/**
+ * Prompt template for GENERATING hint candidates for a question's top answers.
+ * Asks for multiple candidates per answer so a separate rating pass can pick the
+ * best. Batching keeps the model aware of the whole answer set.
+ * @param {string} questionText - The question text
+ * @param {Array<string>} answers - The top answers, in rank order (#1 → #N)
+ * @param {number} candidatesPerAnswer - How many candidate hints to generate per answer
  * @returns {string} - Formatted prompt
  */
-function createHintGenerationPrompt(answer, questionText) {
+function createHintGenerationPrompt(questionText, answers, candidatesPerAnswer = 3) {
+  const answerList = answers
+    .map((a, i) => `${i + 1}. ${a}`)
+    .join('\n');
+
   return `
-Question: "${questionText}"
-Top answer: "${answer}"
+You're writing hints for a Family Feud-style daily trivia game called "Guess What!"
+Each answer gets one hint the player can reveal when stuck. For each answer below,
+generate ${candidatesPerAnswer} DIFFERENT candidate hints — a separate rating pass
+will pick the best one.
 
-Create a subtle, non-obvious hint for this answer using one of these techniques:
-1. Use metaphor or analogy rather than direct description
-2. Reference a distinctive quality without naming the item
-3. Allude to origin, history, or cultural significance
-4. Use wordplay or puns that relate to the answer
-5. Reference an unusual or unexpected aspect of the answer
-6. Hint at how it's made or its components without being explicit
+QUESTION: "${questionText}"
 
-The hint MUST:
-- Be no more than 40 characters
-- Avoid repeating any information from the question
-- NOT be obvious to someone who doesn't already know the answer
-- Provide just enough direction for an "aha" moment
+TOP ANSWERS (${candidatesPerAnswer} candidates for each, in order):
+${answerList}
 
-Format as a short phrase without quotes or punctuation.
+GOAL: Each candidate must still make the answer VERY HARD to solve — even with the
+question for context, it should take real thought to interpret. If a player could guess
+the answer in under 3 seconds of reading hint + question together, the hint is too easy.
 
-Hint:`;
+A great hint is CLEVER. Wordplay, wit, cultural references, juxtaposition,
+recontextualized idioms are all encouraged.
+
+Keep hints tight: short phrases, not vivid sentences. Don't paint the scene — point
+at it sideways.
+
+Make the ${candidatesPerAnswer} candidates for each answer GENUINELY DIFFERENT — try
+different techniques (one juxtaposition, one cultural reference, one implied social
+dynamic, etc.) — so the rater has a real choice.
+
+Examples of hints that WORK:
+${formatGoodExamples()}
+
+Examples of hints that are TOO EASY — do NOT write hints like these. They name specific
+objects or terms directly from the answer's scene, which gives the answer away:
+${formatBadExamples()}
+
+FORMAT RULES:
+- Max 55 characters per hint
+- Do not use the answer word, the question's key words, or direct synonyms of them
+- Do not use double (") or single (') quote characters inside the hint text
+- Sentence case, no surrounding quotes, no ending punctuation
+
+Return ONLY valid JSON in this exact shape, no prose:
+[
+  { "rank": 1, "answer": "...", "candidates": ["...", "...", "..."] },
+  { "rank": 2, "answer": "...", "candidates": ["...", "...", "..."] },
+  ...
+]
+`.trim();
+}
+
+/**
+ * Prompt template for RATING hint candidates and picking the best per answer.
+ * The rater compares each candidate to the anchor good/bad examples and picks the
+ * one closest to the good pile and furthest from the bad pile.
+ * @param {string} questionText - The question text
+ * @param {Array<{rank:number,answer:string,candidates:string[]}>} rows
+ * @returns {string} - Formatted prompt
+ */
+function createHintRatingPrompt(questionText, rows) {
+  const candidatesBlock = rows.map(row => {
+    const opts = row.candidates
+      .map((c, i) => `   ${String.fromCharCode(97 + i)}) "${c}"`)
+      .join('\n');
+    return `${row.rank}. Answer: "${row.answer}"\n${opts}`;
+  }).join('\n\n');
+
+  return `
+You're rating hint candidates for a Family Feud-style trivia game. For each answer
+below, you'll see multiple candidate hints. Pick the BEST one per answer.
+
+QUESTION: "${questionText}"
+
+A GREAT hint is close to these examples — they don't name objects or terms from the
+answer's scene; they use juxtaposition, cultural references, implied dynamics,
+recontextualized idioms, or attitudes:
+${formatGoodExamples()}
+
+A hint is TOO EASY (and should be rejected) when it looks like these — they name
+specific objects or use direct synonyms, so a player would guess the answer instantly:
+${formatBadExamples()}
+
+WHEN RATING, apply these tests to each candidate:
+1. Could a player guess the answer in under 3 seconds of reading hint + question? If
+   yes, reject it — too obvious.
+2. Does the hint name a specific object, tool, material, or term directly from the
+   answer's scene? If yes, reject it.
+3. Does every word of the hint map to a direct synonym for the answer or a question
+   word? If yes, reject it.
+4. Among the remaining candidates, pick the one that is most clever — juxtaposition,
+   cultural reference, recontextualized idiom, or implied social dynamic.
+If all candidates fail tests 1-3, pick the least-bad one.
+
+CANDIDATES:
+
+${candidatesBlock}
+
+For each answer, return the letter of the best candidate AND the actual hint text.
+
+Return ONLY valid JSON in this exact shape, no prose:
+[
+  { "rank": 1, "answer": "...", "best_letter": "a", "winner": "..." },
+  { "rank": 2, "answer": "...", "best_letter": "b", "winner": "..." },
+  ...
+]
+`.trim();
 }
 
 const ARCHETYPES = [
@@ -326,11 +460,14 @@ module.exports = {
   createGuessMatchingPrompt,
   createAnswerGroupingPrompt,
   createHintGenerationPrompt,
+  createHintRatingPrompt,
   createQuestionGenerationPrompt,
   createAnswerSeedingPrompt,
   createQuipPrompt,
   createWrongGuessCommentaryPrompt,
   ARCHETYPES,
   CATEGORIES,
-  GOLD_EXAMPLES
+  GOLD_EXAMPLES,
+  HINT_GOOD_EXAMPLES,
+  HINT_BAD_EXAMPLES
 };
