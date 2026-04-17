@@ -179,13 +179,18 @@ class AnswerBox {
       this.countUpVotes(votesBadge, voteCount, 750);
     }, 250);
 
-    // Hold the moment, then drop the lift and overlay
+    // Hold the moment, then ease back to rest.
+    // Fade the overlay first so it fully clears before the card loses
+    // its z-index lift, otherwise the card briefly falls behind the
+    // dimming layer and looks like it "drops".
     setTimeout(() => {
       this.revealed = true;
       this.hintShown = false;
-      card.classList.remove("revealing");
       if (overlay) overlay.classList.remove("active", "active-soft");
-    }, 1400);
+      setTimeout(() => {
+        card.classList.remove("revealing");
+      }, 200);
+    }, 1300);
   }
 
   /**

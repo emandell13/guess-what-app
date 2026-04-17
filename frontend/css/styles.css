@@ -195,15 +195,14 @@ h5,
     opacity: 0.35;
 }
 
-/* Lift the outer card during a reveal (not card-body — flipReveal owns that
-   element's transform). Scaling the card avoids fighting the flip. */
+/* Lift the outer card during a reveal. Scaling the outer .card leaves
+   .card-body free for any independent animation on its own transforms. */
 #answer-boxes .card.revealing {
     position: relative;
     z-index: 20;
     transform: scale(1.05);
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.22);
     border-radius: 0.5rem;
-    transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
 /* Spacing adjustments */
@@ -229,6 +228,8 @@ h5,
     overflow: hidden;
     border: none;
     box-shadow: none;
+    /* Smooth both the lift-in AND the lift-out */
+    transition: transform 0.45s ease, box-shadow 0.45s ease;
 }
 
 #answer-boxes .card-body {
