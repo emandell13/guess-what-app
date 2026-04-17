@@ -62,6 +62,13 @@ class AnswerBox {
   reveal(answer, voteCount, canonicalAnswer = null, isSuccess = true) {
     if (this.revealed) return;
 
+    if (this.rank === 1) {
+      eventService.emit('game:rank-one-revealed', {
+        answer: canonicalAnswer || answer,
+        voteCount
+      });
+    }
+
     const card = this.element.querySelector(".card");
     const cardBody = this.element.querySelector(".card-body");
     const answerText = this.element.querySelector(".answer-text");

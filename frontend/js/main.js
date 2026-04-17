@@ -12,6 +12,7 @@ import StrikeCounter from './components/StrikeCounter.js';
 import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
 import HintButton from './components/HintButton.js';
+import CommentaryOverlay from './components/CommentaryOverlay.js';
 
 /**
  * Main application class
@@ -26,6 +27,7 @@ class App {
     this.authModal = new AuthModal();
     this.questionHeading = document.querySelector("h2");
     this.hintButton = new HintButton();
+    this.commentaryOverlay = new CommentaryOverlay();
     this.hasCelebratedPerfectGame = false; // Flag to track if perfect game celebration has occurred
 
     // Setup event listeners
@@ -436,10 +438,14 @@ class App {
       }, 500);
     }
 
-    // For any already guessed answers, reveal them in the UI
+    // For any already guessed answers, reveal them in the UI.
+    // Flag the restore so CommentaryOverlay stays quiet — the bubble should
+    // only fire on a live #1 reveal, not on page reload.
+    document.body.dataset.gameRestoring = 'true';
     gameService.correctGuesses.forEach(guess => {
       this.answerGrid.revealAnswer(guess.rank, guess.guess, guess.voteCount, guess.guess);
     });
+    delete document.body.dataset.gameRestoring;
   }
 
 
