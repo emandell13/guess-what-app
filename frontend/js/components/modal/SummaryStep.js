@@ -4,6 +4,7 @@ import eventService from '../../services/EventService.js';
 import authService from '../../services/AuthService.js';
 import gameService from '../../services/GameService.js';
 import streakService from '../../services/StreakService.js';
+import { getTodayHintedRanks } from '../../utils/visitorUtils.js';
 
 /**
  * Component representing the summary step of the game completion modal
@@ -83,22 +84,26 @@ class SummaryStep {
    * Updates the answer boxes display - only handles styling the answer boxes
    * @param {Array} correctAnswers - Array of ranks of correct answers
    * @param {boolean} gaveUp - Whether the user gave up
+   * @param {Array} hintedRanks - Array of ranks that were solved with a hint revealed
    */
-  updateAnswerBoxes(correctAnswers, gaveUp) {
+  updateAnswerBoxes(correctAnswers, gaveUp, hintedRanks = []) {
     // Get all answer boxes
     const answerBoxes = this.stepElement.querySelectorAll('.answer-box');
 
     // Reset all boxes first
     answerBoxes.forEach(box => {
-      box.classList.remove('correct', 'incorrect');
+      box.classList.remove('correct', 'incorrect', 'hint-assisted');
     });
 
-    // Mark correct ones with green
+    // Mark correct ones with green (or yellow if hint-assisted)
     if (correctAnswers && correctAnswers.length > 0) {
       correctAnswers.forEach(rank => {
         const box = this.stepElement.querySelector(`.answer-box[data-rank="${rank}"]`);
         if (box) {
           box.classList.add('correct');
+          if (hintedRanks.includes(rank)) {
+            box.classList.add('hint-assisted');
+          }
         }
       });
     }
@@ -244,8 +249,11 @@ class SummaryStep {
       // Use either the forced gaveUp parameter or the game service value
       const gaveUp = gaveUpParam || (gameService.gaveUp === true);
 
+      // Ranks solved with a hint revealed — for visual differentiation (yellow fill)
+      const hintedRanks = getTodayHintedRanks().filter(rank => correctRanks.includes(rank));
+
       // Update the answer boxes
-      this.updateAnswerBoxes(correctRanks, gaveUp);
+      this.updateAnswerBoxes(correctRanks, gaveUp, hintedRanks);
       
       // Now update the heading separately with the totalGuesses parameter
       this.updateHeading(gaveUp, correctRanks, this.gameData.score);

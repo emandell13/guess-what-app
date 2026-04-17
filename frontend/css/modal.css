@@ -507,6 +507,11 @@
     background-color: #CBE5D9;
 }
 
+/* Hint-assisted correct answer — yellow matches the in-game solved-with-hint fill */
+.share-answer-boxes .answer-box.correct.hint-assisted {
+    background-color: #FDEFA8;
+}
+
 /* Score Display Styling */
 .share-score-display {
     text-align: center;
