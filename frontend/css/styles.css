@@ -584,6 +584,12 @@ body.keyboard-open #guess-form-container {
     animation: hintFlip 0.7s ease-in-out;
 }
 
+/* Game chrome (strikes + hint button) stays hidden until game:initialized
+   so it doesn't render ahead of the answer boxes on cold load. */
+#game-chrome-row.pre-init {
+    visibility: hidden;
+}
+
 /* Escalating hint / give-up button.
    Darkens with each hint used, then flips to a red "Give Up" state once
    all hints have been spent. */

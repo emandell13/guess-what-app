@@ -23,7 +23,6 @@ class HintButton {
     this.button = document.getElementById('hint-button');
 
     this.setupEventListeners();
-    this.updateButtonState();
   }
 
   setupEventListeners() {

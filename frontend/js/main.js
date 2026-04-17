@@ -165,6 +165,8 @@ class App {
 
     eventService.on('game:initialized', () => {
       this.hasCelebratedPerfectGame = false;
+      const chromeRow = document.getElementById('game-chrome-row');
+      if (chromeRow) chromeRow.classList.remove('pre-init');
     });
 
     // Listen for strike-out (3 strikes = game over)
