@@ -143,9 +143,6 @@ class AnswerBox {
     const votesBadge = this.element.querySelector(".points");
     const hintButton = this.element.querySelector(".hint-button");
 
-    // Lift the outer card — the flipReveal animation owns card-body's transform
-    card.classList.add("revealing");
-
     // Dim the page during reveal: soft for supporting ranks, full for #1
     const isBigReveal = this.rank === 1;
     const overlay = document.getElementById("reveal-dim-overlay");
@@ -153,50 +150,42 @@ class AnswerBox {
       overlay.classList.add(isBigReveal ? "active" : "active-soft");
     }
 
-    // Start with empty text
-    answerText.textContent = "";
+    // Lift the card
+    card.classList.add("revealing");
 
-    // Add animation with callback for half-way point
-    flipReveal(
-      cardBody,
-      // Half-way callback
-      () => {
-        // Remove hint-visible class if it was added
-        answerText.classList.remove('hint-visible');
+    // Swap card style to the correct (or incorrect-fill) color
+    cardBody.classList.remove("bg-light");
+    if (isSuccess) {
+      cardBody.classList.add("bg-success", "bg-opacity-25");
+    } else {
+      cardBody.classList.add("bg-danger", "bg-opacity-25");
+    }
 
-        answerText.textContent = canonicalAnswer || answer;
-        answerText.classList.add('visible');
+    // Hide hint button since answer is revealed
+    if (hintButton) {
+      hintButton.style.display = 'none';
+    }
 
-        // Count the vote number up from 0 to its final value
-        votesBadge.textContent = `0 votes`;
-        votesBadge.classList.remove("d-none");
-        this.countUpVotes(votesBadge, voteCount, 700);
+    // Reveal the text (fades in via existing .answer-text.visible CSS)
+    answerText.classList.remove('hint-visible');
+    answerText.textContent = canonicalAnswer || answer;
+    answerText.classList.add('visible');
 
-        cardBody.classList.remove("bg-light");
+    // Show vote badge at 0 and count up
+    votesBadge.textContent = `0 votes`;
+    votesBadge.classList.remove("d-none");
+    // Small delay so the lift + dim settle before the numbers start rolling
+    setTimeout(() => {
+      this.countUpVotes(votesBadge, voteCount, 750);
+    }, 250);
 
-        if (isSuccess) {
-          cardBody.classList.add("bg-success", "bg-opacity-25");
-        } else {
-          cardBody.classList.add("bg-danger", "bg-opacity-25");
-        }
-
-        // Hide hint button since answer is revealed
-        if (hintButton) {
-          hintButton.style.display = 'none';
-        }
-      },
-      // Complete callback
-      () => {
-        this.revealed = true;
-        this.hintShown = false;
-
-        // Let the moment linger briefly, then drop back to normal
-        setTimeout(() => {
-          card.classList.remove("revealing");
-          if (overlay) overlay.classList.remove("active", "active-soft");
-        }, 200);
-      }
-    );
+    // Hold the moment, then drop the lift and overlay
+    setTimeout(() => {
+      this.revealed = true;
+      this.hintShown = false;
+      card.classList.remove("revealing");
+      if (overlay) overlay.classList.remove("active", "active-soft");
+    }, 1400);
   }
 
   /**

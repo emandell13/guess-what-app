@@ -285,7 +285,7 @@ h5,
 
 #answer-boxes .answer-text.visible {
     opacity: 1;
-    transition-delay: 0.5s;
+    transition-delay: 0.15s;
 }
 
 /* Points styling - fixed to properly handle "votes" text */
