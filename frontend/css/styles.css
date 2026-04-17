@@ -231,6 +231,15 @@ body > .container.py-5 > .row {
     flex-direction: column;
     min-height: 0;
 }
+/* Widen the content column at lg+ so the question heading typically fits
+   on two lines and we use more of the available horizontal space instead
+   of hugging a 50%-of-container width that crams the title to 3 lines. */
+@media (min-width: 992px) {
+    .container > .row > .col-lg-6 {
+        flex: 0 0 auto;
+        width: min(700px, 100%);
+    }
+}
 .answer-boxes-wrapper {
     flex: 1 1 auto;
     display: flex;
