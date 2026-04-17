@@ -690,19 +690,19 @@ body.keyboard-open #guess-form-container {
 }
 
 #answer-boxes .card-body.hinted .answer-text {
-    font-weight: 500 !important;
-    font-size: 1rem !important;
+    font-weight: 600 !important;
+    font-size: clamp(1rem, 1.8vw, 1.125rem) !important;
     font-style: italic;
     text-transform: none !important;
     color: #5D4E1F !important;
-    /* Balance the rank column on the left so the hint text centers in
+    /* Mirror the rank column on the left so the hint text centers in
        the card, not in the flex slot shoved right by the rank. */
-    margin-right: 2.5rem;
+    margin-right: 2rem;
 }
 
 @media (min-width: 768px) {
     #answer-boxes .card-body.hinted .answer-text {
-        margin-right: 3rem;
+        margin-right: 2.5rem;
     }
 }
 
