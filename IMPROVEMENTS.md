@@ -81,15 +81,17 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 
 ## In progress
 
+*(nothing in flight)*
+
+---
+
+## Done
+
 ### Better questions (Claude content engine)
 Question quality is the #1 lever. Punchy, specific, slightly spicy — Family Feud style. Claude generates questions + seeded answers (with plausible vote weights) so the game is ready to play out of the gate. Real user votes layer on top and eventually fade Claude seeds out.
 
 ### Hints redesign
 Remove hints being tied to a specific answer. User just asks for "a hint" and one is revealed. Hints reveal in a fixed sequence (either from answer #1 down or #5 up — TBD). User figures out which answer the hint belongs to.
-
----
-
-## Done
 
 ### Strikes + dramatic wrong-guess feedback
 Reverted from the plain "Guesses:" counter back to 3-strike max with game over on strike-out. Wrong guesses now have real feedback: strike circle fills, red shake on the input + button, visible strike reveal animation.
