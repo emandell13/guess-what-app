@@ -60,7 +60,7 @@ class CommentaryOverlay {
       this.copy.textContent = text;
       this.element.classList.add('in');
       clearTimeout(this.hideTimer);
-      this.hideTimer = setTimeout(() => this.hide(), 2500);
+      this.hideTimer = setTimeout(() => this.hide(), 4000);
     }, 1950);
   }
 
