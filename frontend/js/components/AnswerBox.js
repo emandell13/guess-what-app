@@ -14,7 +14,16 @@ class AnswerBox {
     this.rank = rank;
     this.element = null;
     this.revealed = false;
+    this.hintShown = false;
     this.createDomElement();
+
+    // Listen for hint reveals targeting this rank and flip the hint in-place
+    eventService.on('hint:revealed', (event) => {
+      if (!event.detail) return;
+      if (event.detail.rank === this.rank) {
+        this.showHint(event.detail.hint);
+      }
+    });
   }
 
   /**
@@ -69,7 +78,7 @@ class AnswerBox {
     card.classList.add("revealing");
 
     // Swap card style to the correct (or incorrect-fill) color
-    cardBody.classList.remove("bg-light");
+    cardBody.classList.remove("bg-light", "hinted");
     if (isSuccess) {
       cardBody.classList.add("bg-success", "bg-opacity-25");
     } else {
@@ -99,6 +108,41 @@ class AnswerBox {
         card.classList.remove("revealing");
       }, 200);
     }, 1300);
+  }
+
+  /**
+   * Shows a hint inside this answer box with a brief flip animation.
+   * The hint occupies the space where the answer text will eventually
+   * appear. When the player correctly guesses, reveal() takes over and
+   * replaces the hint with the real answer.
+   */
+  showHint(hintText) {
+    if (this.revealed || this.hintShown) return;
+
+    const cardBody = this.element.querySelector(".card-body");
+    const answerText = this.element.querySelector(".answer-text");
+    if (!cardBody || !answerText) return;
+
+    cardBody.classList.add("hinted");
+
+    // Flip the card in place: scale down, swap text at the halfway mark,
+    // scale back up. Cheap, punchy, no 3D rotation weirdness.
+    cardBody.classList.add("hint-flip");
+
+    const formatted = hintText
+      ? hintText.charAt(0).toUpperCase() + hintText.slice(1)
+      : '';
+
+    setTimeout(() => {
+      answerText.textContent = formatted;
+      answerText.classList.add('visible');
+    }, 200);
+
+    setTimeout(() => {
+      cardBody.classList.remove("hint-flip");
+    }, 400);
+
+    this.hintShown = true;
   }
 
   /**

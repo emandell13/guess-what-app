@@ -559,40 +559,30 @@ body.keyboard-open #guess-form-container {
     /* Slightly more opaque when clicked */
 }
 
-/* Revealed hints stack above the answer grid */
-#hints-module {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+/* Hinted answer box — flipped-in hint replaces the empty slot for that
+   rank. Yellow tone distinguishes it from a real reveal (green). */
+#answer-boxes .card-body.hinted {
+    background-color: #FFF9E6 !important;
+    border-color: #F5E6A3 !important;
 }
 
-#hint-list {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+#answer-boxes .card-body.hinted .answer-text {
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    font-style: italic;
+    text-transform: none !important;
+    color: #5D4E1F !important;
 }
 
-.hint-item {
-    background: #FFF9E6;
-    border: 0.125rem solid #F5E6A3;
-    border-radius: 0.5rem;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.95rem;
-    color: #5D4E1F;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 0.35s ease, transform 0.35s ease;
+/* Quick flip animation that swaps empty -> hint without 3D gymnastics */
+@keyframes hintFlip {
+    0%   { transform: scaleY(1); }
+    50%  { transform: scaleY(0.05); }
+    100% { transform: scaleY(1); }
 }
 
-.hint-item.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.hint-item::before {
-    content: "💡 ";
-    margin-right: 0.25rem;
+#answer-boxes .card-body.hint-flip {
+    animation: hintFlip 0.4s ease-in-out;
 }
 
 /* Escalating hint / give-up button.

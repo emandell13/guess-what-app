@@ -23,9 +23,7 @@ class HintButton {
     this.revealedRanks = new Set();
     this.hintsUsed = 0;
 
-    this.module = document.getElementById('hints-module');
     this.button = document.getElementById('hint-button');
-    this.list = document.getElementById('hint-list');
 
     this.setupEventListeners();
     this.updateButtonState();
@@ -114,17 +112,11 @@ class HintButton {
 
     this.revealedRanks.add(nextRank);
     this.hintsUsed += 1;
-    this.appendHintToList(hintText);
-    this.updateButtonState();
-  }
 
-  appendHintToList(text) {
-    if (!this.list) return;
-    const item = document.createElement('div');
-    item.className = 'hint-item';
-    item.textContent = text;
-    this.list.prepend(item);
-    requestAnimationFrame(() => item.classList.add('visible'));
+    // Let the corresponding answer box flip and show the hint in-place
+    eventService.emit('hint:revealed', { rank: nextRank, hint: hintText });
+
+    this.updateButtonState();
   }
 
   updateButtonState() {
@@ -165,7 +157,6 @@ class HintButton {
 
   hide() {
     if (this.button) this.button.style.display = 'none';
-    if (this.module) this.module.style.display = 'none';
   }
 }
 

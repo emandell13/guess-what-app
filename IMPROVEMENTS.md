@@ -29,6 +29,9 @@ Make getting an answer right feel theatrical — bigger visual payoff when the r
 ### Hints redesign
 Remove hints being tied to a specific answer. User just asks for "a hint" and one is revealed. Hints reveal in a fixed sequence (either from answer #1 down or #5 up — TBD). User figures out which answer the hint belongs to.
 
+### Improve hint quality
+Current seeded hints are often too literal or too generic ("the classic remedy"). Hints should be sharp, specific, and on-brand with the Family Feud tone — clever enough to help without giving the answer away. Needs prompt tuning once the Claude content engine lands.
+
 ### Claude-written commentary on reveals
 After the #1 answer is revealed, a one-line quip from Claude ("Of course sleeping in won — you're all monsters"). Personality baked in. Cheap to run, makes the game feel alive.
 
