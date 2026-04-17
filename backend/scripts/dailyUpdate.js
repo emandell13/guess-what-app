@@ -162,10 +162,13 @@ async function tallyVotesForTodaysQuestion(todayDate) {
 }
 
 /**
- * Ask Claude to pick ONE of the top-5 answers as a comedy target and write a
- * single host-voice line for it, then save to questions.quip_target_rank /
- * quip_text. Returns silently on any failure — a missing quip just means the
- * host bubble won't fire for this question, which is a graceful degrade.
+ * Ask Claude (Sonnet) to pick 2-3 of the top-5 answers as comedy targets and
+ * write one host-voice line for each, then save to questions.quips as a JSONB
+ * array. The per-day quip call runs on Sonnet for better comedy; the
+ * per-guess wrong-guess calls run on the default Haiku.
+ *
+ * Returns silently on any failure — a missing quips array just means the host
+ * bubble won't fire for this question, which is a graceful degrade.
  *
  * @param {number} questionId
  * @param {string} questionText
@@ -182,7 +185,11 @@ async function generateAndSaveQuip(questionId, questionText, topAnswers) {
     if (topFive.length === 0) return;
 
     const prompt = createQuipPrompt(questionText, topFive);
-    const raw = await callLLM(prompt, { maxTokens: 200, skipCache: true });
+    const raw = await callLLM(prompt, {
+      maxTokens: 500,
+      skipCache: true,
+      model: 'claude-sonnet-4-6'
+    });
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -191,26 +198,37 @@ async function generateAndSaveQuip(questionId, questionText, topAnswers) {
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const targetRank = Number.isInteger(parsed.targetRank) ? parsed.targetRank : null;
-    const text = typeof parsed.text === 'string' ? parsed.text.trim() : null;
+    const quips = Array.isArray(parsed.quips) ? parsed.quips : [];
 
-    if (!targetRank || !text || targetRank < 1 || targetRank > topFive.length) {
-      console.log(`No quip target for question ${questionId} (targetRank=${targetRank})`);
+    const seenRanks = new Set();
+    const validQuips = [];
+    for (const q of quips) {
+      const targetRank = Number.isInteger(q?.targetRank) ? q.targetRank : null;
+      const text = typeof q?.text === 'string' ? q.text.trim() : null;
+      if (!targetRank || !text || targetRank < 1 || targetRank > topFive.length) continue;
+      if (seenRanks.has(targetRank)) continue;
+      seenRanks.add(targetRank);
+      validQuips.push({ targetRank, text });
+    }
+
+    if (validQuips.length === 0) {
+      console.log(`No quip targets for question ${questionId}`);
       return;
     }
 
     const { error } = await supabase
       .from('questions')
-      .update({ quip_target_rank: targetRank, quip_text: text })
+      .update({ quips: validQuips })
       .eq('id', questionId);
 
     if (error) {
-      console.error(`Error saving quip for question ${questionId}:`, error);
+      console.error(`Error saving quips for question ${questionId}:`, error);
     } else {
-      console.log(`Saved quip for question ${questionId}: rank=${targetRank} "${text}"`);
+      console.log(`Saved ${validQuips.length} quips for question ${questionId}:`);
+      validQuips.forEach(q => console.log(`  rank=${q.targetRank} "${q.text}"`));
     }
   } catch (error) {
-    console.error(`Error generating quip for question ${questionId}:`, error);
+    console.error(`Error generating quips for question ${questionId}:`, error);
   }
 }
 

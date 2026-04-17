@@ -1,8 +1,12 @@
 // backend/scripts/backfillQuips.js
 //
-// One-off: fills quip_target_rank + quip_text for questions that were tallied
-// before the host-commentary work shipped. Only touches rows where
-// quip_target_rank IS NULL so it's idempotent and safe to re-run.
+// One-off: fills questions.quips (JSONB array of {targetRank, text}) for
+// questions that were tallied before the multi-quip host-commentary work
+// shipped. Only touches rows where quips IS NULL so it's idempotent and safe
+// to re-run.
+//
+// Runs on Sonnet for better comedy quality (same model as the live
+// dailyUpdate quip generation).
 //
 // Usage: `node backend/scripts/backfillQuips.js`
 
@@ -16,7 +20,7 @@ async function backfill() {
     .from('questions')
     .select('id, question_text')
     .eq('voting_complete', true)
-    .is('quip_target_rank', null);
+    .is('quips', null);
 
   if (error) {
     console.error('Error fetching questions:', error);
@@ -55,7 +59,11 @@ async function backfill() {
 
     try {
       const prompt = createQuipPrompt(question.question_text, topFive);
-      const raw = await callLLM(prompt, { maxTokens: 200, skipCache: true });
+      const raw = await callLLM(prompt, {
+        maxTokens: 500,
+        skipCache: true,
+        model: 'claude-sonnet-4-6'
+      });
 
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -65,25 +73,36 @@ async function backfill() {
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
-      const targetRank = Number.isInteger(parsed.targetRank) ? parsed.targetRank : null;
-      const text = typeof parsed.text === 'string' ? parsed.text.trim() : null;
+      const quips = Array.isArray(parsed.quips) ? parsed.quips : [];
 
-      if (!targetRank || !text || targetRank < 1 || targetRank > topFive.length) {
-        console.log(`No quip target for ${question.id} ("${question.question_text}")`);
+      const seenRanks = new Set();
+      const validQuips = [];
+      for (const q of quips) {
+        const targetRank = Number.isInteger(q?.targetRank) ? q.targetRank : null;
+        const text = typeof q?.text === 'string' ? q.text.trim() : null;
+        if (!targetRank || !text || targetRank < 1 || targetRank > topFive.length) continue;
+        if (seenRanks.has(targetRank)) continue;
+        seenRanks.add(targetRank);
+        validQuips.push({ targetRank, text });
+      }
+
+      if (validQuips.length === 0) {
+        console.log(`No quip targets for ${question.id} ("${question.question_text}")`);
         skipped++;
         continue;
       }
 
       const { error: updateError } = await supabase
         .from('questions')
-        .update({ quip_target_rank: targetRank, quip_text: text })
+        .update({ quips: validQuips })
         .eq('id', question.id);
 
       if (updateError) {
         console.error(`Update failed for ${question.id}:`, updateError);
         failed++;
       } else {
-        console.log(`[${question.id}] rank=${targetRank} "${text}"`);
+        console.log(`[${question.id}] ${validQuips.length} quips:`);
+        validQuips.forEach(q => console.log(`  rank=${q.targetRank} "${q.text}"`));
         success++;
       }
     } catch (err) {

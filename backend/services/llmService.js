@@ -26,34 +26,41 @@ const responseCache = new LRUCache({
  * @param {boolean} options.skipCache - Whether to skip the cache and force a fresh API call
  * @param {number} options.maxTokens - Maximum tokens in the response (default: 1000)
  * @param {number} options.retries - Number of retries on failure (default: 2)
+ * @param {string} options.model - Override the model for this call. Defaults
+ *   to ANTHROPIC_MODEL env var (set app-wide to Haiku 4.5). Pass a Sonnet ID
+ *   for calls that need more nuance (e.g. the daily host quip).
  * @returns {Promise<string>} - The LLM response
  */
 async function callLLM(prompt, options = {}) {
-  const { 
-    skipCache = false, 
+  const {
+    skipCache = false,
     maxTokens = 1000,
-    retries = 2
+    retries = 2,
+    model
   } = options;
-  
-  // Create a cache key from the prompt
-  const cacheKey = prompt.trim();
-  
+
+  const resolvedModel = model || process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+
+  // Cache key includes the model so a Sonnet response doesn't serve a Haiku
+  // cache hit (and vice-versa).
+  const cacheKey = `${resolvedModel}::${prompt.trim()}`;
+
   // Check cache first (unless skipCache is true)
   if (!skipCache && responseCache.has(cacheKey)) {
     console.log('LLM cache hit');
     return responseCache.get(cacheKey);
   }
-  
-  console.log('LLM API call');
-  
+
+  console.log(`LLM API call (${resolvedModel})`);
+
   // Try the API call with retries
   let attempts = 0;
   let lastError = null;
-  
+
   while (attempts <= retries) {
     try {
       const response = await anthropic.messages.create({
-        model: process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307",
+        model: resolvedModel,
         max_tokens: maxTokens,
         messages: [
           { role: "user", content: prompt }

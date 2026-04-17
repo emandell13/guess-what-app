@@ -213,13 +213,14 @@ Return ONLY valid JSON, no prose:
 }
 
 /**
- * Prompt for generating a single host-voice barb tied to ONE of the top-5 answers.
- * Claude picks whichever answer has the best comedy potential (doesn't have to be #1)
- * and writes one sharp, specific line. If nothing in the batch is worth a joke,
- * returns { targetRank: null }.
+ * Prompt for generating 2-3 host-voice barbs, each tied to a DIFFERENT top-5
+ * answer. Claude picks which ranks land (not always #1) and writes one sharp
+ * line per target. Multiple quips per question mean multiple host moments per
+ * game, so pacing feels alive even if the player doesn't hit the single
+ * funniest rank.
  *
- * Voice anchor mirrors the question-generation prompt so the host feels like the
- * same narrator across reveals, wrong-guess quips, and question copy.
+ * Voice anchor mirrors the question-generation prompt so the host feels like
+ * the same narrator across reveals, wrong-guess quips, and question copy.
  *
  * @param {string} questionText
  * @param {Array<{rank:number, answer:string, voteCount:number}>} topFive
@@ -232,13 +233,15 @@ function createQuipPrompt(questionText, topFive) {
 
   return `
 You're the host of a Family Feud-style daily trivia game called "Guess What!"
-A player just revealed one of the top-5 answers. Your job is to pick ONE answer from
-the list below that has the most comedy potential and write a single host line reacting
-to it landing in the top 5. The line appears in a bubble above the game board for ~2.5s.
+Players reveal the top-5 answers one at a time. Pick 2-3 of the answers with
+the best comedy potential and write one host line for each, so a single game
+has multiple host moments. Each line appears in a bubble above the game board
+for ~2.5s when that specific answer is revealed.
 
-VOICE: Punchy, specific, slightly spicy. Observational without being mean. Warm but with
-edge. Think: a sharp host who's been watching the scoreboard and has a take. NOT a
-corny game-show bit.
+VOICE: Punchy, specific, slightly spicy. Observational without being mean.
+Warm but with edge. Think: a sharp host who's been watching the scoreboard
+and has a take. NOT a corny game-show bit. No "the people have spoken," no
+forced-folksy phrasing, no "wow / apparently / well well well" openers.
 
 QUESTION: "${questionText}"
 
@@ -246,22 +249,27 @@ TOP 5 ANSWERS (with real vote counts — use the counts as material if it helps)
 ${answerList}
 
 HARD RULES:
-- Pick the ONE answer with the most comedy potential. It does NOT have to be rank 1.
-  It could be the funniest, the most predictable, the most surprising, the most telling
-  about the people who voted for it — whatever gives you the best line.
-- The line must be 1 sentence, under 100 characters.
-- Reference the specific answer (its text OR a clear allusion to it). No generic
-  "the people have spoken" filler.
-- It must read as reacting to THIS answer landing in the top 5 — not a generic quip
-  about the question.
-- No emoji. No exclamation points unless it actually lands. No hashtags.
-- Avoid being mean to players. Punch at the answer or at the cultural truth it reveals,
-  not at the person who guessed it.
-- If NONE of the 5 answers lend themselves to a good line, return { "targetRank": null }
-  and skip the text. Better to stay silent than ship a flat quip.
+- Pick 2-3 DIFFERENT ranks (never repeat a rank). Do not always include #1.
+  Pick whichever ranks have the best material — the funniest, the most
+  predictable, the most surprising, the most revealing about who voted for it.
+- If fewer than 2 answers have real comedy potential, return fewer — or an
+  empty array. Better to stay silent on weak material than ship flat lines.
+- Each line must be 1 sentence, under 100 characters.
+- Each line must reference its specific answer (the text OR a clear allusion).
+  Never generic commentary about the question as a whole.
+- No emoji, no hashtags, no exclamation-mark spam.
+- Don't punch at the player. Punch at the answer or at the cultural truth it
+  reveals.
+- The 2-3 lines should feel different from each other — don't do the same
+  joke shape twice in one question.
 
 Return ONLY valid JSON, no prose:
-{ "targetRank": <1-5 or null>, "text": "<the line, or omit if targetRank is null>" }
+{
+  "quips": [
+    { "targetRank": <1-5>, "text": "<the line>" },
+    ...
+  ]
+}
 `.trim();
 }
 

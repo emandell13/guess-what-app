@@ -69,27 +69,24 @@ router.get('/hints/:questionId', async (req, res) => {
     }
 });
 
-// Pre-generated host quip for a question (one of the top-5 answers gets a
-// bespoke line from Claude at daily-tally time). Fetched lazily by the
-// CommentaryOverlay so the quip text stays out of the initial question
-// payload.
+// Pre-generated host quips for a question (2-3 of the top-5 answers each get
+// a bespoke line from Claude-Sonnet at daily-tally time). Fetched lazily by
+// the CommentaryOverlay so the quip text stays out of the initial question
+// payload. Returns { quips: [{ targetRank, text }, ...] } or { quips: [] }.
 router.get('/commentary/:questionId', async (req, res) => {
     try {
         const { questionId } = req.params;
         const { data, error } = await supabase
             .from('questions')
-            .select('quip_target_rank, quip_text')
+            .select('quips')
             .eq('id', questionId)
             .single();
 
         if (error || !data) {
-            return res.json({ quipTargetRank: null, quipText: null });
+            return res.json({ quips: [] });
         }
 
-        res.json({
-            quipTargetRank: data.quip_target_rank || null,
-            quipText: data.quip_text || null
-        });
+        res.json({ quips: Array.isArray(data.quips) ? data.quips : [] });
     } catch (error) {
         console.error('Error fetching commentary:', error);
         res.status(500).json({ error: 'Failed to fetch commentary' });
