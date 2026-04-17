@@ -670,6 +670,67 @@ body.keyboard-open #guess-form-container {
     }
 }
 
+/* Logo entrance animation — runs once on page load. Wave rolls through
+   GUESS (each tile bobs up) then through WHAT! (each tile bobs down).
+   Uses longhand animation-* properties so per-tile animation-delay is
+   not clobbered by the shorthand's implicit reset to 0. */
+.logo-animate-on-load {
+    overflow: visible; /* tiles translate outside the viewBox mid-animation */
+}
+.logo-animate-on-load [data-tile] {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+.logo-animate-on-load [data-tile="0"],
+.logo-animate-on-load [data-tile="1"],
+.logo-animate-on-load [data-tile="2"],
+.logo-animate-on-load [data-tile="3"],
+.logo-animate-on-load [data-tile="4"] {
+    animation-name: logoBobUp;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-in-out;
+}
+.logo-animate-on-load [data-tile="5"],
+.logo-animate-on-load [data-tile="6"],
+.logo-animate-on-load [data-tile="7"],
+.logo-animate-on-load [data-tile="8"],
+.logo-animate-on-load [data-tile="9"] {
+    animation-name: logoBobDown;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-in-out;
+}
+.logo-animate-on-load [data-tile="0"] { animation-delay: 0.00s; }
+.logo-animate-on-load [data-tile="1"] { animation-delay: 0.10s; }
+.logo-animate-on-load [data-tile="2"] { animation-delay: 0.20s; }
+.logo-animate-on-load [data-tile="3"] { animation-delay: 0.30s; }
+.logo-animate-on-load [data-tile="4"] { animation-delay: 0.40s; }
+.logo-animate-on-load [data-tile="5"] { animation-delay: 0.60s; }
+.logo-animate-on-load [data-tile="6"] { animation-delay: 0.70s; }
+.logo-animate-on-load [data-tile="7"] { animation-delay: 0.80s; }
+.logo-animate-on-load [data-tile="8"] { animation-delay: 0.90s; }
+.logo-animate-on-load [data-tile="9"] { animation-delay: 1.00s; }
+
+@keyframes logoBobUp {
+    0%   { transform: scale(1, 1) translateY(0); }
+    35%  { transform: scale(0.9, 1.15) translateY(-8px); }
+    65%  { transform: scale(1.08, 0.94) translateY(-2px); }
+    85%  { transform: scale(0.98, 1.02) translateY(0); }
+    100% { transform: scale(1, 1) translateY(0); }
+}
+@keyframes logoBobDown {
+    0%   { transform: scale(1, 1) translateY(0); }
+    35%  { transform: scale(0.9, 1.15) translateY(8px); }
+    65%  { transform: scale(1.08, 0.94) translateY(2px); }
+    85%  { transform: scale(0.98, 1.02) translateY(0); }
+    100% { transform: scale(1, 1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .logo-animate-on-load [data-tile] {
+        animation: none;
+    }
+}
+
 /* Clickable number styling */
 .clickable-number {
     text-decoration: underline;
