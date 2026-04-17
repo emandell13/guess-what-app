@@ -190,7 +190,7 @@ async function generateAndSaveQuip(questionId, questionText, topAnswers) {
     const raw = await callLLM(prompt, {
       maxTokens: 500,
       skipCache: true,
-      model: 'claude-sonnet-4-6'
+      model: 'claude-opus-4-7'
     });
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
