@@ -94,6 +94,13 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 
 ---
 
+## Technical debt
+
+### Dependency vulnerabilities
+GitHub / Dependabot flagged 22 open vulnerabilities on main at the 2026-04-17 deploy (2 critical, 17 high, 1 moderate, 2 low). Nothing is actively broken, but the critical/high counts are high enough that a prioritized audit + `npm audit fix` pass is worth scheduling. Likely mostly transitive deps from older packages; check if any are in the request path (Express, Supabase client, Anthropic SDK) vs. dev-only tooling.
+
+---
+
 ## In progress
 
 ### Iterate on host commentary (reveals + wrong guesses)
