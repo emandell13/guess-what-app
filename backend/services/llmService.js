@@ -29,31 +29,32 @@ const responseCache = new LRUCache({
  * @returns {Promise<string>} - The LLM response
  */
 async function callLLM(prompt, options = {}) {
-  const { 
-    skipCache = false, 
+  const {
+    skipCache = false,
     maxTokens = 1000,
-    retries = 2
+    retries = 2,
+    model = process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307"
   } = options;
-  
-  // Create a cache key from the prompt
-  const cacheKey = prompt.trim();
-  
+
+  // Cache key includes the model so the same prompt on different models stays separate.
+  const cacheKey = `${model}::${prompt.trim()}`;
+
   // Check cache first (unless skipCache is true)
   if (!skipCache && responseCache.has(cacheKey)) {
     console.log('LLM cache hit');
     return responseCache.get(cacheKey);
   }
-  
-  console.log('LLM API call');
-  
+
+  console.log(`LLM API call (${model})`);
+
   // Try the API call with retries
   let attempts = 0;
   let lastError = null;
-  
+
   while (attempts <= retries) {
     try {
       const response = await anthropic.messages.create({
-        model: process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307",
+        model,
         max_tokens: maxTokens,
         messages: [
           { role: "user", content: prompt }

@@ -6,7 +6,7 @@ const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('../services/llmService');
-const { createAnswerGroupingPrompt, createHintGenerationPrompt } = require('../services/promptTemplates');
+const { createAnswerGroupingPrompt, createHintGenerationPrompt, createHintRatingPrompt } = require('../services/promptTemplates');
 
 /**
  * Daily update process that tallies votes for today's question
@@ -127,19 +127,16 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   const topAnswers = sortedVotes.slice(0, gameConstants.TOP_ANSWER_COUNT);
   console.log('Top answers to insert:', topAnswers.slice(0, gameConstants.TOP_ANSWER_COUNT));
   
-  // Generate hints for top answers
+  // Generate hints for top answers in a single batch call
   console.log('Generating hints for top answers...');
-  for (const answerData of topAnswers) {
-    try {
-      const hint = await generateHintForAnswer(answerData.answer, question.question_text);
-      answerData.hint = hint;
-      console.log(`Generated hint for "${answerData.answer}": "${hint}"`);
-    } catch (error) {
-      console.error(`Error generating hint for "${answerData.answer}":`, error);
-      // Set a default hint if generation fails
-      answerData.hint = "Think about common responses to this question!";
-    }
-  }
+  const hints = await generateHintsForAnswers(
+    topAnswers.map(a => a.answer),
+    question.question_text
+  );
+  topAnswers.forEach((answerData, i) => {
+    answerData.hint = hints[i] || 'Think about common responses to this question!';
+    console.log(`Hint for "${answerData.answer}": "${answerData.hint}"`);
+  });
   
   // Clear any existing top answers first
   await clearExistingTopAnswers(question.id);
@@ -156,25 +153,94 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers with hints`);
 }
 
+const HINT_CANDIDATES_PER_ANSWER = 3;
+// Hints are a creative task — worth the extra cost over the default model.
+// Generation is once per question per day, so a few pennies.
+const HINT_MODEL = 'claude-opus-4-7';
+
 /**
- * Generates a hint for a top answer
- * @param {string} answer - The canonical answer
+ * Two-pass hint generation: first call generates N candidates per answer, second
+ * call rates them and picks the best. Returns hints aligned to `answers` order.
+ * On any failure returns an array of nulls so the caller can fall back per-slot.
+ * @param {Array<string>} answers - Top answers in rank order (#1 → #N)
  * @param {string} questionText - The question text
- * @returns {Promise<string>} - The generated hint
+ * @returns {Promise<Array<string|null>>}
  */
-async function generateHintForAnswer(answer, questionText) {
+async function generateHintsForAnswers(answers, questionText) {
+  // --- Pass 1: generate candidates ---
+  const genPrompt = createHintGenerationPrompt(questionText, answers, HINT_CANDIDATES_PER_ANSWER);
+
+  let genRaw;
   try {
-    const prompt = createHintGenerationPrompt(answer, questionText);
-    const result = await callLLM(prompt, { maxTokens: 100, skipCache: true });
-    
-    // Clean up the result (remove quotation marks if present)
-    const cleanedHint = result.replace(/^["']|["']$/g, '').trim();
-    
-    return cleanedHint;
+    genRaw = await callLLM(genPrompt, { maxTokens: 1500, skipCache: true, model: HINT_MODEL });
   } catch (error) {
-    console.error(`Error generating hint for "${answer}":`, error);
-    throw error;
+    console.error('Hint generation LLM call failed:', error);
+    return answers.map(() => null);
   }
+
+  let candidateRows;
+  try {
+    const jsonMatch = genRaw.match(/\[[\s\S]*\]/);
+    candidateRows = JSON.parse(jsonMatch ? jsonMatch[0] : genRaw);
+  } catch (error) {
+    console.error('Failed to parse hint candidate JSON:', error, '\nRaw:', genRaw);
+    return answers.map(() => null);
+  }
+
+  if (!Array.isArray(candidateRows)) {
+    console.error('Hint generation returned non-array:', candidateRows);
+    return answers.map(() => null);
+  }
+
+  // Normalize candidates and fall back to first candidate per slot if rating fails.
+  const normalized = answers.map((answer, i) => {
+    const byRank = candidateRows.find(r => Number(r.rank) === i + 1);
+    const row = byRank || candidateRows[i];
+    const cleaned = Array.isArray(row?.candidates)
+      ? row.candidates
+          .filter(c => typeof c === 'string')
+          .map(c => c.replace(/^["']|["']$/g, '').trim())
+          .filter(Boolean)
+      : [];
+    return { rank: i + 1, answer, candidates: cleaned };
+  });
+
+  // --- Pass 2: rate and pick best ---
+  const ratePrompt = createHintRatingPrompt(questionText, normalized);
+
+  let rateRaw;
+  try {
+    rateRaw = await callLLM(ratePrompt, { maxTokens: 800, skipCache: true, model: HINT_MODEL });
+  } catch (error) {
+    console.error('Hint rating LLM call failed, falling back to first candidate per slot:', error);
+    return normalized.map(row => row.candidates[0] || null);
+  }
+
+  let verdicts;
+  try {
+    const jsonMatch = rateRaw.match(/\[[\s\S]*\]/);
+    verdicts = JSON.parse(jsonMatch ? jsonMatch[0] : rateRaw);
+  } catch (error) {
+    console.error('Failed to parse hint rating JSON, falling back:', error, '\nRaw:', rateRaw);
+    return normalized.map(row => row.candidates[0] || null);
+  }
+
+  if (!Array.isArray(verdicts)) {
+    return normalized.map(row => row.candidates[0] || null);
+  }
+
+  return normalized.map((row, i) => {
+    const verdict = verdicts.find(v => Number(v.rank) === i + 1) || verdicts[i];
+    if (verdict && typeof verdict.winner === 'string' && verdict.winner.trim()) {
+      return verdict.winner.trim();
+    }
+    // Fall back to the letter pointer if winner text is missing.
+    if (verdict && typeof verdict.best_letter === 'string') {
+      const idx = verdict.best_letter.charCodeAt(0) - 97;
+      if (row.candidates[idx]) return row.candidates[idx];
+    }
+    return row.candidates[0] || null;
+  });
 }
 
 /**

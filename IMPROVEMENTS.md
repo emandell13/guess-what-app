@@ -20,8 +20,8 @@ Fewer strikes, no hints, maybe a time limit — for repeat players who finish to
 ### 3. Feedback loop on question quality
 A way to learn per-question whether it landed (engagement, completion rate, play time, share rate) so Claude can self-improve over time.
 
-### 4. Improve hint quality
-Current seeded hints are often too literal or too generic ("the classic remedy"). Hints should be sharp, specific, and on-brand with the Family Feud tone — clever enough to help without giving the answer away. Needs prompt tuning once the Claude content engine lands.
+### 4. Feedback mechanism on hints
+Now that hints are generated via a candidate-and-rate flow, we need a way to learn which hints actually land with players. Simplest version: a thumbs up / thumbs down on the hint card after reveal. Richer signal: infer from behavior — did the player solve after revealing? How quickly? Did they give up right after? Feeds back into the rater pass (eventually training the rater on real preferences instead of only anchor examples) and into the generation prompt itself.
 
 ### 5. Automated question-quality eval + prompt iteration
 An automated process that grades generated questions against Family Feud-style criteria (specificity, punchiness, plausible answer spread, answerability) — likely LLM-as-judge plus a few heuristic checks — and feeds the grades back into the question-generation prompt so it self-tunes over time. Complements #3: that one learns from real player behavior *after* a question ships; this one is an offline eval loop that catches bad questions *before* they ship and measures whether prompt changes are actually making things better.
@@ -83,6 +83,9 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 ---
 
 ## Done
+
+### Hint quality overhaul
+Replaced single-shot hint generation with a two-pass flow: Claude generates 3 candidates per answer, then a separate rating call picks the best using anchor "good" and "too easy" examples drawn from actual user taste feedback. Also routed hint calls specifically to Opus 4.7 (other LLM calls still use the env default) — the creative task benefits from the stronger model, cost impact is pennies per day. Rater pass is what finally prevented the direct-object-naming failures the generator alone kept falling into.
 
 ### "Closeness" feedback on wrong guesses
 Wrong guesses now get a host-bubble response instead of silent rejection. If others said the same thing, show "Ooh — 12 people said that too. Didn't crack top 5." If nobody did, "Not a soul said that. Bold." Shares the .host-bubble aesthetic with #1-reveal commentary — both float above the guess form, no dim layer, ~2.5s on-screen. Backend counts matching `votes.response` rows; frontend emits `poolCount` through `game:incorrect-guess` to a new `ClosenessFeedback` component.
