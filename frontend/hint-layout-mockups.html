@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hint layout mockups</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body {
+    background: #FAFAFC;
+    font-family: "libre Franklin", -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 1.5rem 1rem 4rem;
+  }
+  .page-title {
+    max-width: 720px;
+    margin: 0 auto 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .page-sub {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 0.95rem;
+  }
+  .mock-wrap {
+    max-width: 560px;
+    margin: 0 auto 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #E5E5EC;
+  }
+  .mock-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 0.25rem;
+  }
+  .mock-note {
+    font-size: 0.88rem;
+    color: #888;
+    margin-bottom: 1rem;
+  }
+  .toggle {
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+  .toggle button {
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .toggle button.active {
+    background: #212529;
+    color: #fff;
+    border-color: #212529;
+  }
+
+  /* Copy of real game CSS for answer boxes */
+  .mock-game .card-body {
+    border-radius: 0.5rem;
+    border: 0.125rem solid #EAEAF2;
+    background-color: #FAFAFC;
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .mock-game .answer-rank {
+    font-size: 1.125rem;
+    font-weight: 700;
+    flex: 0 0 2rem;
+    text-align: center;
+  }
+
+  /* Strikes style */
+  .mock-game .strike-circle {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.4rem;
+    border-radius: 50%;
+    color: #EAEAF2;
+    background-color: #FAFAFC;
+    border: 0.125rem solid #EAEAF2;
+    vertical-align: middle;
+  }
+
+  .hint-pill {
+    background: #FFF9E6;
+    border: 0.125rem solid #F5E6A3;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    color: #5D4E1F;
+    margin-bottom: 0.5rem;
+  }
+  .hint-pill::before {
+    content: "💡 ";
+  }
+
+  /* Shared row label style */
+  .label-regular { font-weight: 400; color: #000; }
+  .label-strong  { font-weight: 700; color: #000; }
+
+  /* Option 3 subtle text-link style */
+  .hint-link {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 0.9rem;
+    padding: 0;
+    margin-top: 0.15rem;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .hint-link:disabled { color: #aaa; cursor: default; }
+
+  /* Option 4 wide button */
+  .wide-hint-btn {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* Option 1 inline three-item stats row */
+  .stats-triple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+  }
+  .stats-triple > * { flex: 0 0 auto; }
+  .stats-triple .center { text-align: center; }
+
+  /* Smaller "strikes" label for tighter rows */
+  .stats-compact h5 { margin: 0; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Hint layout mockups</h1>
+<p class="page-sub">Same question + strikes + grid across all four. Toggle "Hints revealed?" inside each mock to see what it looks like after a hint or two.</p>
+
+<!-- ============ OPTION 1 ============ -->
+<div class="mock-wrap mock-game" data-mock="1">
+  <div class="mock-label">Option 1 · Three-item stats row</div>
+  <div class="mock-note">Strikes, Hint, Give Up all share one line at the top. Hint reveals stack above the answer grid.</div>
+
+  <div class="toggle">
+    Hints revealed?
+    <button class="active" onclick="setState(1, 0)">0</button>
+    <button onclick="setState(1, 1)">1</button>
+    <button onclick="setState(1, 2)">2</button>
+  </div>
+
+  <div class="stats-triple">
+    <h5 class="mb-0"><span class="label-regular">Strikes:</span>
+      <span class="strike-circle"></span><span class="strike-circle"></span><span class="strike-circle"></span>
+    </h5>
+    <button class="btn btn-outline-dark btn-sm"><i class="fas fa-lightbulb"></i> Hint</button>
+    <button class="btn btn-outline-dark btn-sm">Give Up</button>
+  </div>
+
+  <div class="hint-area" id="hints-1"></div>
+
+  <div class="card-body"><span class="answer-rank">1</span></div>
+  <div class="card-body"><span class="answer-rank">2</span></div>
+  <div class="card-body"><span class="answer-rank">3</span></div>
+  <div class="card-body"><span class="answer-rank">4</span></div>
+  <div class="card-body"><span class="answer-rank">5</span></div>
+</div>
+
+<!-- ============ OPTION 2 ============ -->
+<div class="mock-wrap mock-game" data-mock="2">
+  <div class="mock-label">Option 2 · Hint paired with strikes</div>
+  <div class="mock-note">Strikes and Hint sit together on the left (both are "tools the player uses"); Give Up stays on the right.</div>
+
+  <div class="toggle">
+    Hints revealed?
+    <button class="active" onclick="setState(2, 0)">0</button>
+    <button onclick="setState(2, 1)">1</button>
+    <button onclick="setState(2, 2)">2</button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-3">
+      <h5 class="mb-0"><span class="label-regular">Strikes:</span>
+        <span class="strike-circle"></span><span class="strike-circle"></span><span class="strike-circle"></span>
+      </h5>
+      <button class="btn btn-outline-dark btn-sm"><i class="fas fa-lightbulb"></i> Hint</button>
+    </div>
+    <button class="btn btn-outline-dark btn-sm">Give Up</button>
+  </div>
+
+  <div class="hint-area" id="hints-2"></div>
+
+  <div class="card-body"><span class="answer-rank">1</span></div>
+  <div class="card-body"><span class="answer-rank">2</span></div>
+  <div class="card-body"><span class="answer-rank">3</span></div>
+  <div class="card-body"><span class="answer-rank">4</span></div>
+  <div class="card-body"><span class="answer-rank">5</span></div>
+</div>
+
+<!-- ============ OPTION 3 ============ -->
+<div class="mock-wrap mock-game" data-mock="3">
+  <div class="mock-label">Option 3 · Subtle text link</div>
+  <div class="mock-note">Hint shows up as a quiet text link — the button doesn't demand attention. The answer grid + guessing are the focus.</div>
+
+  <div class="toggle">
+    Hints revealed?
+    <button class="active" onclick="setState(3, 0)">0</button>
+    <button onclick="setState(3, 1)">1</button>
+    <button onclick="setState(3, 2)">2</button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h5 class="mb-0"><span class="label-regular">Strikes:</span>
+        <span class="strike-circle"></span><span class="strike-circle"></span><span class="strike-circle"></span>
+      </h5>
+      <button class="hint-link">💡 Get a hint</button>
+    </div>
+    <button class="btn btn-outline-dark btn-sm">Give Up</button>
+  </div>
+
+  <div class="hint-area" id="hints-3"></div>
+
+  <div class="card-body"><span class="answer-rank">1</span></div>
+  <div class="card-body"><span class="answer-rank">2</span></div>
+  <div class="card-body"><span class="answer-rank">3</span></div>
+  <div class="card-body"><span class="answer-rank">4</span></div>
+  <div class="card-body"><span class="answer-rank">5</span></div>
+</div>
+
+<!-- ============ OPTION 4 ============ -->
+<div class="mock-wrap mock-game" data-mock="4">
+  <div class="mock-label">Option 4 · Wide button above the grid</div>
+  <div class="mock-note">Hint is a full-width button that sits directly above the answer grid — reads as "the tool attached to the grid." Stats row stays simple.</div>
+
+  <div class="toggle">
+    Hints revealed?
+    <button class="active" onclick="setState(4, 0)">0</button>
+    <button onclick="setState(4, 1)">1</button>
+    <button onclick="setState(4, 2)">2</button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0"><span class="label-regular">Strikes:</span>
+      <span class="strike-circle"></span><span class="strike-circle"></span><span class="strike-circle"></span>
+    </h5>
+    <button class="btn btn-outline-dark btn-sm">Give Up</button>
+  </div>
+
+  <div class="hint-area" id="hints-4"></div>
+
+  <button class="btn btn-outline-dark btn-sm wide-hint-btn"><i class="fas fa-lightbulb"></i> Get a hint</button>
+
+  <div class="card-body"><span class="answer-rank">1</span></div>
+  <div class="card-body"><span class="answer-rank">2</span></div>
+  <div class="card-body"><span class="answer-rank">3</span></div>
+  <div class="card-body"><span class="answer-rank">4</span></div>
+  <div class="card-body"><span class="answer-rank">5</span></div>
+</div>
+
+<script>
+  const SAMPLE_HINTS = [
+    "They meant to bring these back to the kitchen",
+    "On the wall, not in a frame",
+  ];
+
+  function setState(mockId, count) {
+    // Update toggle buttons
+    const wrap = document.querySelector(`[data-mock="${mockId}"]`);
+    wrap.querySelectorAll('.toggle button').forEach((b, i) => {
+      b.classList.toggle('active', i === count);
+    });
+    // Render hints
+    const area = wrap.querySelector('.hint-area');
+    area.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const pill = document.createElement('div');
+      pill.className = 'hint-pill';
+      pill.textContent = SAMPLE_HINTS[i];
+      area.appendChild(pill);
+    }
+  }
+</script>
+</body>
+</html>
