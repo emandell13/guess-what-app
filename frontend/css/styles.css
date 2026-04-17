@@ -60,7 +60,7 @@ h5,
 }
 
 #game-chrome-row h5 {
-    font-size: 1rem;
+    font-size: 1.125rem;
 }
 
 /* Make score numbers bolder */
@@ -792,8 +792,8 @@ body.keyboard-open #guess-form-container {
     padding: 0.25rem 0.75rem;
     border-radius: 0.375rem;
     font-family: var(--font-family-accent);
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.125rem;
+    font-weight: 500;
     line-height: 1.5;
     cursor: pointer;
     border: 0.125rem solid;
