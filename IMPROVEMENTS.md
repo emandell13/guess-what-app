@@ -91,3 +91,6 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 ## In progress
 
 ## Done
+
+### Pin guess input to the bottom of the viewport
+Guess form is now fixed to the bottom of the window on all screen sizes (not just mobile), so there's an obvious next action when you land on the page. Also bumped the question text down a notch so it doesn't dominate the viewport.
