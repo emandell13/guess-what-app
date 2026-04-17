@@ -113,7 +113,7 @@ class GuessForm {
         this.shakeInput();
 
         // Record incorrect guess
-        gameService.recordIncorrectGuess(userGuess);
+        gameService.recordIncorrectGuess(userGuess, result.poolCount || 0);
       }
     } catch (error) {
       console.error("Error:", error);

@@ -25,9 +25,6 @@
     <!-- Cinematic dim overlay for big reveals -->
     <div id="reveal-dim-overlay" aria-hidden="true"></div>
 
-    <!-- Host commentary: centered card + its own dim layer, appears after #1 reveal -->
-    <div id="commentary-dim" class="commentary-dim" aria-hidden="true"></div>
-
     <!-- Give Up confirmation modal -->
     <div class="modal fade" id="giveUpModal" tabindex="-1" aria-labelledby="giveUpModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -47,9 +44,15 @@
     </div>
 
     <!-- Host commentary bubble that appears after the #1 answer is revealed -->
-    <div id="commentary-overlay" class="commentary-overlay" aria-live="polite">
-      <span class="commentary-avatar" aria-hidden="true">🎙️</span>
-      <span class="commentary-bubble"></span>
+    <div id="commentary-overlay" class="host-bubble" aria-live="polite">
+      <span class="host-avatar" aria-hidden="true">🎙️</span>
+      <span class="host-copy"></span>
+    </div>
+
+    <!-- Closeness feedback bubble that appears after a wrong guess -->
+    <div id="closeness-feedback" class="host-bubble" aria-live="polite">
+      <span class="host-avatar" aria-hidden="true">🎙️</span>
+      <span class="host-copy"></span>
     </div>
     <div class="container py-5">
         <div class="row justify-content-center">

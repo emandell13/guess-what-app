@@ -742,63 +742,57 @@ body.keyboard-open #guess-form-container {
     margin-bottom: 1rem;
   }
 
-/* Host commentary — centered card that appears over a dim layer after the
-   #1 answer is revealed. Lives above the existing #reveal-dim-overlay so
-   the game transitions smoothly from "spotlight on #1" into a "host beat". */
-.commentary-dim {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-    z-index: 40;
-}
-.commentary-dim.in { opacity: 1; }
-
-.commentary-overlay {
+/* Host bubble — shared aesthetic used by the #1-reveal commentary and the
+   wrong-guess closeness feedback. Both float just above the sticky guess
+   form so they feel connected to the player's last action instead of
+   stealing the spotlight. No dim layer: these are beats, not drumrolls. */
+.host-bubble {
     position: fixed;
     left: 50%;
-    top: 14rem;
-    transform: translateX(-50%) scale(0.96);
+    bottom: 5.25rem;   /* sits above #guess-form-container (fixed, bottom: 0) */
+    transform: translateX(-50%) translateY(8px);
     width: min(520px, 92vw);
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.7rem;
     background: #FFFFFF;
-    border-radius: 1rem;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    border-radius: 0.9rem;
+    padding: 0.75rem 0.9rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.22);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    z-index: 60;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1050;     /* above the sticky guess form (z-index: 1000) */
 }
-.commentary-overlay.in {
+.host-bubble.in {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) translateY(0);
 }
-.commentary-avatar {
-    flex: 0 0 2.25rem;
-    width: 2.25rem;
-    height: 2.25rem;
+.host-avatar {
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 50%;
     background: #FFFFFF;
     border: 1.5px solid #E5E5EC;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     filter: grayscale(1) contrast(1.1);
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
-.commentary-bubble {
+.host-copy {
     flex: 1;
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     font-weight: 500;
-    line-height: 1.35;
+    line-height: 1.3;
     color: #222;
     text-align: left;
+}
+.host-copy .host-count {
+    color: #2C2C34;
+    font-weight: 700;
 }
 
 /* Give Up confirmation modal */
