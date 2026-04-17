@@ -226,32 +226,28 @@ body > .container.py-5 > .row {
     flex: 1;
     align-items: stretch;
 }
-/* Vertically center the entire play space inside col-lg-6 so tall
-   viewports don't pin everything to the top. Empty space splits evenly
-   above the logo and below the guess form — on short viewports where
-   content is taller than the col, nothing to center and content stacks
-   from the top naturally (col grows past its flex-stretched min). */
+/* Vertically center the entire play space inside col-lg-6 on tall
+   viewports. `safe center` falls back to flex-start when content
+   exceeds the col so shorter viewports don't render content above the
+   viewport edge (which was producing phantom scroll). We also drop
+   min-height: 0 from col/wrapper/row — those were letting the col be
+   sized smaller than its content under flex-stretch, producing the
+   same overflow-above-the-top bug. */
 .container .col-lg-6 {
     display: flex;
     flex-direction: column;
-    min-height: 0;
     flex: 0 0 auto;
     width: 100%;
     max-width: 700px;
-    justify-content: center;
+    justify-content: safe center;
 }
-/* Wrapper and row no longer flex-grow; they sit at their natural size so
-   col-lg-6 can center the whole block. Cards pick a fluid fixed height
-   (scales with viewport height) rather than growing to fill. */
 .answer-boxes-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 0;
 }
 .answer-boxes-wrapper > #answer-boxes.row {
     flex-direction: column;
     flex-wrap: nowrap;
-    min-height: 0;
     --bs-gutter-y: 0;
     gap: clamp(0.5rem, 1.5vh, 1rem);
 }
