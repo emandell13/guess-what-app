@@ -320,9 +320,11 @@ body > .container.py-5 > .row {
     position: relative;
 }
 
-/* Answer box styling updates */
+/* Answer box styling updates. No overflow: hidden — the card-body fills
+   the card exactly, and at fractional vh-derived heights that clip used
+   to eat the card-body's bottom border. Rounded corners live on
+   card-body so no rounding is being clipped by the card. */
 #answer-boxes .card {
-    overflow: hidden;
     border: none;
     box-shadow: none;
     /* Smooth both the lift-in AND the lift-out */
