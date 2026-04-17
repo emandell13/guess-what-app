@@ -51,7 +51,7 @@ h1,
 h2,
 .h2 {
     font-weight: 700;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-size: clamp(1.25rem, 3vw, 2rem);
 }
 
 h5,
@@ -472,16 +472,6 @@ body.keyboard-open #guess-form-container {
 
 /* Desktop styles (overrides) */
 @media (min-width: 768px) {
-    #guess-form-placeholder {
-        display: none;
-    }
-
-    #guess-form-container {
-        position: static;
-        border-top: none;
-        padding: 0;
-    }
-
     .guess-outer-container {
         max-width: 580px;
         /* Restore from earlier in the CSS */
