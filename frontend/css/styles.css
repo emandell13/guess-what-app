@@ -690,7 +690,7 @@ body.keyboard-open #guess-form-container {
 }
 
 #answer-boxes .card-body.hinted .answer-text {
-    font-weight: 600 !important;
+    font-weight: 400 !important;
     font-size: clamp(1rem, 1.8vw, 1.125rem) !important;
     font-style: italic;
     text-transform: none !important;
