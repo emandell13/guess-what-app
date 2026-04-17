@@ -226,6 +226,11 @@ body > .container.py-5 > .row {
     flex: 1;
     align-items: stretch;
 }
+/* Vertically center the entire play space inside col-lg-6 so tall
+   viewports don't pin everything to the top. Empty space splits evenly
+   above the logo and below the guess form — on short viewports where
+   content is taller than the col, nothing to center and content stacks
+   from the top naturally (col grows past its flex-stretched min). */
 .container .col-lg-6 {
     display: flex;
     flex-direction: column;
@@ -233,15 +238,17 @@ body > .container.py-5 > .row {
     flex: 0 0 auto;
     width: 100%;
     max-width: 700px;
+    justify-content: center;
 }
+/* Wrapper and row no longer flex-grow; they sit at their natural size so
+   col-lg-6 can center the whole block. Cards pick a fluid fixed height
+   (scales with viewport height) rather than growing to fill. */
 .answer-boxes-wrapper {
-    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
 }
 .answer-boxes-wrapper > #answer-boxes.row {
-    flex: 1 1 auto;
     flex-direction: column;
     flex-wrap: nowrap;
     min-height: 0;
@@ -253,18 +260,14 @@ body > .container.py-5 > .row {
         gap: clamp(0.625rem, 1.5vh, 1.125rem);
     }
 }
-/* Cards grow from their min-height floor up to a fluid max — the cap
-   scales with viewport height so tall viewports consume more space (less
-   leftover gap) without letting cards balloon into chunky bars on short
-   or narrow viewports. */
 #answer-boxes > .col-12 {
-    flex: 1 1 auto;
-    max-height: clamp(4rem, 7vh, 6rem);
+    flex: 0 0 auto;
+    height: clamp(4rem, 6vh, 5.25rem);
     display: flex;
 }
 @media (min-width: 768px) {
     #answer-boxes > .col-12 {
-        max-height: clamp(5rem, 7vh, 6.25rem);
+        height: clamp(5rem, 7vh, 6.25rem);
     }
 }
 #answer-boxes > .col-12 > * {
@@ -277,11 +280,10 @@ body > .container.py-5 > .row {
     width: 100%;
 }
 
-/* Spacing adjustments — tightened so the full board fits without scrolling.
-   Top padding is fluid at every viewport width so tall screens (including
-   tall-narrow portrait browsers) get real breathing room above the logo. */
+/* Modest container padding — the heavy lifting for tall-viewport top
+   breathing now comes from justify-content: center on col-lg-6. */
 .container {
-    padding-top: clamp(0.5rem, 3vh, 3rem) !important;
+    padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
 }
 
@@ -299,14 +301,10 @@ body > .container.py-5 > .row {
 }
 
 @media (min-width: 768px) {
-    /* Fluid vertical spacing: grow up to the comfortable max on tall
-       viewports, shrink to the tight floor when height is constrained so
-       the full board still fits above the pinned guess form.
-       Top padding scales more aggressively than bottom so tall viewports
-       get real breathing room above the logo rather than pinning it to
-       the viewport edge. */
+    /* Fluid vertical spacing on desktop — kept modest because the
+       col-lg-6 justify-content: center handles tall-viewport top space. */
     .container {
-        padding-top: clamp(0.75rem, 4vh, 4rem) !important;
+        padding-top: clamp(0.75rem, 1.8vh, 1.25rem) !important;
         padding-bottom: clamp(0.75rem, 1.8vh, 1.25rem) !important;
     }
 
