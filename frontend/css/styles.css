@@ -277,9 +277,11 @@ body > .container.py-5 > .row {
     width: 100%;
 }
 
-/* Spacing adjustments — tightened so the full board fits without scrolling */
+/* Spacing adjustments — tightened so the full board fits without scrolling.
+   Top padding is fluid at every viewport width so tall screens (including
+   tall-narrow portrait browsers) get real breathing room above the logo. */
 .container {
-    padding-top: 0.5rem !important;
+    padding-top: clamp(0.5rem, 3vh, 3rem) !important;
     padding-bottom: 0.5rem !important;
 }
 
@@ -635,15 +637,16 @@ body.keyboard-open #guess-form-container {
     min-height: -webkit-fill-available;
 }
 
-/* Logo styling */
+/* Logo styling — fluid width at every viewport so tall-narrow portrait
+   browsers get a proportionally-sized logo instead of being stuck at the
+   cramped mobile 6rem. */
 .logo-image {
-    width: 6rem;
+    width: clamp(6rem, 14vh, 10rem);
     height: auto;
     margin: 0 auto;
     margin-top: 0.25rem;
 }
 
-/* Desktop styles - apply when screen is wider than 768px */
 @media (min-width: 768px) {
     .logo-image {
         width: clamp(8rem, 18vh, 12.5rem);
