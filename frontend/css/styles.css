@@ -558,8 +558,11 @@ h2.text-center.mb-4 {
     }
 }
 
+/* Must be at least as tall as #guess-form-container (3.25rem input +
+   1rem*2 padding + 1px border ≈ 5.3125rem) so the bottom of the answer
+   grid never sits behind the fixed guess form. */
 #guess-form-placeholder {
-    height: 4rem;
+    height: 5.5rem;
     display: block;
   }
 
@@ -593,7 +596,7 @@ body.keyboard-open #guess-form-container {
   
   /* Adjust fixed positioning using the custom viewport height */
   #guess-form-placeholder {
-    height: 4.5rem; /* Fixed height instead of relying on dynamic calculation */
+    height: 5.5rem; /* match #guess-form-container height so the grid never sits behind the fixed form */
   }
 
 /* Desktop styles (overrides) */
