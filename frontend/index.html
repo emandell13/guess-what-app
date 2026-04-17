@@ -46,22 +46,19 @@
                 <!-- Question with Vote Count -->
                 <h2 class="text-center mb-4"></h2>
 
-                <!-- Strikes and Give Up Row -->
+                <!-- Strikes and Hint/Give-Up Row -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div class="text-start">
                         <h5 class="mb-0"><span class="strikes-label">Strikes:</span> <span id="strikes"></span></h5>
                     </div>
 
                     <div class="text-end">
-                        <button id="give-up-btn" class="btn btn-outline-dark btn-sm">Give Up</button>
+                        <button id="hint-button" class="hint-cta btn-sm" type="button" data-state="0" disabled>Get a hint</button>
                     </div>
                 </div>
 
-                <!-- Hints Module (above answer boxes so the button stays in view) -->
+                <!-- Revealed hints stack here, above the grid -->
                 <div id="hints-module" class="mb-4">
-                    <button id="hint-button" class="btn btn-outline-dark btn-sm" type="button" disabled>
-                        <i class="fas fa-lightbulb"></i> Get a hint
-                    </button>
                     <div id="hint-list"></div>
                 </div>
 
