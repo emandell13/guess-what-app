@@ -212,12 +212,116 @@ Return ONLY valid JSON, no prose:
 `.trim();
 }
 
+/**
+ * Prompt for generating a single host-voice barb tied to ONE of the top-5 answers.
+ * Claude picks whichever answer has the best comedy potential (doesn't have to be #1)
+ * and writes one sharp, specific line. If nothing in the batch is worth a joke,
+ * returns { targetRank: null }.
+ *
+ * Voice anchor mirrors the question-generation prompt so the host feels like the
+ * same narrator across reveals, wrong-guess quips, and question copy.
+ *
+ * @param {string} questionText
+ * @param {Array<{rank:number, answer:string, voteCount:number}>} topFive
+ * @returns {string}
+ */
+function createQuipPrompt(questionText, topFive) {
+  const answerList = topFive
+    .map(a => `${a.rank}. "${a.answer}" (${a.voteCount} votes)`)
+    .join('\n');
+
+  return `
+You're the host of a Family Feud-style daily trivia game called "Guess What!"
+A player just revealed one of the top-5 answers. Your job is to pick ONE answer from
+the list below that has the most comedy potential and write a single host line reacting
+to it landing in the top 5. The line appears in a bubble above the game board for ~2.5s.
+
+VOICE: Punchy, specific, slightly spicy. Observational without being mean. Warm but with
+edge. Think: a sharp host who's been watching the scoreboard and has a take. NOT a
+corny game-show bit.
+
+QUESTION: "${questionText}"
+
+TOP 5 ANSWERS (with real vote counts — use the counts as material if it helps):
+${answerList}
+
+HARD RULES:
+- Pick the ONE answer with the most comedy potential. It does NOT have to be rank 1.
+  It could be the funniest, the most predictable, the most surprising, the most telling
+  about the people who voted for it — whatever gives you the best line.
+- The line must be 1 sentence, under 100 characters.
+- Reference the specific answer (its text OR a clear allusion to it). No generic
+  "the people have spoken" filler.
+- It must read as reacting to THIS answer landing in the top 5 — not a generic quip
+  about the question.
+- No emoji. No exclamation points unless it actually lands. No hashtags.
+- Avoid being mean to players. Punch at the answer or at the cultural truth it reveals,
+  not at the person who guessed it.
+- If NONE of the 5 answers lend themselves to a good line, return { "targetRank": null }
+  and skip the text. Better to stay silent than ship a flat quip.
+
+Return ONLY valid JSON, no prose:
+{ "targetRank": <1-5 or null>, "text": "<the line, or omit if targetRank is null>" }
+`.trim();
+}
+
+/**
+ * Prompt for generating a live host reaction to a single wrong guess at play time.
+ * Called from guessService.checkGuess() on every wrong guess. Must be fast
+ * (Haiku-class) and must handle three tones in one pass: solidarity when many
+ * others said the same thing, gentle ribbing when nobody did, and a "keep it
+ * clean" redirect if the guess is profane or inappropriate.
+ *
+ * @param {string} questionText
+ * @param {string} guess - the raw user guess
+ * @param {number} poolCount - how many other voters submitted the same string
+ * @returns {string}
+ */
+function createWrongGuessCommentaryPrompt(questionText, guess, poolCount) {
+  return `
+You're the host of a Family Feud-style daily trivia game called "Guess What!"
+A player just guessed wrong. Write ONE short host line reacting to their specific guess.
+The line appears in a bubble above the input for ~2.5s.
+
+VOICE: Punchy, specific, slightly spicy. Observational. Warm but with edge. Think of a
+sharp host who's been watching the scoreboard.
+
+QUESTION: "${questionText}"
+THEIR WRONG GUESS: "${guess}"
+OTHER PLAYERS WHO SUBMITTED THE SAME GUESS: ${poolCount}
+
+TONE — pick based on the guess + pool count:
+- If the guess is profane, sexual, slur-adjacent, or otherwise inappropriate for a
+  mixed audience: lightly redirect. Warm, not scolding. E.g. "Let's keep it PG." or
+  "We're not going there today."
+- Else if poolCount >= 2: solidarity. Acknowledge the pool in plain language and
+  note that it didn't make the top 5. Include the number naturally. E.g.
+  "You and ${poolCount} others — didn't crack top 5." or similar, varied phrasing.
+- Else if poolCount === 1: same as above but singular — "You and one other person..."
+- Else (poolCount === 0): gentle ribbing. Lean into the fact that literally nobody
+  else submitted this. Playful, not cruel. E.g. "Bold move. Nobody else went there."
+
+HARD RULES:
+- 1 sentence, under 100 characters.
+- Reference the guess itself (quote it or clearly allude to it) unless it's inappropriate —
+  in that case, don't repeat it back, just redirect.
+- Don't roast the player. Roast the guess or the crowd, not the person.
+- No emoji, no hashtags, no exclamation-mark spam.
+- Don't explain the rules. Don't say "try again" — the UI handles that.
+- Don't start with "Ooh" or "Bold." — those are our old templates; write something fresh.
+
+Return ONLY the line text, no quotes, no JSON, no preamble.
+`.trim();
+}
+
 module.exports = {
   createGuessMatchingPrompt,
   createAnswerGroupingPrompt,
   createHintGenerationPrompt,
   createQuestionGenerationPrompt,
   createAnswerSeedingPrompt,
+  createQuipPrompt,
+  createWrongGuessCommentaryPrompt,
   ARCHETYPES,
   CATEGORIES,
   GOLD_EXAMPLES

@@ -191,8 +191,11 @@ class GameService {
    * @param {string} guess
    * @param {number} poolCount - number of voters who said the same thing
    *   (used to drive the closeness-feedback host bubble). Defaults to 0.
+   * @param {string|null} commentaryLine - backend-generated host-voice line
+   *   for this specific guess. Null means the server call errored and the
+   *   ClosenessFeedback should use its client-side template fallback.
    */
-  recordIncorrectGuess(guess, poolCount = 0) {
+  recordIncorrectGuess(guess, poolCount = 0, commentaryLine = null) {
     // Increment total guesses
     this.totalGuesses++;
 
@@ -214,7 +217,8 @@ class GameService {
       guess: guess,
       totalGuesses: this.totalGuesses,
       incorrectGuesses: strikes,
-      poolCount
+      poolCount,
+      commentaryLine
     });
 
     eventService.emit('game:strike-added', {

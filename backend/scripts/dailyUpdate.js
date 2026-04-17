@@ -6,7 +6,7 @@ const { getTodayDate, getTomorrowDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('../services/llmService');
-const { createAnswerGroupingPrompt, createHintGenerationPrompt } = require('../services/promptTemplates');
+const { createAnswerGroupingPrompt, createHintGenerationPrompt, createQuipPrompt } = require('../services/promptTemplates');
 
 /**
  * Daily update process that tallies votes for today's question
@@ -143,17 +143,75 @@ async function tallyVotesForTodaysQuestion(todayDate) {
   
   // Clear any existing top answers first
   await clearExistingTopAnswers(question.id);
-  
+
   // Insert top answers with hints
   const insertedAnswers = await insertTopAnswers(question.id, topAnswers);
-  
+
   // Update votes with matched_answer_id
   await updateVotesWithLLMGroups(votes, voteTexts, groupedVotes, insertedAnswers);
-  
+
+  // Generate the host quip tied to one of the top 5 (Claude picks the funniest
+  // comedy target — doesn't have to be rank 1). Non-fatal; a null result just
+  // means no bubble fires for this question.
+  await generateAndSaveQuip(question.id, question.question_text, topAnswers);
+
   // Mark question as voting complete
   await markQuestionComplete(question.id);
   
   console.log(`Tallied ${votes.length} votes into ${topAnswers.length} top answers with hints`);
+}
+
+/**
+ * Ask Claude to pick ONE of the top-5 answers as a comedy target and write a
+ * single host-voice line for it, then save to questions.quip_target_rank /
+ * quip_text. Returns silently on any failure — a missing quip just means the
+ * host bubble won't fire for this question, which is a graceful degrade.
+ *
+ * @param {number} questionId
+ * @param {string} questionText
+ * @param {Array<{answer:string, count:number}>} topAnswers - already sorted desc by count
+ */
+async function generateAndSaveQuip(questionId, questionText, topAnswers) {
+  try {
+    const topFive = topAnswers.slice(0, 5).map((a, i) => ({
+      rank: i + 1,
+      answer: a.answer,
+      voteCount: a.count
+    }));
+
+    if (topFive.length === 0) return;
+
+    const prompt = createQuipPrompt(questionText, topFive);
+    const raw = await callLLM(prompt, { maxTokens: 200, skipCache: true });
+
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn(`Quip generator returned no JSON for question ${questionId}:`, raw);
+      return;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const targetRank = Number.isInteger(parsed.targetRank) ? parsed.targetRank : null;
+    const text = typeof parsed.text === 'string' ? parsed.text.trim() : null;
+
+    if (!targetRank || !text || targetRank < 1 || targetRank > topFive.length) {
+      console.log(`No quip target for question ${questionId} (targetRank=${targetRank})`);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('questions')
+      .update({ quip_target_rank: targetRank, quip_text: text })
+      .eq('id', questionId);
+
+    if (error) {
+      console.error(`Error saving quip for question ${questionId}:`, error);
+    } else {
+      console.log(`Saved quip for question ${questionId}: rank=${targetRank} "${text}"`);
+    }
+  } catch (error) {
+    console.error(`Error generating quip for question ${questionId}:`, error);
+  }
 }
 
 /**

@@ -4,8 +4,8 @@ const supabase = require('../config/supabase');
 const { getTodayDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
-const { callLLM } = require('./llmService'); 
-const { createGuessMatchingPrompt } = require('../services/promptTemplates');
+const { callLLM } = require('./llmService');
+const { createGuessMatchingPrompt, createWrongGuessCommentaryPrompt } = require('../services/promptTemplates');
 const gameService = require('./gameService'); // Import gameService for streak updates
 
 // ... existing functions (getCurrentQuestion, getTopAnswers, etc.) remain the same ...
@@ -174,6 +174,18 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         }
     }
 
+    // Step 3b: Generate a live host-voice line for the wrong guess. Capped at
+    // 3 per game by the strike system, so volume is bounded. Template fallback
+    // on any error so the bubble always has something to show.
+    let commentaryLine = null;
+    if (!matchedAnswer && normalizedGuess) {
+        commentaryLine = await generateWrongGuessCommentary(
+            question.question_text,
+            guess,
+            poolCount
+        );
+    }
+
     // Record the guess in the database if we have an identifier
     let gameCompletedThisGuess = false;
     
@@ -313,8 +325,50 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         message: matchedAnswer ? `Correct! This was answer #${matchedAnswer.rank}` : 'Try again!',
         answerId: matchedAnswer?.id || null,
         gameCompleted: gameCompletedThisGuess,
-        poolCount
+        poolCount,
+        commentaryLine
     };
+}
+
+/**
+ * Build a template-based host line for a wrong guess. Used as a fallback when
+ * the live Claude call errors or times out, so the bubble always has copy to
+ * show. Matches the existing frontend templates in ClosenessFeedback.js so the
+ * fallback reads as the same host voice.
+ */
+function buildFallbackCommentary(guess, poolCount) {
+    const safe = String(guess || '').trim();
+    if (!safe) return null;
+    if (poolCount >= 2) return `Ooh — ${poolCount} people said "${safe}" too. Didn't crack top 5.`;
+    if (poolCount === 1) return `Ooh — 1 person said "${safe}" too. Didn't crack top 5.`;
+    return `Not a soul said "${safe}". Bold.`;
+}
+
+/**
+ * Generate a live host reaction to a single wrong guess via Claude. Returns
+ * a fallback template line on any error or timeout so the frontend always has
+ * something to render.
+ */
+async function generateWrongGuessCommentary(questionText, guess, poolCount) {
+    const fallback = buildFallbackCommentary(guess, poolCount);
+    try {
+        const prompt = createWrongGuessCommentaryPrompt(questionText, guess, poolCount);
+        const raw = await callLLM(prompt, {
+            maxTokens: 80,
+            skipCache: true,
+            retries: 1
+        });
+        const line = String(raw || '')
+            .trim()
+            .replace(/^["'`]+|["'`]+$/g, '')
+            .replace(/\n+/g, ' ')
+            .trim();
+        if (!line) return fallback;
+        return line;
+    } catch (error) {
+        console.error('Wrong-guess commentary generation failed:', error.message);
+        return fallback;
+    }
 }
 
 /**
