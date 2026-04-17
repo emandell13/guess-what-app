@@ -32,49 +32,52 @@ An automated process that grades generated questions against Family Feud-style c
 ### 7. Revisit "you already guessed that" UI
 Currently shows as a floating Bootstrap alert at the top of the page. Should feel more integrated with the guess input — inline message near the input, subtle animation, no banner.
 
-### 8. Iterate on host commentary
-Commentary is live but needs tuning — tone, timing, and variety across question types. Should feel like a host, not a bit. Needs taste-testing and enough range so quips don't feel repetitive across sessions.
+### 8. Iterate on host commentary (reveals)
+Reveal commentary is live but needs tuning — tone, timing, and variety across question types. Should feel like a host, not a bit. Needs taste-testing and enough range so quips don't feel repetitive across sessions.
 
-### 9. Differentiate hint-assisted answers in the completion module
+### 9. Improve host commentary on wrong guesses
+Wrong-guess commentary should land with the same host energy as reveals — acknowledge the miss, stay playful, avoid repetition. Needs its own prompt pass and variety pool separate from reveal lines.
+
+### 10. Differentiate hint-assisted answers in the completion module
 End-of-game summary currently shows clean solves and hint-assisted solves identically. Mark hint-assisted answers visually (icon, dimmer fill, label) so players see what they actually earned. Also sets up a more accurate Wordle-style share grid.
 
 ---
 
 ## 2. Retention
 
-### 10. Post-game insights
+### 11. Post-game insights
 After finishing, show context — "You scored better than 62% of today's players", "Your first guess matched the most popular first guess", "#3 was the hardest answer today (only 18% got it)." Cheap to compute, shareable, builds player identity.
 
-### 11. Streak freezes
+### 12. Streak freezes
 Duolingo-style. One per month so a missed day doesn't nuke a long streak. Reduces the "life got in the way and now I'm starting over" churn.
 
-### 12. Archive of past questions
+### 13. Archive of past questions
 Let players replay old questions. A page where someone who just discovered the game can catch up on yesterday's or last week's.
 
 ---
 
 ## 3. Growth
 
-### 13. Wordle-style share grid
+### 14. Wordle-style share grid
 Spoiler-free emoji result after each game (e.g. `Guess What 2026-04-16 — 4/5 ⬛🟩⬛🟩🟩`) paste-able anywhere. The single feature that made Wordle viral; near-zero cost, highest-leverage growth hook on the list.
 
-### 14. Challenge-a-friend link
+### 15. Challenge-a-friend link
 "I got 4/5, can you beat me?" — direct 1:1 growth loop. Complements the share grid but more personal/targeted.
 
-### 15. Categories / themed verticals
+### 16. Categories / themed verticals
 Branded spin-offs ("Guess What Politics!", "Guess What Pop Culture!", "Guess What Sports!"). Each category gets its own daily question and audience. Opens product surface, makes sponsorship targeting easier, gives a natural expansion path.
 
-### 16. Player-submitted questions (with Claude as editor)
+### 17. Player-submitted questions (with Claude as editor)
 Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time.
 
 ---
 
 ## Monetization (cross-cutting)
 
-### 17. Sponsored questions
+### 18. Sponsored questions
 Branded themed weeks ("Name a Netflix show everyone's watching"). Pairs naturally with categories — a sponsor owns a themed week inside a specific vertical. Use sparingly (~1/month) to avoid cheapening the experience.
 
-### 18. Paid hints
+### 19. Paid hints
 Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for unlimited. Simple, respects the player.
 
 ---
