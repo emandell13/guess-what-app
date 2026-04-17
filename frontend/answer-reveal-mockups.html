@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correct-Guess Reveal Mockups</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body {
+    background: #FAFAFC;
+    font-family: "libre Franklin", -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 2rem 1rem;
+  }
+  .mockup-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .mockup-block {
+    margin-bottom: 2.75rem;
+    padding-bottom: 2.25rem;
+    border-bottom: 1px solid #E5E5EC;
+  }
+  .mockup-block:last-child { border-bottom: none; }
+  .mockup-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 0.25rem;
+  }
+  .mockup-desc {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 1rem;
+  }
+  .trigger-btn {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Make the mockup boxes look like the real answer boxes */
+  .mock-grid .card-body {
+    border-radius: 0.5rem;
+    border: 0.125rem solid #EAEAF2;
+    background-color: #FAFAFC;
+    box-sizing: border-box;
+    min-height: 4.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .mock-grid .card-body.revealed {
+    background-color: #CBE5D9 !important;
+    border: 0.125rem solid #A6CCBB !important;
+  }
+  .mock-grid .answer-rank {
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex: 0 0 2.5rem;
+    text-align: center;
+  }
+  .mock-grid .answer-text {
+    flex: 1;
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-transform: capitalize;
+    margin: 0 0.75rem;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+  }
+  .mock-grid .answer-text.visible {
+    opacity: 1;
+  }
+  .mock-grid .points {
+    flex: 0 0 5.5rem;
+    text-align: center;
+    font-size: 1.125rem;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .mock-grid .points.visible {
+    opacity: 1;
+  }
+
+  /* ===== Option A: Vote Count Slam ===== */
+  @keyframes slamIn {
+    0%   { transform: scale(3); opacity: 0; letter-spacing: 0.1em; }
+    70%  { transform: scale(0.92); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .slam-in {
+    display: inline-block;
+    animation: slamIn 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    font-weight: 800;
+  }
+  @keyframes rankPunch {
+    0%   { transform: scale(2.5); opacity: 0; }
+    60%  { transform: scale(0.9); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .rank-punch {
+    display: inline-block;
+    animation: rankPunch 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  /* ===== Option B: Cinematic Dim ===== */
+  #dim-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    z-index: 10;
+  }
+  #dim-overlay.active { opacity: 1; }
+  .dim-hero {
+    position: relative;
+    z-index: 20;
+    transition: transform 0.35s ease;
+  }
+  .dim-hero.active {
+    transform: scale(1.04);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border-radius: 0.5rem;
+  }
+
+  /* ===== Option C: Tally Roll ===== */
+  .roll-number {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+  }
+  @keyframes rollThunk {
+    0%   { transform: translateY(-4px) scale(1.15); }
+    60%  { transform: translateY(1px) scale(0.96); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  .roll-thunk { animation: rollThunk 0.28s ease-out forwards; }
+
+  /* ===== Option D: Premium Glow ===== */
+  @keyframes sheen {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .sheen-once {
+    position: relative;
+  }
+  .sheen-once::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5rem;
+    background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.7) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: sheen 0.9s ease-out forwards;
+    pointer-events: none;
+  }
+  .fade-beat { opacity: 0; transition: opacity 0.35s ease; }
+  .fade-beat.in { opacity: 1; }
+  .sheen-once .answer-text { transition: opacity 0.35s ease; }
+  .sheen-once .points { transition: opacity 0.35s ease; }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .preamble {
+    color: #666;
+    margin-bottom: 2.5rem;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="dim-overlay"></div>
+
+<div class="mockup-wrap">
+  <h1>Correct-guess reveal mockups</h1>
+  <p class="preamble">Each block shows one style. Click the button to trigger it. The answer is "Sleeping in" with 25 votes at rank #1.</p>
+
+  <!-- Option A: Vote Count Slam -->
+  <div class="mockup-block mock-grid" id="block-a">
+    <div class="mockup-title">Option A · Vote Count Slam</div>
+    <div class="mockup-desc">Answer text appears, rank punches in, vote count slams from huge to final size and counts up.</div>
+    <div class="card"><div class="card-body" id="box-a">
+      <span class="answer-rank" id="rank-a">1</span>
+      <span class="answer-text" id="text-a">Sleeping in</span>
+      <span class="points" id="points-a"><span id="count-a">0</span> votes</span>
+    </div></div>
+    <button class="btn btn-outline-dark btn-sm trigger-btn" onclick="triggerA()">Reveal</button>
+  </div>
+
+  <!-- Option B: Cinematic Dim -->
+  <div class="mockup-block mock-grid" id="block-b">
+    <div class="mockup-title">Option B · Cinematic Dim</div>
+    <div class="mockup-desc">Page dims. Only the revealed box stays bright and lifts slightly. The game "pauses to honor" the guess.</div>
+    <div class="card dim-hero" id="hero-b"><div class="card-body" id="box-b">
+      <span class="answer-rank">1</span>
+      <span class="answer-text" id="text-b">Sleeping in</span>
+      <span class="points" id="points-b"><span id="count-b">0</span> votes</span>
+    </div></div>
+    <button class="btn btn-outline-dark btn-sm trigger-btn" onclick="triggerB()">Reveal</button>
+  </div>
+
+  <!-- Option C: Tally Roll -->
+  <div class="mockup-block mock-grid" id="block-c">
+    <div class="mockup-title">Option C · Tally Roll (with audio)</div>
+    <div class="mockup-desc">Rapidly scrambles random digits, brakes on the real count with a "thunk" — and a subtle low audio thunk to match. Headphones recommended.</div>
+    <div class="card"><div class="card-body" id="box-c">
+      <span class="answer-rank">1</span>
+      <span class="answer-text" id="text-c">Sleeping in</span>
+      <span class="points"><span class="roll-number" id="count-c">0</span> votes</span>
+    </div></div>
+    <button class="btn btn-outline-dark btn-sm trigger-btn" onclick="triggerC()">Reveal</button>
+  </div>
+
+  <!-- Option D: Premium Glow -->
+  <div class="mockup-block mock-grid" id="block-d">
+    <div class="mockup-title">Option D · Premium Glow</div>
+    <div class="mockup-desc">Subtle shimmer sweep. Answer fades in first, then rank, then vote count. No drama, just craft.</div>
+    <div class="card"><div class="card-body" id="box-d">
+      <span class="answer-rank fade-beat" id="rank-d">1</span>
+      <span class="answer-text fade-beat" id="text-d">Sleeping in</span>
+      <span class="points fade-beat" id="points-d"><span id="count-d">25</span> votes</span>
+    </div></div>
+    <button class="btn btn-outline-dark btn-sm trigger-btn" onclick="triggerD()">Reveal</button>
+  </div>
+
+  <div class="mockup-block" style="border-bottom:none; padding-bottom: 0;">
+    <button class="btn btn-sm btn-outline-secondary" onclick="resetAll()">Reset all</button>
+  </div>
+</div>
+
+<script>
+  const FINAL_COUNT = 25;
+  const ANSWER = "Sleeping in";
+  const RANK = 1;
+
+  function countUp(el, target, duration = 700) {
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(target * eased);
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ===== Option A =====
+  function triggerA() {
+    const box = document.getElementById('box-a');
+    const rank = document.getElementById('rank-a');
+    const text = document.getElementById('text-a');
+    const points = document.getElementById('points-a');
+    const count = document.getElementById('count-a');
+
+    box.classList.add('revealed');
+    text.classList.add('visible');
+
+    rank.classList.remove('rank-punch');
+    void rank.offsetWidth;
+    rank.classList.add('rank-punch');
+
+    setTimeout(() => {
+      points.classList.remove('slam-in');
+      void points.offsetWidth;
+      points.classList.add('slam-in');
+      points.style.opacity = 1;
+      count.textContent = '0';
+      countUp(count, FINAL_COUNT, 550);
+    }, 250);
+  }
+
+  // ===== Option B =====
+  function triggerB() {
+    const box = document.getElementById('box-b');
+    const hero = document.getElementById('hero-b');
+    const text = document.getElementById('text-b');
+    const points = document.getElementById('points-b');
+    const count = document.getElementById('count-b');
+    const overlay = document.getElementById('dim-overlay');
+
+    box.classList.add('revealed');
+    overlay.classList.add('active');
+    hero.classList.add('active');
+    text.classList.add('visible');
+    points.classList.add('visible');
+    count.textContent = '0';
+    countUp(count, FINAL_COUNT, 900);
+
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      hero.classList.remove('active');
+    }, 1600);
+  }
+
+  // ===== Option C =====
+  let audioCtx = null;
+  function playThunk() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.18);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.4, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } catch (e) { /* audio blocked */ }
+  }
+
+  function triggerC() {
+    const box = document.getElementById('box-c');
+    const text = document.getElementById('text-c');
+    const count = document.getElementById('count-c');
+    const points = box.querySelector('.points');
+
+    box.classList.add('revealed');
+    text.classList.add('visible');
+    points.classList.add('visible');
+
+    const duration = 700;
+    const start = performance.now();
+    function scramble(now) {
+      const elapsed = now - start;
+      if (elapsed < duration) {
+        count.textContent = Math.floor(Math.random() * 99) + 1;
+        requestAnimationFrame(scramble);
+      } else {
+        count.textContent = FINAL_COUNT;
+        count.classList.remove('roll-thunk');
+        void count.offsetWidth;
+        count.classList.add('roll-thunk');
+        playThunk();
+      }
+    }
+    requestAnimationFrame(scramble);
+  }
+
+  // ===== Option D =====
+  function triggerD() {
+    const box = document.getElementById('box-d');
+    const rank = document.getElementById('rank-d');
+    const text = document.getElementById('text-d');
+    const points = document.getElementById('points-d');
+
+    box.classList.add('revealed');
+    box.classList.remove('sheen-once');
+    void box.offsetWidth;
+    box.classList.add('sheen-once');
+
+    setTimeout(() => text.classList.add('in'), 150);
+    setTimeout(() => rank.classList.add('in'), 450);
+    setTimeout(() => points.classList.add('in'), 750);
+  }
+
+  // ===== Reset =====
+  function resetAll() {
+    ['a','b','c','d'].forEach(id => {
+      const box = document.getElementById('box-'+id);
+      if (box) {
+        box.classList.remove('revealed', 'sheen-once');
+      }
+    });
+    ['a','b','c'].forEach(id => {
+      const t = document.getElementById('text-'+id);
+      if (t) t.classList.remove('visible');
+      const c = document.getElementById('count-'+id);
+      if (c) c.textContent = '0';
+      const p = document.getElementById('points-'+id);
+      if (p) {
+        p.classList.remove('visible', 'slam-in');
+        if (id === 'a') p.style.opacity = 0;
+      }
+    });
+    // Reset D
+    document.getElementById('text-d').classList.remove('in');
+    document.getElementById('rank-d').classList.remove('in');
+    document.getElementById('points-d').classList.remove('in');
+    document.getElementById('count-d').textContent = '25';
+    // Reset A rank animation
+    document.getElementById('rank-a').classList.remove('rank-punch');
+    // Reset B overlay
+    document.getElementById('dim-overlay').classList.remove('active');
+    document.getElementById('hero-b').classList.remove('active');
+  }
+
+  // Start with B/C in unrevealed state
+  document.getElementById('points-a').style.opacity = 0;
+</script>
+</body>
+</html>

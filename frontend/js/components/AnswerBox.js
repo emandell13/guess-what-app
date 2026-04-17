@@ -142,6 +142,14 @@ class AnswerBox {
     const votesBadge = this.element.querySelector(".points");
     const hintButton = this.element.querySelector(".hint-button");
 
+    // Lift the box during the reveal so it reads as a moment
+    cardBody.classList.add("revealing");
+
+    // Reserve the big cinematic dim for the #1 answer only
+    const isBigReveal = this.rank === 1;
+    const overlay = isBigReveal ? document.getElementById("reveal-dim-overlay") : null;
+    if (overlay) overlay.classList.add("active");
+
     // Start with empty text
     answerText.textContent = "";
 
@@ -177,6 +185,12 @@ class AnswerBox {
       () => {
         this.revealed = true;
         this.hintShown = false;
+
+        // Let the moment linger briefly, then drop back to normal
+        setTimeout(() => {
+          cardBody.classList.remove("revealing");
+          if (overlay) overlay.classList.remove("active");
+        }, 200);
       }
     );
   }

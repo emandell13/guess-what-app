@@ -176,6 +176,30 @@ h5,
     color: #FFFFFF !important;
 }
 
+/* Cinematic reveal overlay (active only on the #1 answer reveal) */
+#reveal-dim-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.25s ease;
+}
+
+#reveal-dim-overlay.active {
+    opacity: 1;
+}
+
+/* Subtle lift on any revealed answer — gives the box a moment */
+#answer-boxes .card-body.revealing {
+    position: relative;
+    z-index: 20;
+    transform: scale(1.03);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
 /* Spacing adjustments */
 .container {
     padding-top: 1rem !important;
