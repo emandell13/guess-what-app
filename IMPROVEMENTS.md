@@ -29,43 +29,64 @@ Currently shows as a floating Bootstrap alert at the top of the page. Should fee
 ### 6. Differentiate hint-assisted answers in the completion module
 End-of-game summary currently shows clean solves and hint-assisted solves identically. Mark hint-assisted answers visually (icon, dimmer fill, label) so players see what they actually earned. Also sets up a more accurate Wordle-style share grid.
 
+### 7. Personality pass on completion-module headings
+"You win!" / "Better luck next time!" / "Perfect Game!" are generic and drop the host voice the rest of the game has. Replace with a variety pool of host-style lines that vary by performance (and ideally by question), so the modal feels like the same host who's been talking to players all game.
+
+### 8. Contextualize the guess count in the summary
+Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #13 (post-game insights).
+
+### 9. Theatrical perfect-game moment
+Code already emits `game:perfect-game` but the modal just swaps text to "Perfect Game!". Add a celebration worthy of the achievement — confetti, distinct animation, maybe a "shareable highlight" beat. Rare event, so it should feel earned.
+
+### 10. Distinguish the give-up state from losing
+Today both show "Better luck next time!". A give-up deserves its own acknowledgement — not punitive, not identical to running out of strikes. Something that says "no shame, see you tomorrow" without treating it as a loss.
+
+### 11. Add context to the vote form (Step 2)
+Players get a bare input asking them to respond to tomorrow's question, with no explanation of what it does or why they should bother. One line of context ("You're helping seed the answer pool for tomorrow — your response plus others decide the top 5") and maybe a quick example would likely lift submission rates meaningfully.
+
+### 12. Rebuild Step 3 around the share grid once #17 ships
+Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#17) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed).
+
 ---
 
 ## 2. Retention
 
-### 7. Post-game insights
+### 13. Post-game insights
 After finishing, show context — "You scored better than 62% of today's players", "Your first guess matched the most popular first guess", "#3 was the hardest answer today (only 18% got it)." Cheap to compute, shareable, builds player identity.
 
-### 8. Streak freezes
+### 14. Streak freezes
 Duolingo-style. One per month so a missed day doesn't nuke a long streak. Reduces the "life got in the way and now I'm starting over" churn.
 
-### 9. Archive of past questions
+### 15. Archive of past questions
 Let players replay old questions. A page where someone who just discovered the game can catch up on yesterday's or last week's.
+
+### 16. Strengthen the anon streak prompt in the completion module
+Today anonymous players see "Track your streak - Sign up 🔥" — vague and low-conversion. Show what they'd unlock — e.g. "You'd have a 2-day streak if you signed in" — or a richer preview of what signed-in users get. Higher-signal ask, same real estate.
 
 ---
 
 ## 3. Growth
 
-### 10. Wordle-style share grid
+### 17. Wordle-style share grid
 Spoiler-free emoji result after each game (e.g. `Guess What 2026-04-16 — 4/5 ⬛🟩⬛🟩🟩`) paste-able anywhere. The single feature that made Wordle viral; near-zero cost, highest-leverage growth hook on the list.
 
-### 11. Challenge-a-friend link
+### 18. Challenge-a-friend link
 "I got 4/5, can you beat me?" — direct 1:1 growth loop. Complements the share grid but more personal/targeted.
 
-### 12. Categories / themed verticals
+### 19. Categories / themed verticals
 Branded spin-offs ("Guess What Politics!", "Guess What Pop Culture!", "Guess What Sports!"). Each category gets its own daily question and audience. Opens product surface, makes sponsorship targeting easier, gives a natural expansion path.
 
-### 13. Player-submitted questions (with Claude as editor)
+### 20. Player-submitted questions (with Claude as editor)
 Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time.
 
 ---
 
 ## Monetization (cross-cutting)
 
-### 14. Sponsored questions
+### 21. Sponsored questions
 Branded themed weeks ("Name a Netflix show everyone's watching"). Pairs naturally with categories — a sponsor owns a themed week inside a specific vertical. Use sparingly (~1/month) to avoid cheapening the experience.
 
-### 15. Paid hints
+### 22. Paid hints
 Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for unlimited. Simple, respects the player.
 
 ---
