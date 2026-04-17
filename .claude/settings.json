@@ -10,7 +10,23 @@
       "Bash(find *)",
       "Bash(grep *)",
       "Bash(ls *)",
-      "Bash(cp /Users/ericmandell/Coding\\ Projects/guess-what-app/.env .env*)"
+      "Bash(cp /Users/ericmandell/Coding\\ Projects/guess-what-app/.env .env*)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(stat *)",
+      "Bash(file *)",
+      "Bash(diff *)",
+      "Bash(tree *)",
+      "Bash(du *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(realpath *)",
+      "Bash(readlink *)",
+      "Bash(rg *)",
+      "Bash(fd *)",
+      "Bash(jq *)"
     ]
   }
 }
