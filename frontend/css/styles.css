@@ -176,28 +176,34 @@ h5,
     color: #FFFFFF !important;
 }
 
-/* Cinematic reveal overlay (active only on the #1 answer reveal) */
+/* Cinematic reveal overlay — two strengths: soft (non-#1) and full (#1) */
 #reveal-dim-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: #000;
     opacity: 0;
     pointer-events: none;
     z-index: 10;
     transition: opacity 0.25s ease;
 }
 
-#reveal-dim-overlay.active {
-    opacity: 1;
+#reveal-dim-overlay.active-soft {
+    opacity: 0.22;
 }
 
-/* Subtle lift on any revealed answer — gives the box a moment */
-#answer-boxes .card-body.revealing {
+#reveal-dim-overlay.active {
+    opacity: 0.35;
+}
+
+/* Lift the outer card during a reveal (not card-body — flipReveal owns that
+   element's transform). Scaling the card avoids fighting the flip. */
+#answer-boxes .card.revealing {
     position: relative;
     z-index: 20;
-    transform: scale(1.03);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-    transition: transform 0.35s ease, box-shadow 0.35s ease, background-color 0.3s ease, border-color 0.3s ease;
+    transform: scale(1.05);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.22);
+    border-radius: 0.5rem;
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
 /* Spacing adjustments */

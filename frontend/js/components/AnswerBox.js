@@ -137,18 +137,21 @@ class AnswerBox {
   reveal(answer, voteCount, canonicalAnswer = null, isSuccess = true) {
     if (this.revealed) return;
 
+    const card = this.element.querySelector(".card");
     const cardBody = this.element.querySelector(".card-body");
     const answerText = this.element.querySelector(".answer-text");
     const votesBadge = this.element.querySelector(".points");
     const hintButton = this.element.querySelector(".hint-button");
 
-    // Lift the box during the reveal so it reads as a moment
-    cardBody.classList.add("revealing");
+    // Lift the outer card — the flipReveal animation owns card-body's transform
+    card.classList.add("revealing");
 
-    // Reserve the big cinematic dim for the #1 answer only
+    // Dim the page during reveal: soft for supporting ranks, full for #1
     const isBigReveal = this.rank === 1;
-    const overlay = isBigReveal ? document.getElementById("reveal-dim-overlay") : null;
-    if (overlay) overlay.classList.add("active");
+    const overlay = document.getElementById("reveal-dim-overlay");
+    if (overlay) {
+      overlay.classList.add(isBigReveal ? "active" : "active-soft");
+    }
 
     // Start with empty text
     answerText.textContent = "";
@@ -188,8 +191,8 @@ class AnswerBox {
 
         // Let the moment linger briefly, then drop back to normal
         setTimeout(() => {
-          cardBody.classList.remove("revealing");
-          if (overlay) overlay.classList.remove("active");
+          card.classList.remove("revealing");
+          if (overlay) overlay.classList.remove("active", "active-soft");
         }, 200);
       }
     );
