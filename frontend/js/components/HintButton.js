@@ -131,8 +131,7 @@ class HintButton {
       this.button.setAttribute('data-state', '3');
       this.button.textContent = 'Give Up';
     } else {
-      // State mirrors how many hints have been used (0, 1, or 2 before give-up)
-      this.button.setAttribute('data-state', String(this.hintsUsed));
+      this.button.setAttribute('data-state', '0');
       this.button.textContent = 'Get a hint';
     }
   }
