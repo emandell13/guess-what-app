@@ -690,9 +690,9 @@ body.keyboard-open #guess-form-container {
 }
 
 #answer-boxes .card-body.hinted .answer-text {
-    font-weight: 400 !important;
+    font-weight: 500 !important;
     font-size: clamp(1rem, 1.8vw, 1.125rem) !important;
-    font-style: italic;
+    font-style: normal;
     text-transform: none !important;
     color: #5D4E1F !important;
     /* Mirror the rank column on the left so the hint text centers in
