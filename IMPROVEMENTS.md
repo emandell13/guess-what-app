@@ -11,8 +11,8 @@ Within each tier, items are ordered top-down by rough priority/impact. Monetizat
 
 ## 1. Game play
 
-### 1. Question supply + voting on next day's question
-Need a pipeline of upcoming questions. Let users vote on which question plays tomorrow (from a slate of candidates). Claude seeds top answers for each candidate up front so any choice is playable immediately.
+### 1. Let players vote on future questions
+After completing today's game, show players 3–5 candidate questions for a future day and let them thumbs-up / check the ones they find interesting (ranking possible later for sharper signal). Generates continuous crowdsourced quality signal and taps peak engagement right after the finish. Complements #3, which infers quality from play behavior post-hoc — this one is explicit preference. Lives in the post-completion module. Pipeline and Claude-seeded answers already exist, so this is purely the voting UI + storage + surfacing logic.
 
 ### 2. Hard mode
 Fewer strikes, no hints, maybe a time limit — for repeat players who finish too easily.
