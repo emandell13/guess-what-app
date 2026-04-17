@@ -246,24 +246,25 @@ body > .container.py-5 > .row {
     flex-wrap: nowrap;
     min-height: 0;
     --bs-gutter-y: 0;
-    gap: 0.5rem;
+    gap: clamp(0.5rem, 1.5vh, 1rem);
 }
 @media (min-width: 768px) {
     .answer-boxes-wrapper > #answer-boxes.row {
-        gap: 0.625rem;
+        gap: clamp(0.625rem, 1.5vh, 1.125rem);
     }
 }
-/* Cards grow from their min-height floor up to a capped max so they never
-   balloon into chunky bars on tall/narrow viewports. Leftover vertical
-   space stays outside the card via justify-content: center above. */
+/* Cards grow from their min-height floor up to a fluid max — the cap
+   scales with viewport height so tall viewports consume more space (less
+   leftover gap) without letting cards balloon into chunky bars on short
+   or narrow viewports. */
 #answer-boxes > .col-12 {
     flex: 1 1 auto;
-    max-height: 4rem;
+    max-height: clamp(4rem, 7vh, 6rem);
     display: flex;
 }
 @media (min-width: 768px) {
     #answer-boxes > .col-12 {
-        max-height: 5rem;
+        max-height: clamp(5rem, 7vh, 6.25rem);
     }
 }
 #answer-boxes > .col-12 > * {
@@ -298,9 +299,12 @@ body > .container.py-5 > .row {
 @media (min-width: 768px) {
     /* Fluid vertical spacing: grow up to the comfortable max on tall
        viewports, shrink to the tight floor when height is constrained so
-       the full board still fits above the pinned guess form. */
+       the full board still fits above the pinned guess form.
+       Top padding scales more aggressively than bottom so tall viewports
+       get real breathing room above the logo rather than pinning it to
+       the viewport edge. */
     .container {
-        padding-top: clamp(0.75rem, 1.8vh, 1.25rem) !important;
+        padding-top: clamp(0.75rem, 4vh, 4rem) !important;
         padding-bottom: clamp(0.75rem, 1.8vh, 1.25rem) !important;
     }
 
