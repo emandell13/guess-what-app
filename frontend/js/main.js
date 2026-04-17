@@ -13,6 +13,7 @@ import GameModal from './components/modal/GameModal.js';
 import AuthModal from './components/modal/AuthModal.js';
 import HintButton from './components/HintButton.js';
 import CommentaryOverlay from './components/CommentaryOverlay.js';
+import ClosenessFeedback from './components/ClosenessFeedback.js';
 
 /**
  * Main application class
@@ -28,6 +29,7 @@ class App {
     this.questionHeading = document.querySelector("h2");
     this.hintButton = new HintButton();
     this.commentaryOverlay = new CommentaryOverlay();
+    this.closenessFeedback = new ClosenessFeedback();
     this.hasCelebratedPerfectGame = false; // Flag to track if perfect game celebration has occurred
 
     // Setup event listeners

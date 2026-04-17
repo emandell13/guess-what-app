@@ -157,6 +157,23 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         matchedAnswer = await checkGuessWithLLM(guess, top5Answers, question.question_text);
     }
 
+    // Step 3: If the guess is wrong, count how many voters said the same
+    // thing (case-insensitive exact match on the raw response). Used to
+    // drive the "X people said that too — not top 5" closeness feedback.
+    let poolCount = 0;
+    if (!matchedAnswer && normalizedGuess) {
+        const { count, error: poolError } = await supabase
+            .from('votes')
+            .select('*', { count: 'exact', head: true })
+            .eq('question_id', question.id)
+            .ilike('response', normalizedGuess);
+        if (poolError) {
+            console.error('Error counting pool matches:', poolError);
+        } else {
+            poolCount = count || 0;
+        }
+    }
+
     // Record the guess in the database if we have an identifier
     let gameCompletedThisGuess = false;
     
@@ -295,7 +312,8 @@ async function checkGuess(guess, userId = null, visitorId = null) {
         canonicalAnswer: matchedAnswer?.answer || null,
         message: matchedAnswer ? `Correct! This was answer #${matchedAnswer.rank}` : 'Try again!',
         answerId: matchedAnswer?.id || null,
-        gameCompleted: gameCompletedThisGuess
+        gameCompleted: gameCompletedThisGuess,
+        poolCount
     };
 }
 

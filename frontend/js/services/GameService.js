@@ -188,8 +188,11 @@ class GameService {
 
   /**
    * Records an incorrect guess
+   * @param {string} guess
+   * @param {number} poolCount - number of voters who said the same thing
+   *   (used to drive the closeness-feedback host bubble). Defaults to 0.
    */
-  recordIncorrectGuess(guess) {
+  recordIncorrectGuess(guess, poolCount = 0) {
     // Increment total guesses
     this.totalGuesses++;
 
@@ -210,7 +213,8 @@ class GameService {
     eventService.emit('game:incorrect-guess', {
       guess: guess,
       totalGuesses: this.totalGuesses,
-      incorrectGuesses: strikes
+      incorrectGuesses: strikes,
+      poolCount
     });
 
     eventService.emit('game:strike-added', {
