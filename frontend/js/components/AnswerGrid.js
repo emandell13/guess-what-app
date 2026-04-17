@@ -28,16 +28,8 @@ class AnswerGrid {
       const { rank } = event.detail;
       this.highlightAnswer(rank);
     });
-    
-    // Listen for game initialization to load hints
-    eventService.on('game:initialized', async (event) => {
-      if (event.detail.question && event.detail.question.id) {
-        this.questionId = event.detail.question.id;
-        await this.loadHints(this.questionId);
-      }
-    });
   }
-  
+
   /**
    * Initializes the grid with a specific number of answer boxes
    * @param {number} count - The number of answer boxes to create
@@ -46,50 +38,15 @@ class AnswerGrid {
     // Clear container
     this.container.innerHTML = '';
     this.answerBoxes = [];
-    
+
     // Create at most 5 answer boxes
     const boxesToCreate = Math.min(count, 5);
-    
+
     // Create answer boxes
     for (let i = 1; i <= boxesToCreate; i++) {
       const answerBox = new AnswerBox(i);
       this.answerBoxes.push(answerBox);
       this.container.appendChild(answerBox.getElement());
-    }
-    
-    // If we already have the question ID, load hints
-    if (this.questionId) {
-      this.loadHints(this.questionId);
-    }
-  }
-  
-  /**
-   * Loads hints for answer boxes
-   * @param {number} questionId - The question ID
-   */
-  async loadHints(questionId) {
-    try {
-      const response = await fetch(`/guesses/hints/${questionId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch hints');
-      }
-      
-      const data = await response.json();
-      
-      // Set hints on answer boxes
-      if (data.hints && data.hints.length > 0) {
-        data.hints.forEach(hint => {
-          if (hint.hint && hint.rank >= 1 && hint.rank <= this.answerBoxes.length) {
-            const answerBox = this.answerBoxes.find(box => box.rank === hint.rank);
-            if (answerBox) {
-              answerBox.setHint(hint.hint);
-              console.log(`Set hint for rank ${hint.rank}: ${hint.hint}`);
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error loading hints:', error);
     }
   }
   

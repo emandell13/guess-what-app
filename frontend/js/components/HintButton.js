@@ -1,154 +1,126 @@
 // frontend/js/components/HintButton.js
 import eventService from '../services/EventService.js';
+import gameService from '../services/GameService.js';
 
 /**
- * Component for displaying hints for answers
+ * Component that reveals hints one at a time.
+ * Hints are not labeled — the player figures out which answer each hint
+ * points to. Reveal order is highest rank first (#5, #4, ... #1) since
+ * the lower-ranked answers are typically the hardest to guess.
+ * Skips ranks the player has already solved.
  */
 class HintButton {
-  /**
-   * Creates a new HintButton
-   */
   constructor() {
-    this.hints = new Map(); // Map of rank to hint text
-    this.currentRank = null; // Currently displayed hint rank
-    this.container = document.getElementById('hint-container');
+    this.hintsByRank = new Map();      // rank -> hint text
+    this.revealedRanks = new Set();    // ranks the player has used a hint for
+    this.module = document.getElementById('hints-module');
     this.button = document.getElementById('hint-button');
-    this.hintText = document.getElementById('hint-text');
-    
-    // Initialize UI
+    this.list = document.getElementById('hint-list');
+
     this.setupEventListeners();
-    this.hideHint();
+    this.updateButtonState();
   }
-  
-  /**
-   * Sets up event listeners
-   */
+
   setupEventListeners() {
-    // Toggle hint visibility when button is clicked
     if (this.button) {
-      this.button.addEventListener('click', () => {
-        if (this.container.style.display === 'none') {
-          this.showHint();
-        } else {
-          this.hideHint();
-        }
-      });
+      this.button.addEventListener('click', () => this.revealNextHint());
     }
-    
-    // Listen for game initialization to load hints
+
+    // Load hints when the game is initialized
     eventService.on('game:initialized', async (event) => {
-      if (event.detail.question && event.detail.question.id) {
+      if (event.detail && event.detail.question && event.detail.question.id) {
         await this.loadHints(event.detail.question.id);
+
+        // If the game is already over (restored completed state), hide
+        if (gameService.isGameOver()) {
+          this.hideModule();
+        } else {
+          this.updateButtonState();
+        }
       }
     });
-    
-    // Listen for game:completed to hide hints
-    eventService.on('game:completed', () => {
-      this.hideHint();
-      if (this.button) {
-        this.button.disabled = true;
-      }
+
+    // An answer was correctly revealed — update available hint count
+    eventService.on('game:answer-revealed', () => {
+      this.updateButtonState();
     });
+
+    // Game ended — hide the module entirely
+    eventService.on('game:completed', () => this.hideModule());
+    eventService.on('game:struck-out', () => this.hideModule());
+    eventService.on('game:gave-up', () => this.hideModule());
   }
-  
-  /**
-   * Loads hints for a question
-   * @param {number} questionId - The question ID
-   */
+
   async loadHints(questionId) {
     try {
       const response = await fetch(`/guesses/hints/${questionId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch hints');
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch hints');
+
       const data = await response.json();
-      
-      // Clear existing hints
-      this.hints.clear();
-      
-      // Store hints by rank
-      if (data.hints && data.hints.length > 0) {
-        data.hints.forEach(hint => {
-          if (hint.hint) {
-            this.hints.set(hint.rank, hint.hint);
-          }
+      this.hintsByRank.clear();
+
+      if (data.hints && Array.isArray(data.hints)) {
+        data.hints.forEach((h) => {
+          if (h.hint) this.hintsByRank.set(h.rank, h.hint);
         });
-        
-        console.log(`Loaded ${this.hints.size} hints`);
-        
-        // Enable the hint button if we have hints
-        if (this.button && this.hints.size > 0) {
-          this.button.disabled = false;
-        }
       }
-    } catch (error) {
-      console.error('Error loading hints:', error);
+    } catch (err) {
+      console.error('Error loading hints:', err);
     }
   }
-  
+
   /**
-   * Shows a hint for a specific rank
-   * @param {number} rank - The rank to show a hint for (if null, shows any available hint)
+   * Reveals the next available hint — highest rank that is neither
+   * already revealed as a hint nor already correctly guessed.
    */
-  showHint(rank = null) {
-    // If a specific rank is requested, use that
-    if (rank !== null) {
-      this.currentRank = rank;
-    } 
-    // Otherwise pick the lowest rank that hasn't been guessed yet
-    else if (!this.currentRank) {
-      // Get the lowest rank with a hint
-      const availableRanks = Array.from(this.hints.keys()).sort((a, b) => a - b);
-      this.currentRank = availableRanks[0] || 1;
-    }
-    
-    // Get hint for current rank
-    const hint = this.hints.get(this.currentRank);
-    
-    // If we have a hint, show it
-    if (hint && this.container && this.hintText) {
-      this.hintText.textContent = hint;
-      this.container.style.display = 'block';
-      
-      // Update button text
-      if (this.button) {
-        this.button.innerHTML = '<i class="fas fa-lightbulb"></i> Hide Hint';
-      }
-      
-      // Emit event
-      eventService.emit('hint:shown', {
-        rank: this.currentRank,
-        hint
-      });
-    }
+  revealNextHint() {
+    const nextRank = this.findNextAvailableRank();
+    if (nextRank === null) return;
+
+    const hintText = this.hintsByRank.get(nextRank);
+    if (!hintText) return;
+
+    this.revealedRanks.add(nextRank);
+    this.appendHintToList(hintText);
+    this.updateButtonState();
   }
-  
-  /**
-   * Hides the hint
-   */
-  hideHint() {
-    if (this.container) {
-      this.container.style.display = 'none';
-      
-      // Update button text
-      if (this.button) {
-        this.button.innerHTML = '<i class="fas fa-lightbulb"></i> Show Hint';
+
+  findNextAvailableRank() {
+    const guessedRanks = new Set(
+      (gameService.correctGuesses || []).map((g) => g.rank)
+    );
+    // Walk from the highest rank down and return the first that is
+    // unrevealed-as-hint AND unguessed.
+    const ranks = Array.from(this.hintsByRank.keys()).sort((a, b) => b - a);
+    for (const rank of ranks) {
+      if (!this.revealedRanks.has(rank) && !guessedRanks.has(rank)) {
+        return rank;
       }
-      
-      // Emit event
-      eventService.emit('hint:hidden');
     }
+    return null;
   }
-  
-  /**
-   * Updates the hint button UI based on availability of hints
-   * @param {boolean} hasHints - Whether hints are available
-   */
-  updateHintButtonUI(hasHints) {
-    if (this.button) {
-      this.button.disabled = !hasHints;
-    }
+
+  appendHintToList(text) {
+    if (!this.list) return;
+    const item = document.createElement('div');
+    item.className = 'hint-item';
+    item.textContent = text;
+    this.list.appendChild(item);
+    // Trigger fade-in on the next frame
+    requestAnimationFrame(() => item.classList.add('visible'));
+  }
+
+  updateButtonState() {
+    if (!this.button) return;
+    const hasMore = this.findNextAvailableRank() !== null;
+    this.button.disabled = !hasMore;
+    this.button.innerHTML = hasMore
+      ? '<i class="fas fa-lightbulb"></i> Get a hint'
+      : '<i class="fas fa-lightbulb"></i> No more hints';
+  }
+
+  hideModule() {
+    if (this.module) this.module.style.display = 'none';
   }
 }
 

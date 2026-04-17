@@ -1,6 +1,5 @@
 // frontend/js/components/AnswerBox.js
 
-import { flipReveal } from '../utils/animationUtils.js';
 import eventService from '../services/EventService.js';
 
 /**
@@ -15,8 +14,6 @@ class AnswerBox {
     this.rank = rank;
     this.element = null;
     this.revealed = false;
-    this.hintShown = false;
-    this.hint = null;
     this.createDomElement();
   }
 
@@ -36,87 +33,6 @@ class AnswerBox {
     // Set the ID and rank
     this.element.id = `answer-${this.rank}`;
     this.element.querySelector('.answer-rank').textContent = this.rank;
-
-    // Add hint lightbulb icon
-    const hintButton = document.createElement('button');
-    hintButton.className = 'hint-button';
-    hintButton.innerHTML = '<i class="fas fa-lightbulb"></i>';
-    hintButton.setAttribute('aria-label', 'Show hint');
-    hintButton.style.display = 'none'; // Hidden until hints are loaded
-
-    // Insert the hint button near the end of the card-body
-    const cardBody = this.element.querySelector('.card-body');
-    cardBody.appendChild(hintButton);
-
-    // Add click event for hint button
-    hintButton.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent triggering other click events
-      this.toggleHint();
-    });
-  }
-
-  /**
-   * Sets the hint for this answer box
-   * @param {string} hint - The hint text
-   */
-  setHint(hint) {
-    if (!hint) return;
-
-    // Format the hint to sentence case
-    const formattedHint = hint.charAt(0).toUpperCase() + hint.slice(1).toLowerCase();
-    this.hint = formattedHint;
-
-    // Show the hint button if we have a hint and answer isn't revealed
-    const hintButton = this.element.querySelector('.hint-button');
-    if (hintButton && !this.revealed) {
-      hintButton.style.display = 'inline-block';
-    }
-  }
-
-  /**
-   * Toggles the visibility of the hint
-   */
-  /**
- * Toggles the visibility of the hint
- */
-  toggleHint() {
-    if (!this.hint) return;
-
-    const cardBody = this.element.querySelector(".card-body");
-    const answerText = this.element.querySelector(".answer-text");
-
-    // Use flipReveal animation
-    if (this.hintShown) {
-      // Hide hint with animation - keep the text until animation is complete
-      const currentText = answerText.textContent;
-
-      flipReveal(
-        cardBody,
-        () => {
-          // Halfway callback - don't change text yet
-        },
-        () => {
-          // Complete callback - now hide the text
-          answerText.textContent = "";
-          answerText.classList.remove('hint-visible');
-          this.hintShown = false;
-        }
-      );
-    } else {
-      // Show hint with animation - don't show text until animation is complete
-      flipReveal(
-        cardBody,
-        () => {
-          // Halfway callback - don't change text yet
-        },
-        () => {
-          // Complete callback - now show the hint
-          answerText.textContent = this.hint;
-          answerText.classList.add('hint-visible');
-          this.hintShown = true;
-        }
-      );
-    }
   }
 
   /**
@@ -141,7 +57,6 @@ class AnswerBox {
     const cardBody = this.element.querySelector(".card-body");
     const answerText = this.element.querySelector(".answer-text");
     const votesBadge = this.element.querySelector(".points");
-    const hintButton = this.element.querySelector(".hint-button");
 
     // Dim the page during reveal: soft for supporting ranks, full for #1
     const isBigReveal = this.rank === 1;
@@ -161,13 +76,7 @@ class AnswerBox {
       cardBody.classList.add("bg-danger", "bg-opacity-25");
     }
 
-    // Hide hint button since answer is revealed
-    if (hintButton) {
-      hintButton.style.display = 'none';
-    }
-
     // Reveal the text (fades in via existing .answer-text.visible CSS)
-    answerText.classList.remove('hint-visible');
     answerText.textContent = canonicalAnswer || answer;
     answerText.classList.add('visible');
 
@@ -185,7 +94,6 @@ class AnswerBox {
     // dimming layer and looks like it "drops".
     setTimeout(() => {
       this.revealed = true;
-      this.hintShown = false;
       if (overlay) overlay.classList.remove("active", "active-soft");
       setTimeout(() => {
         card.classList.remove("revealing");
