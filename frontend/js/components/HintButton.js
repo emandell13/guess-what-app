@@ -15,7 +15,7 @@ import gameService from '../services/GameService.js';
  * capped at MAX_HINTS or the number of unsolved ranks, whichever is
  * smaller.
  */
-const MAX_HINTS = 3;
+const MAX_HINTS = 1;
 
 class HintButton {
   constructor() {
