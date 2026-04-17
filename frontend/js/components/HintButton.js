@@ -105,7 +105,8 @@ class HintButton {
     const item = document.createElement('div');
     item.className = 'hint-item';
     item.textContent = text;
-    this.list.appendChild(item);
+    // Newest hint on top so it appears right below the button
+    this.list.prepend(item);
     // Trigger fade-in on the next frame
     requestAnimationFrame(() => item.classList.add('visible'));
   }
@@ -113,10 +114,17 @@ class HintButton {
   updateButtonState() {
     if (!this.button) return;
     const hasMore = this.findNextAvailableRank() !== null;
+    const hasRevealedAny = this.revealedRanks.size > 0;
+
     this.button.disabled = !hasMore;
-    this.button.innerHTML = hasMore
-      ? '<i class="fas fa-lightbulb"></i> Get a hint'
-      : '<i class="fas fa-lightbulb"></i> No more hints';
+
+    if (!hasMore) {
+      this.button.innerHTML = '<i class="fas fa-lightbulb"></i> No more hints';
+    } else if (hasRevealedAny) {
+      this.button.innerHTML = '<i class="fas fa-lightbulb"></i> Get another hint';
+    } else {
+      this.button.innerHTML = '<i class="fas fa-lightbulb"></i> Get a hint';
+    }
   }
 
   hideModule() {
