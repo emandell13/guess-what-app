@@ -3,7 +3,12 @@
     "allow": [
       "Bash(heroku releases *)",
       "Bash(git fetch *)",
-      "Bash(heroku logs *)"
+      "Bash(heroku logs *)",
+      "Bash(git log *)",
+      "Bash(claude *)",
+      "Bash(claude)",
+      "Bash(find *)",
+      "Bash(grep *)"
     ]
   }
 }
