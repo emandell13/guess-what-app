@@ -90,6 +90,9 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 
 ## Done
 
+### Host commentary on wrong guesses
+Wrong guesses now trigger a one-line host reaction alongside the strike animation. Baseline is shipped; quality tuning tracked as #9.
+
 ### Claude-written commentary on reveals
 After the #1 answer is revealed, a one-line quip from Claude ("Of course sleeping in won — you're all monsters"). Personality baked in. Cheap to run, makes the game feel alive.
 
