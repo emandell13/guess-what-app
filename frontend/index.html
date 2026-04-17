@@ -50,8 +50,16 @@
                     </div>
                 </div>
 
+                <!-- Date placeholder (seeded with skeleton; replaced on init) -->
+                <h5 id="question-date" class="text-center mb-3" aria-hidden="true">
+                    <span class="skeleton skeleton-line skeleton-line-date"></span>
+                </h5>
+
                 <!-- Question with Vote Count -->
-                <h2 class="text-center mb-4"></h2>
+                <h2 class="text-center mb-4">
+                    <span class="skeleton skeleton-line skeleton-line-question" aria-hidden="true"></span>
+                    <span class="skeleton skeleton-line skeleton-line-question skeleton-line-question-short" aria-hidden="true"></span>
+                </h2>
 
                 <!-- Strikes and Hint/Give-Up Row -->
                 <div id="game-chrome-row" class="d-flex justify-content-between align-items-center mb-4 pre-init">
@@ -67,7 +75,22 @@
                 <!-- Answer Boxes Container -->
                 <div class="mb-4">
                     <div class="row g-3" id="answer-boxes">
-                        <!-- Answer boxes will be added dynamically -->
+                        <!-- Skeleton placeholders; replaced when AnswerGrid initializes -->
+                        <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
+                            <div class="skeleton skeleton-answer-box"></div>
+                        </div>
+                        <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
+                            <div class="skeleton skeleton-answer-box"></div>
+                        </div>
+                        <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
+                            <div class="skeleton skeleton-answer-box"></div>
+                        </div>
+                        <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
+                            <div class="skeleton skeleton-answer-box"></div>
+                        </div>
+                        <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
+                            <div class="skeleton skeleton-answer-box"></div>
+                        </div>
                     </div>
                 </div>
 

@@ -369,8 +369,12 @@ class App {
     if (gameInitResult.success) {
       this.updateInitialUI(gameInitResult.answerCount);
     } else {
-      // No active question available
+      // No active question available — clear skeleton placeholders
       this.questionHeading.textContent = "No question available for guessing yet";
+      const dateEl = document.getElementById('question-date');
+      if (dateEl) dateEl.remove();
+      const answerBoxes = document.getElementById('answer-boxes');
+      if (answerBoxes) answerBoxes.innerHTML = '';
     }
 
     // Fetch tomorrow's question for voting
