@@ -648,8 +648,8 @@ body.keyboard-open #guess-form-container {
 .commentary-overlay {
     position: fixed;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%) scale(0.96);
+    top: 14rem;
+    transform: translateX(-50%) scale(0.96);
     width: min(520px, 92vw);
     display: flex;
     align-items: center;
@@ -665,7 +665,7 @@ body.keyboard-open #guess-form-container {
 }
 .commentary-overlay.in {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
 }
 .commentary-avatar {
     flex: 0 0 2.25rem;

@@ -22,15 +22,16 @@ class CommentaryOverlay {
   }
 
   show(answer) {
-    // Delay so the card lands after the #1 reveal's count-up finishes,
-    // not on top of it.
+    // Wait until the #1 reveal is fully settled — card has fallen back,
+    // count-up is long done, reveal dim has cleared — before taking over.
+    // Firing mid-animation makes the reveal feel cut off.
     setTimeout(() => {
       this.bubble.textContent = this.buildQuip(answer);
       this.element.classList.add('in');
       this.dim?.classList.add('in');
       clearTimeout(this.hideTimer);
       this.hideTimer = setTimeout(() => this.hide(), 4500);
-    }, 1050);
+    }, 1800);
   }
 
   hide() {
