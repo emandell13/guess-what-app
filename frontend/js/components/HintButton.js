@@ -1,6 +1,7 @@
 // frontend/js/components/HintButton.js
 import eventService from '../services/EventService.js';
 import gameService from '../services/GameService.js';
+import { saveTodayHintedRanks, getTodayHintedRanks } from '../utils/visitorUtils.js';
 
 /**
  * Combined "Get a hint" + "Give Up" escalating button.
@@ -33,6 +34,7 @@ class HintButton {
     eventService.on('game:initialized', async (event) => {
       if (event.detail && event.detail.question && event.detail.question.id) {
         await this.loadHints(event.detail.question.id);
+        this.restoreHintedRanks();
         if (gameService.isGameOver()) {
           this.hide();
         } else {
@@ -107,11 +109,39 @@ class HintButton {
 
     this.revealedRanks.add(nextRank);
     this.hintsUsed += 1;
+    saveTodayHintedRanks(Array.from(this.revealedRanks));
 
     // Let the corresponding answer box flip and show the hint in-place
     eventService.emit('hint:revealed', { rank: nextRank, hint: hintText });
 
     this.updateButtonState();
+  }
+
+  /**
+   * Replays hint state from a prior same-day session. AnswerBox constructors
+   * have already seeded their hintShown flag from localStorage (so solved
+   * ranks re-render yellow via reveal()). Here we just re-emit hint:revealed
+   * for unsolved hinted ranks so the hint text reappears in the box, and
+   * catch the button state up to the right spend count.
+   */
+  restoreHintedRanks() {
+    const stored = getTodayHintedRanks();
+    if (!Array.isArray(stored) || stored.length === 0) return;
+
+    const solvedRanks = new Set(
+      (gameService.correctGuesses || []).map((g) => g.rank)
+    );
+
+    stored.forEach((rank) => {
+      this.revealedRanks.add(rank);
+      this.hintsUsed += 1;
+      if (!solvedRanks.has(rank)) {
+        const hintText = this.hintsByRank.get(rank);
+        if (hintText) {
+          eventService.emit('hint:revealed', { rank, hint: hintText });
+        }
+      }
+    });
   }
 
   updateButtonState() {

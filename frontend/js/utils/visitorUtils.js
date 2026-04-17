@@ -93,3 +93,16 @@ export function hasTodayGivenUp() {
   const today = getTodayDate();
   return localStorage.getItem(`gwGaveUp_${today}`) === 'true';
 }
+
+// Save hint state for today (ranks that have had hints revealed)
+export function saveTodayHintedRanks(ranks) {
+  const today = getTodayDate();
+  localStorage.setItem(`gwHinted_${today}`, JSON.stringify(ranks));
+}
+
+// Get hinted ranks for today
+export function getTodayHintedRanks() {
+  const today = getTodayDate();
+  const raw = localStorage.getItem(`gwHinted_${today}`);
+  return raw ? JSON.parse(raw) : [];
+}

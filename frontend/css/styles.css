@@ -226,16 +226,16 @@ h5,
 
 @media (min-width: 768px) {
     .container {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
     }
 
     .mb-4 {
-        margin-bottom: 1.25rem !important;
+        margin-bottom: 1rem !important;
     }
 
     .container .position-relative.mb-5 {
-        margin-bottom: 2rem !important;
+        margin-bottom: 1.25rem !important;
     }
 }
 
@@ -271,7 +271,7 @@ h5,
 
 @media (min-width: 768px) {
     #answer-boxes.row.g-3 {
-        --bs-gutter-y: 1rem;
+        --bs-gutter-y: 0.625rem;
     }
 }
 
@@ -342,9 +342,8 @@ h5,
 /* Desktop styles */
 @media (min-width: 768px) {
     #answer-boxes .card-body {
-        min-height: 4.5rem;
-        /* Slightly taller on desktop */
-        padding: 1rem;
+        min-height: 3.5rem;
+        padding: 0.625rem 1rem;
     }
 
     #answer-boxes .answer-rank {
@@ -478,7 +477,7 @@ h2.text-center.mb-4 {
 
 @media (min-width: 768px) {
     h2.text-center.mb-4 {
-        margin-bottom: 1.75rem !important;
+        margin-bottom: 1rem !important;
     }
 }
 
@@ -569,8 +568,7 @@ body.keyboard-open #guess-form-container {
 /* Desktop styles - apply when screen is wider than 768px */
 @media (min-width: 768px) {
     .logo-image {
-        width: 12.5rem;
-        /* 200px on desktop */
+        width: 8rem;
     }
 }
 
@@ -581,7 +579,7 @@ body.keyboard-open #guess-form-container {
 
 @media (min-width: 768px) {
     .logo-image+h2 {
-        margin-top: 1.25rem;
+        margin-top: 0.75rem;
     }
 }
 

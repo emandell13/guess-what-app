@@ -1,6 +1,7 @@
 // frontend/js/components/AnswerBox.js
 
 import eventService from '../services/EventService.js';
+import { getTodayHintedRanks } from '../utils/visitorUtils.js';
 
 /**
  * Component representing a single answer box
@@ -14,7 +15,11 @@ class AnswerBox {
     this.rank = rank;
     this.element = null;
     this.revealed = false;
-    this.hintShown = false;
+    // Seed from localStorage so a resumed game still paints yellow on
+    // ranks that had a hint used before a reload. HintButton also emits
+    // events for live hint use during the session.
+    const storedHintedRanks = getTodayHintedRanks();
+    this.hintShown = Array.isArray(storedHintedRanks) && storedHintedRanks.includes(rank);
     this.createDomElement();
 
     // Listen for hint reveals targeting this rank and flip the hint in-place
@@ -131,36 +136,38 @@ class AnswerBox {
   }
 
   /**
-   * Shows a hint inside this answer box with a brief flip animation.
-   * The hint occupies the space where the answer text will eventually
-   * appear. When the player correctly guesses, reveal() takes over and
-   * replaces the hint with the real answer.
+   * Shows a hint inside this answer box. Plays a flip animation on first
+   * reveal; on a restored session (hintShown already seeded true), renders
+   * the static hint state without the flip.
    */
   showHint(hintText) {
-    if (this.revealed || this.hintShown) return;
+    if (this.revealed) return;
 
     const cardBody = this.element.querySelector(".card-body");
     const answerText = this.element.querySelector(".answer-text");
     if (!cardBody || !answerText) return;
 
-    cardBody.classList.add("hinted");
+    const isRestore = this.hintShown === true;
 
-    // Flip the card in place: scale down, swap text at the halfway mark,
-    // scale back up. Cheap, punchy, no 3D rotation weirdness.
-    cardBody.classList.add("hint-flip");
+    cardBody.classList.add("hinted");
 
     const formatted = hintText
       ? hintText.charAt(0).toUpperCase() + hintText.slice(1)
       : '';
 
-    setTimeout(() => {
+    if (isRestore) {
       answerText.textContent = formatted;
       answerText.classList.add('visible');
-    }, 350);
-
-    setTimeout(() => {
-      cardBody.classList.remove("hint-flip");
-    }, 700);
+    } else {
+      cardBody.classList.add("hint-flip");
+      setTimeout(() => {
+        answerText.textContent = formatted;
+        answerText.classList.add('visible');
+      }, 350);
+      setTimeout(() => {
+        cardBody.classList.remove("hint-flip");
+      }, 700);
+    }
 
     this.hintShown = true;
   }
