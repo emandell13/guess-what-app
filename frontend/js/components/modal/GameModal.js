@@ -2,6 +2,7 @@
 
 import SummaryStep from './SummaryStep.js';
 import VoteStep from './VoteStep.js';
+import PickFavoriteStep from './PickFavoriteStep.js';
 import ShareStep from './ShareStep.js';
 import eventService from '../../services/EventService.js';
 
@@ -22,6 +23,7 @@ class GameModal {
     // Initialize steps with no callback dependencies
     this.summaryStep = new SummaryStep('summaryStep');
     this.voteStep = new VoteStep('voteStep');
+    this.pickStep = new PickFavoriteStep('pickStep');
     this.shareStep = new ShareStep('shareStep');
 
     // Handle modal hidden event
@@ -99,6 +101,7 @@ class GameModal {
     // Hide all steps
     this.summaryStep.hide();
     this.voteStep.hide();
+    this.pickStep.hide();
     this.shareStep.hide();
 
     // Show current step
@@ -112,6 +115,10 @@ class GameModal {
         eventService.emit('modal:step-changed', { step: 'vote' });
         break;
       case 3:
+        this.pickStep.show();
+        eventService.emit('modal:step-changed', { step: 'pick' });
+        break;
+      case 4:
         this.shareStep.show();
         eventService.emit('modal:step-changed', { step: 'share' });
         break;
@@ -124,6 +131,7 @@ class GameModal {
     // Hide all steps
     this.summaryStep.hide();
     this.voteStep.hide();
+    this.pickStep.hide();
     this.shareStep.hide();
 
     // Show only the vote step
@@ -162,8 +170,8 @@ class GameModal {
     // Emit progress update event
     eventService.emit('modal:progress-updated', {
       step: this.currentStep,
-      totalSteps: 3,
-      percent: (this.currentStep / 3) * 100
+      totalSteps: 4,
+      percent: (this.currentStep / 4) * 100
     });
   }
 
@@ -174,8 +182,9 @@ class GameModal {
 
       console.log('GameModal.resetModal - Before calling summaryStep.show, gaveUp state:', this.gaveUp);
   
-      // Hide vote and share steps
+      // Hide non-summary steps
       this.voteStep.hide();
+      this.pickStep.hide();
       this.shareStep.hide();
       
       // Show summary step with gaveUp status

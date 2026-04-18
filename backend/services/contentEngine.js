@@ -1,23 +1,24 @@
 // backend/services/contentEngine.js
 //
-// Autonomous content pipeline. Keeps ~N days of upcoming questions queued,
-// each pre-seeded with synthetic "votes" so it's playable from day 1.
-// Real user votes layer on top; the existing daily tally groups both together.
+// Candidate-pool content pipeline. Each daily run:
+//   1. Adds N new candidate questions to the pool (no date assigned).
+//   2. Picks the top-rated candidate (by player picks) and promotes it to
+//      tomorrow's scheduled question, seeding its synthetic answer pool so
+//      it's playable from minute one.
+//
+// Player picks come from the post-completion "Pick your favorite" step
+// (3 candidates shown, one tap to favorite). The picked count drives
+// promotion ranking; ties break by oldest-in-pool to flush through.
 
 require('dotenv').config();
 const supabase = require('../config/supabase');
 const { callLLM } = require('./llmService');
 const {
-  getTomorrowDate,
-  getDateFromString,
-  formatDateString
-} = require('../utils/dateUtils');
-const {
   createQuestionGenerationPrompt,
   createAnswerSeedingPrompt
 } = require('./promptTemplates');
 
-const TARGET_QUEUE_DAYS = 7;
+const NEW_CANDIDATES_PER_RUN = 5;
 const RECENT_QUESTIONS_LIMIT = 30;
 
 /**
@@ -31,15 +32,31 @@ function parseJsonFromLLM(text) {
 }
 
 /**
- * Questions scheduled for tomorrow or later that haven't been played yet.
+ * Everything not yet completed — scheduled (with dates) and candidates (no
+ * date), ordered with scheduled first by active_date, then candidates by
+ * created_at. Used by admin views and the prepare-tomorrow check.
  */
 async function getUpcomingQuestions() {
-  const tomorrowDate = getTomorrowDate();
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .gte('active_date', tomorrowDate)
-    .order('active_date', { ascending: true });
+    .neq('status', 'completed')
+    .order('active_date', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * Candidate pool only — questions awaiting promotion (no active_date).
+ */
+async function getCandidatePool() {
+  const { data, error } = await supabase
+    .from('questions')
+    .select('*')
+    .eq('status', 'candidate')
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
   return data || [];
@@ -85,6 +102,8 @@ async function generateQuestions(n, recentQuestions = []) {
 /**
  * Ask Claude for 5 plausible answers + weights, then insert synthetic vote rows.
  * Each row goes into `votes` with is_seed=true so real engagement can be measured separately.
+ * Called at promotion time (not generation time) so we don't waste seeding work
+ * on candidates that may never get promoted.
  * Returns the number of vote rows inserted.
  */
 async function seedVotesForQuestion(questionId, questionText) {
@@ -128,22 +147,18 @@ async function seedVotesForQuestion(questionId, questionText) {
 }
 
 /**
- * Given a YYYY-MM-DD string, return the next day's string in the app timezone.
+ * Insert a generated question into the candidate pool. No date, no seeding —
+ * those happen at promotion time.
  */
-function nextDateAfter(lastDateString) {
-  const d = getDateFromString(lastDateString);
-  d.setDate(d.getDate() + 1);
-  return formatDateString(d);
-}
-
-async function insertGeneratedQuestion(generated, activeDate) {
+async function insertGeneratedCandidate(generated) {
   const { data, error } = await supabase
     .from('questions')
     .insert([{
       question_text: generated.question,
-      active_date: activeDate,
+      active_date: null,
       voting_complete: false,
-      source: 'generated'
+      source: 'generated',
+      status: 'candidate'
     }])
     .select()
     .single();
@@ -153,25 +168,94 @@ async function insertGeneratedQuestion(generated, activeDate) {
 }
 
 /**
- * Main orchestrator: checks how many upcoming questions we have, generates + seeds
- * enough new ones to reach the target depth. Idempotent — safe to run daily.
+ * Pick the top candidate (most player picks; ties broken by oldest-in-pool),
+ * promote it to scheduled with the given active_date, and seed its answer
+ * pool. Idempotent — if a question is already scheduled for activeDate, no-op.
+ *
+ * Returns { promoted, picks, seeded } on success, or { promoted: null, ... }
+ * on skip/failure.
  */
-async function replenishPipeline(options = {}) {
-  const targetDays = options.targetDays || TARGET_QUEUE_DAYS;
+async function promoteNextCandidate(activeDate) {
+  // Idempotency: if anything is already scheduled for this date, skip.
+  const { data: existing, error: existingError } = await supabase
+    .from('questions')
+    .select('id, question_text')
+    .eq('active_date', activeDate)
+    .maybeSingle();
 
-  const upcoming = await getUpcomingQuestions();
-  console.log(`Content pipeline: ${upcoming.length} upcoming questions (target ${targetDays})`);
-
-  if (upcoming.length >= targetDays) {
-    return { generated: 0, seeded: 0, created: [] };
+  if (existingError && existingError.code !== 'PGRST116') {
+    console.error('Error checking existing scheduled question:', existingError);
   }
 
-  const needed = targetDays - upcoming.length;
+  if (existing) {
+    console.log(`Promotion skipped — already scheduled for ${activeDate}: "${existing.question_text}"`);
+    return { promoted: null, skipped: true, reason: 'already_scheduled' };
+  }
+
+  const candidates = await getCandidatePool();
+  if (candidates.length === 0) {
+    console.warn('Promotion failed — candidate pool is empty. Run replenishPipeline first.');
+    return { promoted: null, skipped: false, error: 'no_candidates' };
+  }
+
+  // Aggregate pick counts in one round-trip.
+  const candidateIds = candidates.map(c => c.id);
+  const { data: pickRows, error: picksError } = await supabase
+    .from('question_picks')
+    .select('question_id')
+    .in('question_id', candidateIds);
+
+  if (picksError) {
+    console.error('Error fetching pick counts (proceeding without ranking):', picksError);
+  }
+
+  const pickCounts = {};
+  (pickRows || []).forEach(row => {
+    pickCounts[row.question_id] = (pickCounts[row.question_id] || 0) + 1;
+  });
+
+  // Highest pick count first, ties broken by oldest in pool.
+  const ranked = candidates.slice().sort((a, b) => {
+    const pa = pickCounts[a.id] || 0;
+    const pb = pickCounts[b.id] || 0;
+    if (pb !== pa) return pb - pa;
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+
+  const winner = ranked[0];
+  const winnerPicks = pickCounts[winner.id] || 0;
+  console.log(`Promoting candidate "${winner.question_text}" (${winnerPicks} picks) to ${activeDate}`);
+
+  const { error: updateError } = await supabase
+    .from('questions')
+    .update({ status: 'scheduled', active_date: activeDate })
+    .eq('id', winner.id);
+  if (updateError) throw updateError;
+
+  let seeded = 0;
+  try {
+    seeded = await seedVotesForQuestion(winner.id, winner.question_text);
+    console.log(`Seeded ${seeded} votes for promoted question ${winner.id}`);
+  } catch (err) {
+    console.error(`Seed failed for promoted question ${winner.id} ("${winner.question_text}"):`, err);
+    // Promotion stands — admin can reseed via the review UI.
+  }
+
+  return { promoted: winner, picks: winnerPicks, seeded };
+}
+
+/**
+ * Add N new candidate questions to the pool. Idempotent in the sense that
+ * running it multiple times just adds more candidates — there's no upper
+ * cap; ranking + promotion drains the pool naturally.
+ */
+async function replenishPipeline(options = {}) {
+  const count = options.count || NEW_CANDIDATES_PER_RUN;
   const recentQuestions = await getRecentQuestions();
 
   let newQuestions;
   try {
-    newQuestions = await generateQuestions(needed, recentQuestions);
+    newQuestions = await generateQuestions(count, recentQuestions);
   } catch (err) {
     console.error('Question generation failed:', err);
     return { generated: 0, seeded: 0, created: [], error: err.message };
@@ -182,38 +266,20 @@ async function replenishPipeline(options = {}) {
     return { generated: 0, seeded: 0, created: [] };
   }
 
-  let nextActiveDate = upcoming.length > 0
-    ? nextDateAfter(upcoming[upcoming.length - 1].active_date)
-    : getTomorrowDate();
-
   const created = [];
-  let seededCount = 0;
-
   for (const generated of newQuestions) {
-    let question;
     try {
-      question = await insertGeneratedQuestion(generated, nextActiveDate);
+      const question = await insertGeneratedCandidate(generated);
+      created.push(question);
+      console.log(`Added candidate: "${question.question_text}"`);
     } catch (err) {
-      console.error(`Failed to insert question "${generated.question}":`, err);
-      continue;
+      console.error(`Failed to insert candidate "${generated.question}":`, err);
     }
-
-    try {
-      const n = await seedVotesForQuestion(question.id, question.question_text);
-      seededCount += n;
-      console.log(`Seeded ${n} votes for "${question.question_text}" (${question.active_date})`);
-    } catch (err) {
-      console.error(`Seed failed for question ${question.id} ("${question.question_text}"):`, err);
-      // Keep the question row — admin can reseed or reject via the review UI.
-    }
-
-    created.push(question);
-    nextActiveDate = nextDateAfter(nextActiveDate);
   }
 
   return {
     generated: newQuestions.length,
-    seeded: seededCount,
+    seeded: 0, // Seeding deferred to promotion.
     created
   };
 }
@@ -222,6 +288,8 @@ module.exports = {
   generateQuestions,
   seedVotesForQuestion,
   replenishPipeline,
+  promoteNextCandidate,
   getUpcomingQuestions,
-  TARGET_QUEUE_DAYS
+  getCandidatePool,
+  NEW_CANDIDATES_PER_RUN
 };

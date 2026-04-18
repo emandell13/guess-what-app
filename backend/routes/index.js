@@ -7,6 +7,7 @@ const authRoutes = require('./auth');
 const userHistoryRoutes = require('./userHistory');
 const visitorRoutes = require('./visitors');
 const streakRoutes = require('./streaks');
+const questionPickRoutes = require('./questionPicks');
 
 module.exports = (app) => {
   // Serve static files first
@@ -25,6 +26,7 @@ module.exports = (app) => {
   app.use('/user', userHistoryRoutes);
   app.use('/api/visitors', visitorRoutes);
   app.use('/api/streaks', streakRoutes);
+  app.use('/api/question-picks', questionPickRoutes);
 
   // Handle GET request for the homepage
   app.get('/', (req, res) => {

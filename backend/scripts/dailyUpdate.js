@@ -7,6 +7,7 @@ const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('../services/llmService');
 const { createAnswerGroupingPrompt, createHintGenerationPrompt, createHintRatingPrompt, createQuipPrompt } = require('../services/promptTemplates');
+const { replenishPipeline, promoteNextCandidate } = require('../services/contentEngine');
 
 /**
  * Daily update process that tallies votes for today's question
@@ -19,17 +20,36 @@ async function dailyUpdate() {
   try {
     // Get dates in ET timezone using date utilities
     const todayDate = getTodayDate();
-    
-    // Step 1: Find TODAY's question that was in voting phase yesterday
-    // (it should have active_date=TODAY and voting_complete=false)
+
+    // Step 1: Tally today's question (was in voting phase yesterday).
     await tallyVotesForTodaysQuestion(todayDate);
 
-    // Step 2: Prepare tomorrow's question for voting
+    // Step 2: Replenish the candidate pool so promotion has options.
+    // Doing this before promotion guarantees liveness even from a cold start.
+    let replenishResult = null;
+    try {
+      replenishResult = await replenishPipeline();
+      console.log(`Replenished pool with ${replenishResult.generated} new candidates`);
+    } catch (err) {
+      console.error('Candidate pool replenishment failed (continuing):', err);
+    }
+
+    // Step 3: Promote the top-picked candidate to tomorrow's scheduled
+    // question (sets active_date, seeds answers). Idempotent.
     const tomorrowDate = getTomorrowDate();
-    await prepareTomorrowsQuestion(tomorrowDate);
-    
+    let promotionResult = null;
+    try {
+      promotionResult = await promoteNextCandidate(tomorrowDate);
+    } catch (err) {
+      console.error('Candidate promotion failed:', err);
+    }
+
     console.log('Daily update completed successfully');
-    return { success: true };
+    return {
+      success: true,
+      replenish: replenishResult,
+      promotion: promotionResult
+    };
   } catch (error) {
     console.error('Error in daily update:', error);
     return { success: false, error: error.message };
@@ -434,9 +454,9 @@ async function groupAllVotesWithLLM(votes, questionText) {
 async function markQuestionComplete(questionId) {
   const { error } = await supabase
     .from('questions')
-    .update({ voting_complete: true })
+    .update({ voting_complete: true, status: 'completed' })
     .eq('id', questionId);
-    
+
   if (error) {
     console.error('Error marking question as complete:', error);
   } else {
@@ -545,32 +565,6 @@ async function updateVotesWithLLMGroups(votes, voteTexts, groupedVotes, inserted
       console.error(`Error updating vote ${vote.id}:`, error);
     }
   }
-}
-
-/**
- * Prepares tomorrow's question for voting if needed
- * @param {string} tomorrowDate - Tomorrow's date in YYYY-MM-DD format
- */
-async function prepareTomorrowsQuestion(tomorrowDate) {
-  console.log(`Checking for tomorrow's question (${tomorrowDate})`);
-  
-  // Check if tomorrow's question exists
-  const { data: existingTomorrow, error: checkError } = await supabase
-    .from('questions')
-    .select('*')
-    .eq('active_date', tomorrowDate)
-    .single();
-    
-  if (checkError && checkError.code !== 'PGRST116') { // Not found is ok
-    console.error('Error checking for tomorrow\'s question:', checkError);
-  }
-    
-  if (existingTomorrow) {
-    console.log(`Tomorrow's question already exists: ${existingTomorrow.question_text}`);
-    return;
-  }
-  
-  console.log('No question found for tomorrow');
 }
 
 module.exports = dailyUpdate;

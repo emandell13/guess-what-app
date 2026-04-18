@@ -40,7 +40,7 @@ class VoteStep {
         e.preventDefault();
         eventService.emit('modal:next-step', {
           currentStep: 'vote',
-          nextStep: 'share'
+          nextStep: 'pick'
         });
       });
     }
@@ -165,7 +165,7 @@ class VoteStep {
           nextButton.addEventListener('click', () => {
             eventService.emit('modal:next-step', {
               currentStep: 'vote',
-              nextStep: 'share'
+              nextStep: 'pick'
             });
           });
           nextButton.hasListener = true;
@@ -260,7 +260,7 @@ class VoteStep {
           nextButton.addEventListener('click', () => {
             eventService.emit('modal:next-step', {
               currentStep: 'vote',
-              nextStep: 'share'
+              nextStep: 'pick'
             });
           });
           nextButton.hasListener = true;

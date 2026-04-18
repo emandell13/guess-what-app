@@ -155,11 +155,24 @@ async function associateVisitorWithUser(visitorId, userId) {
             .update({ user_id: userId })
             .eq('visitor_id', visitorId)
             .is('user_id', null);
-            
+
         if (progressError) {
             console.error('Error updating game progress:', progressError);
         } else {
             console.log(`Updated game progress for visitor ${visitorId}`);
+        }
+
+        // Update all question picks with this visitor_id to also have the user_id
+        const { error: picksError } = await supabase
+            .from('question_picks')
+            .update({ user_id: userId })
+            .eq('visitor_id', visitorId)
+            .is('user_id', null);
+
+        if (picksError) {
+            console.error('Error updating question picks:', picksError);
+        } else {
+            console.log(`Updated question picks for visitor ${visitorId}`);
         }
         
         console.log(`Associated visitor ${visitorId} with user ${userId} successfully`);
