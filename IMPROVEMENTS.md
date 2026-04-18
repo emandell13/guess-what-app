@@ -47,6 +47,15 @@ Players get a bare input asking them to respond to tomorrow's question, with no 
 ### 12. Rebuild Step 3 around the share grid once #17 ships
 Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#17) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed).
 
+### 23. Extend the wave animation across the post-completion flow
+The wave reveal currently used in one spot of the post-completion module should be reused in other places in the flow so the visual language feels consistent instead of appearing once and disappearing. Candidates: step transitions, step-intro reveals, any element that currently just fades or snaps in.
+
+### 24. Post-completion flow refresh
+A broader pass on the post-completion module — visual hierarchy, pacing between steps, how each step opens and closes, copy, what actually earns a step of its own vs. collapsing together. Several individual items above (#7, #8, #10, #11, #12, #16, #23) touch pieces of this; a refresh would zoom out and rethink the whole sequence as one experience rather than patching step-by-step.
+
+### 25. Improve the mobile experience
+General mobile polish pass. Specific pain points TBD — likely touches guess input ergonomics, modal sizing, tap targets, and post-completion flow on small screens. Worth auditing end-to-end on a phone before scoping individual tickets.
+
 ---
 
 ## 2. Retention
