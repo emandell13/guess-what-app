@@ -147,14 +147,36 @@ async function seedVotesForQuestion(questionId, questionText) {
 }
 
 /**
+ * Strip the "Name X." or "What's the X?" wrapper from a question, leaving the
+ * noun-phrase the in-game guessing UI uses. Fallback when the generator omits
+ * an explicit guess_prompt — guess_prompt is NOT NULL in the questions table.
+ */
+function deriveGuessPrompt(questionText) {
+  if (typeof questionText !== 'string') return '';
+  let text = questionText.trim().replace(/[?.!]+$/, '');
+  // "Name X" / "Name a X" / "Name the X"
+  text = text.replace(/^name\s+/i, '');
+  // "What's X" / "What is X"
+  text = text.replace(/^what(?:'s|\s+is)\s+/i, '');
+  // "What do (you|people) X" → "X"
+  text = text.replace(/^what\s+do\s+(?:you|people)\s+/i, '');
+  return text.trim();
+}
+
+/**
  * Insert a generated question into the candidate pool. No date, no seeding —
  * those happen at promotion time.
  */
 async function insertGeneratedCandidate(generated) {
+  const guessPrompt = (typeof generated.guess_prompt === 'string' && generated.guess_prompt.trim())
+    ? generated.guess_prompt.trim()
+    : deriveGuessPrompt(generated.question);
+
   const { data, error } = await supabase
     .from('questions')
     .insert([{
       question_text: generated.question,
+      guess_prompt: guessPrompt,
       active_date: null,
       voting_complete: false,
       source: 'generated',

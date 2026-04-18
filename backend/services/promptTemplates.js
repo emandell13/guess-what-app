@@ -297,9 +297,17 @@ BATCH VARIETY RULES:
 - Spread across different categories
 - Don't stack multiple questions from the same archetype/category pair
 
+EACH question needs a "guess_prompt" — the noun-phrase the in-game guessing UI uses
+right after "Name…" or "What's…". It should be lowercase, no leading article when
+awkward, no trailing punctuation, and should slot into the player's mental sentence
+"_______". Examples:
+- question: "Name a chore people hate doing." → guess_prompt: "a chore people hate doing"
+- question: "What's the first thing you do when you get home from work?" → guess_prompt: "the first thing people do when they get home from work"
+- question: "Name something you'd hide from your in-laws." → guess_prompt: "something you'd hide from your in-laws"
+
 Generate exactly ${n} NEW questions (not in the forbidden list above). Return ONLY valid JSON, no prose:
 [
-  { "archetype": "...", "category": "...", "question": "..." },
+  { "archetype": "...", "category": "...", "question": "...", "guess_prompt": "..." },
   ...
 ]
 `.trim();
