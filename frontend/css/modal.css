@@ -952,7 +952,7 @@
     transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
-.pick-badge-check {
+.pick-badge .pick-badge-check {
     display: none;
     font-size: 1rem;
 }
@@ -967,8 +967,8 @@
     display: none;
 }
 
-.pick-card.selected .pick-badge-check {
-    display: inline;
+.pick-card.selected .pick-badge .pick-badge-check {
+    display: inline-block;
     animation: pick-pop 0.3s ease;
 }
 
