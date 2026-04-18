@@ -372,6 +372,70 @@ async function generateWrongGuessCommentary(questionText, guess, poolCount) {
 }
 
 /**
+ * Record that the current player revealed a hint. Increments hints_revealed
+ * on their game_progress row for today's question (creating the row if this
+ * is their first action of the game). Idempotency is delegated to the client
+ * — HintButton only posts on a fresh reveal, not on same-day session restore.
+ */
+async function recordHintReveal(userId = null, visitorId = null) {
+    if (!userId && !visitorId) {
+        return { success: false, error: 'No identifier provided' };
+    }
+
+    const question = await getCurrentQuestion();
+
+    let query = supabase
+        .from('game_progress')
+        .select('id, hints_revealed')
+        .eq('question_id', question.id);
+
+    if (userId) {
+        query = query.eq('user_id', userId);
+    } else {
+        query = query.eq('visitor_id', visitorId);
+    }
+
+    const { data: existing, error: findError } = await query.maybeSingle();
+
+    if (findError) {
+        console.error('Error finding game progress for hint reveal:', findError);
+        return { success: false, error: 'Failed to record hint reveal' };
+    }
+
+    if (existing) {
+        const { error: updateError } = await supabase
+            .from('game_progress')
+            .update({ hints_revealed: (existing.hints_revealed || 0) + 1 })
+            .eq('id', existing.id);
+        if (updateError) {
+            console.error('Error incrementing hints_revealed:', updateError);
+            return { success: false, error: 'Failed to record hint reveal' };
+        }
+    } else {
+        const newRow = {
+            question_id: question.id,
+            total_guesses: 0,
+            strikes: 0,
+            completed: false,
+            gave_up: false,
+            hints_revealed: 1
+        };
+        if (userId) newRow.user_id = userId;
+        if (visitorId) newRow.visitor_id = visitorId;
+
+        const { error: insertError } = await supabase
+            .from('game_progress')
+            .insert([newRow]);
+        if (insertError) {
+            console.error('Error creating game progress for hint reveal:', insertError);
+            return { success: false, error: 'Failed to record hint reveal' };
+        }
+    }
+
+    return { success: true };
+}
+
+/**
  * Get hints for all top answers for a question
  * @param {number} questionId - The question ID
  * @returns {Promise<Array>} - Array of hints with answer IDs
@@ -398,5 +462,6 @@ module.exports = {
     getTopAnswers,
     getAnswerHint,
     checkGuess,
-    getHintsForQuestion
+    getHintsForQuestion,
+    recordHintReveal
 }

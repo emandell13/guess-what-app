@@ -1,7 +1,8 @@
 // frontend/js/components/HintButton.js
 import eventService from '../services/EventService.js';
 import gameService from '../services/GameService.js';
-import { saveTodayHintedRanks, getTodayHintedRanks } from '../utils/visitorUtils.js';
+import authService from '../services/AuthService.js';
+import { getVisitorId, saveTodayHintedRanks, getTodayHintedRanks } from '../utils/visitorUtils.js';
 
 /**
  * Combined "Get a hint" + "Give Up" escalating button.
@@ -106,7 +107,28 @@ class HintButton {
     // Let the corresponding answer box flip and show the hint in-place
     eventService.emit('hint:revealed', { rank: nextRank, hint: hintText });
 
+    // Fire-and-forget: server-side counter for question-quality analytics.
+    // Only posts on fresh reveals; restoreHintedRanks replays without hitting
+    // this path so same-day refreshes don't double-count.
+    this.postHintRevealed();
+
     this.updateButtonState();
+  }
+
+  async postHintRevealed() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authService.isAuthenticated()) {
+        headers['Authorization'] = `Bearer ${authService.token}`;
+      }
+      await fetch('/guesses/hint-revealed', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ visitorId: getVisitorId() })
+      });
+    } catch (err) {
+      console.error('Failed to record hint reveal:', err);
+    }
   }
 
   /**

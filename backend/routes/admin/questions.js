@@ -3,6 +3,52 @@ const router = express.Router();
 const supabase = require('../../config/supabase');
 const { getTodayDate, getTomorrowDate } = require('../../utils/dateUtils');
 
+function computeEngagementMetrics(progressRows) {
+    const totalPlays = progressRows.length;
+    if (totalPlays === 0) {
+        return {
+            totalPlays: 0,
+            uniquePlayers: 0,
+            completions: 0,
+            gaveUps: 0,
+            abandoned: 0,
+            completionRate: 0,
+            abandonmentRate: 0,
+            avgGuesses: 0,
+            avgGuessesOnWin: 0,
+            avgStrikes: 0,
+            avgHintsRevealed: 0
+        };
+    }
+
+    // Count an authenticated user once and an anonymous visitor once. A player
+    // with both a user_id and a visitor_id on the same row still counts once.
+    const playerKeys = new Set(
+        progressRows.map(p => p.user_id ? `u:${p.user_id}` : `v:${p.visitor_id}`)
+    );
+
+    const wins = progressRows.filter(p => p.completed && !p.gave_up);
+    const completions = wins.length;
+    const gaveUps = progressRows.filter(p => p.gave_up).length;
+    const abandoned = totalPlays - completions - gaveUps;
+
+    const sum = (rows, key) => rows.reduce((s, r) => s + (r[key] || 0), 0);
+
+    return {
+        totalPlays,
+        uniquePlayers: playerKeys.size,
+        completions,
+        gaveUps,
+        abandoned,
+        completionRate: completions / totalPlays,
+        abandonmentRate: abandoned / totalPlays,
+        avgGuesses: sum(progressRows, 'total_guesses') / totalPlays,
+        avgGuessesOnWin: wins.length > 0 ? sum(wins, 'total_guesses') / wins.length : 0,
+        avgStrikes: sum(progressRows, 'strikes') / totalPlays,
+        avgHintsRevealed: sum(progressRows, 'hints_revealed') / totalPlays
+    };
+}
+
 // Get all questions
 router.get('/', async (req, res) => {
     try {
@@ -109,12 +155,25 @@ router.get('/:id', async (req, res) => {
         
         // Get vote count
         const voteCount = votes.length;
-        
-        res.json({ 
-            question, 
+
+        // Engagement metrics — per-question aggregation over game_progress.
+        // Drives the admin analytics view so we can see which questions
+        // actually landed (completion rate, abandonment, hint reliance).
+        const { data: progress, error: progressError } = await supabase
+            .from('game_progress')
+            .select('user_id, visitor_id, total_guesses, strikes, completed, gave_up, hints_revealed')
+            .eq('question_id', id);
+
+        if (progressError) throw progressError;
+
+        const engagement = computeEngagementMetrics(progress || []);
+
+        res.json({
+            question,
             topAnswers: topAnswers || [],
             voteCount: voteCount || 0,
-            voteDistribution: sortedVotes
+            voteDistribution: sortedVotes,
+            engagement
         });
     } catch (error) {
         console.error('Error fetching question:', error);

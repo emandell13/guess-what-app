@@ -142,6 +142,38 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Record that the player revealed a hint. Increments hints_revealed on the
+// caller's game_progress row for today's question so the admin analytics view
+// can surface how much scaffolding a question needed.
+router.post('/hint-revealed', async (req, res) => {
+    try {
+        const { visitorId } = req.body;
+
+        let userId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            const token = req.headers.authorization.split(' ')[1];
+            try {
+                const { data, error } = await supabase.auth.getUser(token);
+                if (!error && data && data.user) {
+                    userId = data.user.id;
+                }
+            } catch (authError) {
+                console.error('Auth error (non-critical):', authError);
+            }
+        }
+
+        if (visitorId) {
+            await visitorService.ensureVisitorExists(visitorId, userId);
+        }
+
+        const result = await guessService.recordHintReveal(userId, visitorId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error recording hint reveal:', error);
+        res.status(500).json({ error: 'Failed to record hint reveal' });
+    }
+});
+
 // Add this route to the file
 router.post('/giveup', async (req, res) => {
     try {

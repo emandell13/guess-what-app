@@ -223,6 +223,16 @@ const QuestionsManager = {
                     document.getElementById('top-answers-section').style.display = 'none';
                 }
 
+                // Engagement metrics show once the question is live or past.
+                // Voting/upcoming questions have no plays yet, so skip.
+                const engagementSection = document.getElementById('engagement-metrics-section');
+                if ((status === 'active' || status === 'completed') && data.engagement) {
+                    this.showEngagementMetrics(data.engagement);
+                    engagementSection.style.display = 'block';
+                } else {
+                    engagementSection.style.display = 'none';
+                }
+
                 // Update vote distribution if in voting phase or if there are votes
                 if (status === 'voting' && data.voteDistribution && data.voteDistribution.length > 0) {
                     window.app.votingManager.showVoteDistribution(id, data.voteCount);
@@ -248,6 +258,71 @@ const QuestionsManager = {
             document.getElementById('questionDetails').innerHTML =
                 '<div class="alert alert-danger">Failed to load question details</div>';
         }
+    },
+
+    showEngagementMetrics: function (engagement) {
+        const body = document.getElementById('engagement-metrics-body');
+        if (!body) return;
+
+        if (!engagement || engagement.totalPlays === 0) {
+            body.innerHTML = '<p class="text-muted mb-0 text-center py-2">No plays recorded yet.</p>';
+            return;
+        }
+
+        const pct = (v) => `${Math.round(v * 100)}%`;
+        const num = (v) => (Math.round(v * 10) / 10).toFixed(1);
+
+        body.innerHTML = `
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Unique players</div>
+                    <div class="fs-4 fw-semibold">${engagement.uniquePlayers}</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Total plays</div>
+                    <div class="fs-4 fw-semibold">${engagement.totalPlays}</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Completion rate</div>
+                    <div class="fs-4 fw-semibold">${pct(engagement.completionRate)}</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-muted small">Abandonment rate</div>
+                    <div class="fs-4 fw-semibold">${pct(engagement.abandonmentRate)}</div>
+                </div>
+            </div>
+            <hr class="my-3">
+            <div class="row g-2 small">
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Wins:</span>
+                    <span class="fw-semibold">${engagement.completions}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Gave up:</span>
+                    <span class="fw-semibold">${engagement.gaveUps}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Abandoned:</span>
+                    <span class="fw-semibold">${engagement.abandoned}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Avg guesses:</span>
+                    <span class="fw-semibold">${num(engagement.avgGuesses)}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Avg guesses (wins):</span>
+                    <span class="fw-semibold">${num(engagement.avgGuessesOnWin)}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Avg strikes:</span>
+                    <span class="fw-semibold">${num(engagement.avgStrikes)}</span>
+                </div>
+                <div class="col-6 col-md-4">
+                    <span class="text-muted">Avg hints revealed:</span>
+                    <span class="fw-semibold">${num(engagement.avgHintsRevealed)}</span>
+                </div>
+            </div>
+        `;
     },
 
     showTopAnswers: function (topAnswers) {
@@ -392,9 +467,10 @@ const QuestionsManager = {
             document.getElementById('questionDetails').innerHTML =
                 '<p class="text-center text-muted my-4">Select a question to view details</p>';
 
-            // Hide vote distribution and top answers sections
+            // Hide vote distribution, top answers, and engagement sections
             document.getElementById('vote-distribution-section').style.display = 'none';
             document.getElementById('top-answers-section').style.display = 'none';
+            document.getElementById('engagement-metrics-section').style.display = 'none';
 
         } catch (error) {
             console.error('Error deleting question:', error);
