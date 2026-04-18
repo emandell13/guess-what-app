@@ -7,7 +7,7 @@ const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('../services/llmService');
 const { createAnswerGroupingPrompt, createHintGenerationPrompt, createHintRatingPrompt, createQuipPrompt } = require('../services/promptTemplates');
-const { replenishPipeline, promoteNextCandidate } = require('../services/contentEngine');
+const { replenishPipeline, promoteNextCandidate, retireDuds } = require('../services/contentEngine');
 
 /**
  * Daily update process that tallies votes for today's question
@@ -24,17 +24,27 @@ async function dailyUpdate() {
     // Step 1: Tally today's question (was in voting phase yesterday).
     await tallyVotesForTodaysQuestion(todayDate);
 
-    // Step 2: Replenish the candidate pool so promotion has options.
-    // Doing this before promotion guarantees liveness even from a cold start.
+    // Step 2: Retire dud candidates (shown enough to judge, never picked)
+    // BEFORE replenishing — so the pool drops, then generation tops it back up.
+    let retireResult = null;
+    try {
+      retireResult = await retireDuds();
+      console.log(`Retired ${retireResult.retired.length} dud candidates`);
+    } catch (err) {
+      console.error('Dud retirement failed (continuing):', err);
+    }
+
+    // Step 3: Replenish the candidate pool to its target size so promotion
+    // has options. Maintains a steady pool, doesn't grow unboundedly.
     let replenishResult = null;
     try {
       replenishResult = await replenishPipeline();
-      console.log(`Replenished pool with ${replenishResult.generated} new candidates`);
+      console.log(`Pool now at ${replenishResult.poolSize || '?'}/${10} after generating ${replenishResult.generated}`);
     } catch (err) {
       console.error('Candidate pool replenishment failed (continuing):', err);
     }
 
-    // Step 3: Promote the top-picked candidate to tomorrow's scheduled
+    // Step 4: Promote the top-picked candidate to tomorrow's scheduled
     // question (sets active_date, seeds answers). Idempotent.
     const tomorrowDate = getTomorrowDate();
     let promotionResult = null;
@@ -47,6 +57,7 @@ async function dailyUpdate() {
     console.log('Daily update completed successfully');
     return {
       success: true,
+      retire: retireResult,
       replenish: replenishResult,
       promotion: promotionResult
     };

@@ -19,10 +19,10 @@ const DEFAULT_LIMIT = 3;
  * provided (handles cross-device account-holders without losing the rule).
  */
 async function getCandidatesForVoter({ visitorId = null, userId = null, limit = DEFAULT_LIMIT } = {}) {
-  // 1. All current candidates.
+  // 1. Current candidates with their impression counts.
   const { data: candidates, error: candidatesError } = await supabase
     .from('questions')
-    .select('id, question_text')
+    .select('id, question_text, impression_count')
     .eq('status', 'candidate');
 
   if (candidatesError) throw candidatesError;
@@ -50,32 +50,35 @@ async function getCandidatesForVoter({ visitorId = null, userId = null, limit = 
   const eligible = candidates.filter(c => !pickedIds.has(c.id));
   if (eligible.length === 0) return [];
 
-  // 3. Aggregate pick counts for the eligible candidates.
-  const eligibleIds = eligible.map(c => c.id);
-  const { data: pickRows, error: countsError } = await supabase
-    .from('question_picks')
-    .select('question_id')
-    .in('question_id', eligibleIds);
-
-  if (countsError) {
-    console.error('Error fetching pick counts (treating all as zero):', countsError);
-  }
-
-  const pickCounts = {};
-  (pickRows || []).forEach(row => {
-    pickCounts[row.question_id] = (pickCounts[row.question_id] || 0) + 1;
-  });
-
-  // 4. Fewest picks first; random within ties so we don't always show the
-  //    same trio.
+  // 3. Least-shown first; random tiebreak so we don't always show the same
+  //    trio to the same viewer-session. Basing serving on impressions (not
+  //    picks) gives every candidate fair exposure — a just-picked candidate
+  //    doesn't get demoted out of rotation just because someone liked it.
   const sorted = eligible.slice().sort((a, b) => {
-    const ca = pickCounts[a.id] || 0;
-    const cb = pickCounts[b.id] || 0;
-    if (ca !== cb) return ca - cb;
+    const ia = a.impression_count || 0;
+    const ib = b.impression_count || 0;
+    if (ia !== ib) return ia - ib;
     return Math.random() - 0.5;
   });
 
-  return sorted.slice(0, limit);
+  const chosen = sorted.slice(0, limit);
+
+  // 4. Bump impression counts for the chosen set. Best-effort — a failure
+  //    here shouldn't block the response; the voter still sees candidates.
+  if (chosen.length > 0) {
+    try {
+      const { error: rpcError } = await supabase.rpc('increment_impression_counts', {
+        question_ids: chosen.map(c => c.id)
+      });
+      if (rpcError) {
+        console.error('increment_impression_counts RPC failed:', rpcError);
+      }
+    } catch (err) {
+      console.error('increment_impression_counts RPC threw:', err);
+    }
+  }
+
+  return chosen.map(c => ({ id: c.id, question_text: c.question_text }));
 }
 
 /**

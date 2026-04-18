@@ -18,7 +18,8 @@ const {
   createAnswerSeedingPrompt
 } = require('./promptTemplates');
 
-const NEW_CANDIDATES_PER_RUN = 5;
+const TARGET_POOL_SIZE = 10;
+const RETIRE_IMPRESSION_THRESHOLD = 30;
 const RECENT_QUESTIONS_LIMIT = 30;
 
 /**
@@ -267,17 +268,85 @@ async function promoteNextCandidate(activeDate) {
 }
 
 /**
- * Add N new candidate questions to the pool. Idempotent in the sense that
- * running it multiple times just adds more candidates — there's no upper
- * cap; ranking + promotion drains the pool naturally.
+ * Retire candidates that have been shown at least `impressionThreshold` times
+ * without accumulating a single pick. Fair dud-detection — rather than calendar
+ * age, we use actual exposure to decide whether a candidate has had its chance.
+ * Retired rows stay in the table (status='retired') for analytics; they're
+ * excluded from candidate queries.
+ */
+async function retireDuds(options = {}) {
+  const threshold = options.impressionThreshold || RETIRE_IMPRESSION_THRESHOLD;
+
+  const { data: exposed, error: exposedError } = await supabase
+    .from('questions')
+    .select('id, question_text, impression_count')
+    .eq('status', 'candidate')
+    .gte('impression_count', threshold);
+
+  if (exposedError) throw exposedError;
+  if (!exposed || exposed.length === 0) return { retired: [] };
+
+  const exposedIds = exposed.map(c => c.id);
+  const { data: pickRows, error: pickError } = await supabase
+    .from('question_picks')
+    .select('question_id')
+    .in('question_id', exposedIds);
+
+  if (pickError) {
+    console.error('Error checking picks during retirement (skipping retire):', pickError);
+    return { retired: [], error: pickError.message };
+  }
+
+  const pickedIds = new Set((pickRows || []).map(r => r.question_id));
+  const dudIds = exposedIds.filter(id => !pickedIds.has(id));
+
+  if (dudIds.length === 0) return { retired: [] };
+
+  const { data: retired, error: updateError } = await supabase
+    .from('questions')
+    .update({ status: 'retired' })
+    .in('id', dudIds)
+    .select('id, question_text, impression_count');
+
+  if (updateError) throw updateError;
+
+  (retired || []).forEach(r => {
+    console.log(`Retired dud candidate: "${r.question_text}" (${r.impression_count} impressions, 0 picks)`);
+  });
+
+  return { retired: retired || [] };
+}
+
+/**
+ * Generate just enough new candidates to bring the pool up to the target
+ * size. Self-throttling — if the pool is already full, no generation happens;
+ * if retirement drained it, we catch up. Matches consumption (1/day via
+ * promotion + occasional retirement) rather than a fixed generation rate.
  */
 async function replenishPipeline(options = {}) {
-  const count = options.count || NEW_CANDIDATES_PER_RUN;
-  const recentQuestions = await getRecentQuestions();
+  const targetSize = options.targetSize || TARGET_POOL_SIZE;
 
+  const { count, error: countError } = await supabase
+    .from('questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'candidate');
+
+  if (countError) throw countError;
+
+  const currentSize = count || 0;
+  const needed = Math.max(0, targetSize - currentSize);
+
+  if (needed === 0) {
+    console.log(`Candidate pool at ${currentSize}/${targetSize}; no generation needed`);
+    return { generated: 0, seeded: 0, created: [], poolSize: currentSize };
+  }
+
+  console.log(`Candidate pool at ${currentSize}/${targetSize}; generating ${needed}`);
+
+  const recentQuestions = await getRecentQuestions();
   let newQuestions;
   try {
-    newQuestions = await generateQuestions(count, recentQuestions);
+    newQuestions = await generateQuestions(needed, recentQuestions);
   } catch (err) {
     console.error('Question generation failed:', err);
     return { generated: 0, seeded: 0, created: [], error: err.message };
@@ -302,7 +371,8 @@ async function replenishPipeline(options = {}) {
   return {
     generated: newQuestions.length,
     seeded: 0, // Seeding deferred to promotion.
-    created
+    created,
+    poolSize: currentSize + created.length
   };
 }
 
@@ -310,8 +380,10 @@ module.exports = {
   generateQuestions,
   seedVotesForQuestion,
   replenishPipeline,
+  retireDuds,
   promoteNextCandidate,
   getUpcomingQuestions,
   getCandidatePool,
-  NEW_CANDIDATES_PER_RUN
+  TARGET_POOL_SIZE,
+  RETIRE_IMPRESSION_THRESHOLD
 };
