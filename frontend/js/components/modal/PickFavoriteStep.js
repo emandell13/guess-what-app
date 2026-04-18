@@ -61,7 +61,7 @@ class PickFavoriteStep {
       card.innerHTML = `
         <div class="pick-badge">
           <span class="pick-badge-num">${idx + 1}</span>
-          <i class="bi bi-check-lg pick-badge-check"></i>
+          <i class="fas fa-check pick-badge-check"></i>
         </div>
         <div class="pick-text">${this.escapeHtml(candidate.question_text)}</div>
       `;
