@@ -108,6 +108,9 @@ Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for un
 ### Dependency vulnerabilities
 GitHub / Dependabot flagged 22 open vulnerabilities on main at the 2026-04-17 deploy (2 critical, 17 high, 1 moderate, 2 low). Nothing is actively broken, but the critical/high counts are high enough that a prioritized audit + `npm audit fix` pass is worth scheduling. Likely mostly transitive deps from older packages; check if any are in the request path (Express, Supabase client, Anthropic SDK) vs. dev-only tooling.
 
+### Backend uses anon key for everything (RLS silently blocks DELETEs)
+The backend's `backend/config/supabase.js` instantiates the Supabase client with `SUPABASE_ANON_KEY` for all calls — admin endpoints included. Row-Level-Security on the `questions` table allows SELECT/INSERT/UPDATE for the anon role but blocks DELETE, so any code path that calls `.delete()` (e.g. `backend/routes/admin/questions.js` DELETE `/admin/questions/:id`) silently affects 0 rows with no error. Discovered while trying to bulk-delete future-dated manual questions during the candidate-pool migration; had to fall back to running raw SQL in the Supabase editor. Fix: add `SUPABASE_SERVICE_ROLE_KEY` to Heroku config and instantiate a separate privileged client (e.g. `supabaseAdmin`) used only by admin/cron paths, leaving the anon client for user-facing endpoints.
+
 ---
 
 ## In progress
