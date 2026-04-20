@@ -123,6 +123,13 @@ class GuessForm {
 
     // Reset form
     this.form.reset();
+
+    // On mobile, close the keyboard after a guess so the player can see
+    // the full board (revealed tiles, strikes, host commentary). They'll
+    // tap the input again to guess next.
+    if (window.matchMedia('(max-width: 767.98px)').matches) {
+      this.input.blur();
+    }
   }
 
   /**

@@ -46,79 +46,46 @@ class App {
   }
 
   /**
-   * Setup mobile keyboard handling with VisualViewport API and fallbacks
+   * Setup mobile keyboard handling for the three-zone shell.
+   *
+   * Writes --viewport-h (= visualViewport.height) to the root so the
+   * shell in styles.css sizes exactly to the visual viewport. When the
+   * keyboard opens the visual viewport shrinks and the shell shrinks
+   * with it, keeping the header pinned and the input just above the keys.
+   *
+   * Also force-resets window scroll on input focus to counteract iOS
+   * Safari's auto-scroll-into-view, which otherwise yanks the "fixed"
+   * header up even though overflow is hidden.
    */
   setupMobileKeyboardHandling() {
-    // Only apply on mobile devices
-    if (!window.matchMedia('(max-width: 767.98px)').matches) {
-      return;
-    }
+    if (!window.matchMedia('(max-width: 767.98px)').matches) return;
+    if (!window.visualViewport) return;
 
-    // Get input element
-    const inputElement = document.querySelector('#guess-form input');
-    inputElement.addEventListener('focus', () => {
-      setTimeout(() => {
-        inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
-    });
-    if (!inputElement) return;
+    const root = document.documentElement;
+    let rafId = null;
 
-    // Use the VisualViewport API which is specifically designed for handling mobile keyboards
-    if (window.visualViewport) {
-      const guessForm = document.getElementById('guess-form-container');
-      const updatePosition = () => {
-        if (!guessForm) return;
-        const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-        guessForm.style.transform = offset > 0 ? `translateY(-${offset}px)` : 'translateY(0)';
-      };
-      let vpTimeout;
-      const handleViewportChange = () => {
-        clearTimeout(vpTimeout);
-        vpTimeout = setTimeout(updatePosition, 10);
-      };
+    const applyHeight = () => {
+      rafId = null;
+      root.style.setProperty('--viewport-h', `${window.visualViewport.height}px`);
+    };
 
-      window.visualViewport.addEventListener("resize", handleViewportChange);
-      window.visualViewport.addEventListener("scroll", handleViewportChange);
-    }
-    // Fallback for browsers without VisualViewport API - use the CSS variable approach
-    else {
-      // Set initial viewport height
-      const setViewportHeight = () => {
-        // First we get the viewport height and multiply it by 1% to get a value for a vh unit
-        const vh = window.innerHeight * 0.01;
-        // Then we set the value in the --vh custom property to the root of the document
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-      };
+    const schedule = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(applyHeight);
+    };
 
-      // Set the height initially
-      setViewportHeight();
+    window.visualViewport.addEventListener('resize', schedule);
+    window.visualViewport.addEventListener('scroll', schedule);
+    applyHeight();
 
-      // Update the height on resize (with debounce for performance)
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(setViewportHeight, 150);
+    const input = document.querySelector('#guess-form input');
+    if (input) {
+      const pinScroll = () => window.scrollTo(0, 0);
+      input.addEventListener('focus', () => {
+        pinScroll();
+        setTimeout(pinScroll, 50);
+        setTimeout(pinScroll, 200);
       });
-
-      // Handle iOS specific issues by listening for orientation changes
-      window.addEventListener('orientationchange', () => {
-        // Small timeout to wait for the resize to finish
-        setTimeout(setViewportHeight, 200);
-      });
-
-      // Additional handling for input focus
-      inputElement.addEventListener('focus', () => {
-        // Delay scroll to allow keyboard to fully open
-        setTimeout(() => {
-          inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      });
-    }
-
-    // Add padding to prevent content from being hidden behind the form on mobile
-    const content = document.querySelector('.container');
-    if (content) {
-      content.style.paddingBottom = '4.5rem'; // Match the form container height
     }
   }
 
@@ -358,11 +325,58 @@ class App {
   }
 
   /**
+   * Paint a canned game state for the ?mock=1 preview URL. Replaces the
+   * skeleton placeholders with a fixed question, date, and partially
+   * played answer board so mobile layout can be reviewed without a
+   * live game. Never reachable in prod outside the mock URL.
+   */
+  paintMockState() {
+    const date = document.getElementById('question-date');
+    if (date) date.textContent = 'Sunday, April 19';
+
+    this.questionHeading.textContent = "Name something you'd bring to a picnic.";
+
+    const chrome = document.getElementById('game-chrome-row');
+    if (chrome) chrome.classList.remove('pre-init');
+
+    const boxes = document.getElementById('answer-boxes');
+    if (!boxes) return;
+    const mock = [
+      { rank: 1, text: 'Sandwiches', points: 42, solved: true },
+      { rank: 2, text: 'Blanket', points: 28, solved: true },
+      { rank: 3, text: '', points: 0, solved: false },
+      { rank: 4, text: '', points: 0, solved: false },
+      { rank: 5, text: '', points: 0, solved: false },
+    ];
+    boxes.innerHTML = mock.map(m => `
+      <div class="col-12 answer-box">
+        <div class="card w-100">
+          <div class="card-body d-flex justify-content-between align-items-center ${m.solved ? 'bg-success bg-opacity-25' : 'bg-light'}">
+            <div class="d-flex align-items-center w-100 answer-content">
+              <span class="answer-rank">${m.rank}</span>
+              <span class="answer-text ${m.solved ? 'visible' : ''} flex-grow-1 text-center h5 mb-0">${m.text}</span>
+              <span class="points badge ${m.solved ? '' : 'd-none'}">${m.solved ? m.points : '0 pts'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /**
  * Initialize the application
  */
   async initialize() {
     // Reset celebration flag for new games
     this.hasCelebratedPerfectGame = false;
+
+    // ?mock=1 skips game/server init and paints a canned mock state so
+    // the full mobile layout can be previewed without playing a game.
+    // Prod users never see this — it only activates via the URL flag.
+    if (new URLSearchParams(window.location.search).get('mock') === '1') {
+      this.paintMockState();
+      return;
+    }
 
     // Initialize game
     const gameInitResult = await gameService.initialize();

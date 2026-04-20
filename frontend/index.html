@@ -56,7 +56,10 @@
     </div>
     <div class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-lg-6">
+            <div class="col-lg-6 game-col">
+                <!-- Mobile shell: sticky header zone (logo, date, question,
+                     strikes/hint). On desktop the zone is a plain wrapper. -->
+                <div class="mobile-header-zone">
                 <!-- Logo -->
                 <div class="position-relative mb-5">
                     <!-- Fixed-width container for the auth button -->
@@ -120,9 +123,10 @@
                         <button id="hint-button" class="hint-cta btn-sm" type="button" data-state="0" disabled>Get a hint</button>
                     </div>
                 </div>
+                </div><!-- /.mobile-header-zone -->
 
                 <!-- Answer Boxes Container -->
-                <div class="mb-4 answer-boxes-wrapper">
+                <div class="mb-4 answer-boxes-wrapper mobile-board-zone">
                     <div class="row g-3" id="answer-boxes">
                         <!-- Skeleton placeholders; replaced when AnswerGrid initializes -->
                         <div class="col-12 skeleton-answer-wrapper" aria-hidden="true">
@@ -148,12 +152,12 @@
                 <div id="guess-form-placeholder"></div>
 
                 <!-- Guessing Module -->
-                <div id="guess-form-container">
+                <div id="guess-form-container" class="mobile-input-zone">
                     <div class="guess-outer-container">
                         <form id="guess-form" novalidate>
                             <div class="input-group">
                                 <input type="text" class="form-control guess-input" placeholder="Type your guess here"
-                                    required autofocus>
+                                    required>
                                 <button class="btn btn-dark">Guess</button>
                             </div>
                         </form>
