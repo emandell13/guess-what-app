@@ -87,6 +87,19 @@ class App {
         setTimeout(pinScroll, 200);
       });
     }
+
+    // Host commentary + closeness-feedback bubbles live in <body> by
+    // default and position: fixed relative to the layout viewport. On
+    // mobile the shell covers only the visual viewport, so fixed bottom
+    // offsets hide them behind the keyboard. Relocate into the input
+    // zone so their absolute positioning anchors just above the input.
+    const inputZone = document.querySelector('.mobile-input-zone');
+    if (inputZone) {
+      const commentary = document.getElementById('commentary-overlay');
+      const closeness = document.getElementById('closeness-feedback');
+      if (commentary) inputZone.appendChild(commentary);
+      if (closeness) inputZone.appendChild(closeness);
+    }
   }
 
   /**
