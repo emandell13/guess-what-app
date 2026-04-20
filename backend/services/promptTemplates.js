@@ -297,13 +297,25 @@ BATCH VARIETY RULES:
 - Spread across different categories
 - Don't stack multiple questions from the same archetype/category pair
 
-EACH question needs a "guess_prompt" — the noun-phrase the in-game guessing UI uses
-right after "Name…" or "What's…". It should be lowercase, no leading article when
-awkward, no trailing punctuation, and should slot into the player's mental sentence
-"_______". Examples:
+EACH question needs a "guess_prompt" — the noun-phrase that slots into the
+in-game guessing sentence: "What did N people say was ___?". It should be
+lowercase, no leading article when awkward, and no trailing punctuation.
+
+PRONOUN RULE — the "N people" in the outer sentence are the voters. Anything
+inside the guess_prompt that refers to *them* must use third-person plural
+("they" / "their" / "themselves"), never second-person ("you" / "your") and
+never a second "people" that echoes the outer "N people":
+- When the source question addresses the voter in 2nd person ("What's the
+  first thing YOU do…", "Name something YOU'D hide…"), convert YOU→THEY and
+  YOUR→THEIR in the guess_prompt so the clause refers back to the N voters.
+- Only keep "people" inside the guess_prompt when it means people-in-general
+  and is NOT the subject of the embedded clause (e.g. "a chore people hate
+  doing" is fine — "people" modifies the chore, it isn't echoing the voters).
+
+Examples:
 - question: "Name a chore people hate doing." → guess_prompt: "a chore people hate doing"
-- question: "What's the first thing you do when you get home from work?" → guess_prompt: "the first thing people do when they get home from work"
-- question: "Name something you'd hide from your in-laws." → guess_prompt: "something you'd hide from your in-laws"
+- question: "What's the first thing you do when you get home from work?" → guess_prompt: "the first thing they do when they get home from work"
+- question: "Name something you'd hide from your in-laws." → guess_prompt: "something they'd hide from their in-laws"
 
 Generate exactly ${n} NEW questions (not in the forbidden list above). Return ONLY valid JSON, no prose:
 [
