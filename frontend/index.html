@@ -72,7 +72,7 @@
                          letter tile can be animated individually on load. -->
                     <div class="text-center">
                         <a href="/" title="Guess What!">
-                            <svg class="logo-image logo-animate-on-load" viewBox="0 0 121 54"
+                            <svg class="logo-image" viewBox="0 0 121 54"
                                  xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Guess What!">
                                 <title>Guess What!</title>
                                 <!-- Row 1: GUESS (filled) — tiles 0-4 -->
@@ -101,6 +101,17 @@
                         </a>
                     </div>
                 </div>
+                <script>
+                    // Apply the wave-animation class after the SVG is in the
+                    // DOM so iOS Safari reliably fires the entrance animation
+                    // on mobile — adding the class via a pre-parse attribute
+                    // could be skipped when the animation is set before
+                    // layout settles.
+                    (function () {
+                        var logo = document.querySelector('.logo-image');
+                        if (logo) logo.classList.add('logo-animate-on-load');
+                    })();
+                </script>
 
                 <!-- Date placeholder (seeded with skeleton; replaced on init) -->
                 <h5 id="question-date" class="text-center mb-3" aria-hidden="true">
