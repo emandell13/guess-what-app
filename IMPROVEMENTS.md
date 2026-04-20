@@ -23,9 +23,6 @@ An automated process that grades generated questions against Family Feud-style c
 ### 6. Revisit "you already guessed that" UI
 Currently shows as a floating Bootstrap alert at the top of the page. Should feel more integrated with the guess input — inline message near the input, subtle animation, no banner.
 
-### 7. Personality pass on completion-module headings
-"You win!" / "Better luck next time!" / "Perfect Game!" are generic and drop the host voice the rest of the game has. Replace with a variety pool of host-style lines that vary by performance (and ideally by question), so the modal feels like the same host who's been talking to players all game.
-
 ### 8. Contextualize the guess count in the summary
 Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #13 (post-game insights).
 
@@ -108,6 +105,9 @@ The backend's `backend/config/supabase.js` instantiates the Supabase client with
 ---
 
 ## In progress
+
+### Personality pass on completion-module headings
+"You win!" / "Better luck next time!" / "Perfect Game!" are generic and drop the host voice the rest of the game has. Replace with a variety pool of host-style lines that vary by performance (and ideally by question), so the modal feels like the same host who's been talking to players all game.
 
 ### Iterate on host commentary (reveals + wrong guesses)
 Host commentary is live on both #1 reveals and wrong-guess closeness feedback, but the copy needs tuning — tone, timing, and variety across question types. Should feel like a host, not a bit. Needs a variety pool so quips don't repeat across sessions, and Claude-generated lines per question rather than today's hardcoded placeholders.
