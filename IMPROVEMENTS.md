@@ -56,6 +56,9 @@ A broader pass on the post-completion module — visual hierarchy, pacing betwee
 ### 25. Improve the mobile experience
 General mobile polish pass. Specific pain points TBD — likely touches guess input ergonomics, modal sizing, tap targets, and post-completion flow on small screens. Worth auditing end-to-end on a phone before scoping individual tickets.
 
+### 26. Hide the question picker after a player has already voted today
+The future-question voting step (#1) should not re-show to a player who's already seen it and submitted votes on a given day. Today it appears every time they land back on the completion flow, which feels repetitive and risks double-voting noise. Track per-player/day vote state and skip the step on subsequent visits — collapse straight to the next step or show a brief "thanks, see you tomorrow" acknowledgement in its place.
+
 ---
 
 ## 2. Retention
