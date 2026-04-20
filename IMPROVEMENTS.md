@@ -11,14 +11,8 @@ Within each tier, items are ordered top-down by rough priority/impact. Monetizat
 
 ## 1. Game play
 
-### 1. Let players vote on future questions
-After completing today's game, show players 3–5 candidate questions for a future day and let them thumbs-up / check the ones they find interesting (ranking possible later for sharper signal). Generates continuous crowdsourced quality signal and taps peak engagement right after the finish. Complements #3, which infers quality from play behavior post-hoc — this one is explicit preference. Lives in the post-completion module. Pipeline and Claude-seeded answers already exist, so this is purely the voting UI + storage + surfacing logic.
-
-### 2. Hard mode
-Fewer strikes, no hints, maybe a time limit — for repeat players who finish too easily.
-
-### 3. Feedback loop on question quality
-A way to learn per-question whether it landed (engagement, completion rate, play time, share rate) so Claude can self-improve over time.
+### 3. Wire per-question engagement signals back into question generation
+Per-question metrics — completion rate, abandonment, avg guesses, avg hints revealed — are already computed in `backend/routes/admin/questions.js` (`computeEngagementMetrics`) and surfaced in the admin panel. But `contentEngine.js` promotes candidates to scheduled questions using `pick_count` alone (the #1 signal), ignoring whether past questions actually landed in play. This item is the missing half: feed engagement metrics into the generation/promotion prompts so Claude self-tunes based on real play behavior, not just explicit preference. Share-rate tracking is also not built — add if it turns out to be useful signal. Complements #5 (offline eval catching bad questions before ship); this one is the post-ship "did it land?" loop.
 
 ### 4. Feedback mechanism on hints
 Now that hints are generated via a candidate-and-rate flow, we need a way to learn which hints actually land with players. Simplest version: a thumbs up / thumbs down on the hint card after reveal. Richer signal: infer from behavior — did the player solve after revealing? How quickly? Did they give up right after? Feeds back into the rater pass (eventually training the rater on real preferences instead of only anchor examples) and into the generation prompt itself.
@@ -121,6 +115,9 @@ Host commentary is live on both #1 reveals and wrong-guess closeness feedback, b
 ---
 
 ## Done
+
+### Future-question voting in the post-completion flow
+After finishing today's game, players see 3–5 candidate questions in `PickFavoriteStep` (frontend/js/components/modal/PickFavoriteStep.js) and can thumbs-up the ones they find interesting. Votes land in the `question_picks` table; candidates are surfaced fairest-first via an impression counter in `questionPickService.js`, and `contentEngine.js` uses pick counts to promote candidates to scheduled questions. Soft-skippable — advancing without picking is allowed. Gives the content engine an explicit-preference signal at peak engagement, complementing the post-hoc engagement metrics the admin panel now tracks (see #3 for the missing feedback loop back into generation).
 
 ### Differentiate hint-assisted answers in the completion summary
 Answer boxes in the completion modal now render yellow when solved with a hint revealed, reusing the in-game `solved-with-hint` fill color (#FDEFA8) so the signal is consistent from the game grid through to the summary. Clean solves stay green, missed answers stay red — a three-state palette that also sets up a more accurate Wordle-style share grid (#17). State already existed in `localStorage` (`gwHinted_<date>`); `SummaryStep` just reads it and adds a `hint-assisted` class alongside `correct`.
