@@ -22,8 +22,11 @@ class AnswerGrid {
       this.revealAnswer(rank, guess, voteCount, canonicalAnswer);
     });
     
-    // Listen for already guessed events
-    eventService.on('game:already-guessed', (event) => {
+    // Yellow flash on duplicate-guess. We listen for the "-reveal" event —
+    // AlreadyGuessedFeedback fires it at the same beat as the host bubble
+    // appears (after its Claude call resolves) so the flash and bubble read
+    // as one coordinated moment instead of the flash racing ahead.
+    eventService.on('game:already-guessed-reveal', (event) => {
       const { rank } = event.detail;
       this.highlightAnswer(rank);
     });

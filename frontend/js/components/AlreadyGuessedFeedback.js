@@ -20,24 +20,29 @@ class AlreadyGuessedFeedback {
 
     eventService.on('game:already-guessed', (event) => {
       if (document.body.dataset.gameRestoring === 'true') return;
-      const { userGuess = '', canonicalAnswer = '' } = event.detail || {};
-      this.handle(userGuess, canonicalAnswer);
+      const { userGuess = '', canonicalAnswer = '', rank = null } = event.detail || {};
+      this.handle(userGuess, canonicalAnswer, rank);
     });
   }
 
-  async handle(userGuess, canonicalAnswer) {
+  async handle(userGuess, canonicalAnswer, rank) {
     const requestId = ++this.latestRequestId;
     const line = await guessService.fetchDuplicateCommentary(userGuess, canonicalAnswer);
     // If another duplicate fired while we were waiting, drop this response so
     // we don't overwrite a newer line with stale copy.
     if (requestId !== this.latestRequestId) return;
     const finalLine = (line && line.trim()) || this.buildFallback(userGuess, canonicalAnswer);
-    this.show(finalLine);
+    this.show(finalLine, rank);
   }
 
-  show(line) {
+  show(line, rank) {
     this.copy.textContent = line;
     this.element.classList.add('in');
+    // Fire the matching card's yellow flash on the same beat as the bubble
+    // appearing — AnswerGrid listens for this and calls AnswerBox.highlight().
+    if (rank != null) {
+      eventService.emit('game:already-guessed-reveal', { rank });
+    }
     clearTimeout(this.hideTimer);
     this.hideTimer = setTimeout(() => this.hide(), 3300);
   }
