@@ -355,9 +355,13 @@ body > .container.py-5 > .row {
 }
 
 /* Yellow flash fired by AnswerBox.highlight() when a correct guess maps to
-   an answer the player already solved. Must come after the .bg-success rule
-   above — both selectors have equal specificity, so source order decides the
-   winner when the revealed card briefly carries both classes. */
+   an answer the player already solved. Needs to beat the revealed-card rules
+   above: the bg-success variant chains two classes (.bg-success.bg-opacity-25),
+   so the flash rule chains the same two to reach equal specificity and win on
+   source order. solved-with-hint cards are already yellow — the flash is a
+   visual no-op there but still fires for consistency. */
+#answer-boxes .card-body.bg-success.bg-opacity-25.already-guessed-flash,
+#answer-boxes .card-body.solved-with-hint.already-guessed-flash,
 #answer-boxes .card-body.already-guessed-flash {
     background-color: #FDEFA8 !important;
     border: 0.125rem solid #E8CD5A !important;
