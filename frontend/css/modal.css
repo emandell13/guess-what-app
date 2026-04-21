@@ -1098,11 +1098,11 @@
         cursor: grabbing;
     }
 
-    /* Compact header: the grab handle already gives top breathing
-       room, and the close button is hidden on mobile, so progress
-       segments sit tight and centered. */
+    /* Compact header: close button is hidden on mobile, so progress
+       segments sit centered. Top padding gives the progress bar
+       a readable gap from the grab handle pill above it. */
     #gameCompleteModal .modal-header {
-        padding: 0.15rem 1.25rem 0.4rem !important;
+        padding: 0.6rem 1.25rem 0.5rem !important;
         justify-content: center !important;
         position: relative;
         flex: 0 0 auto;
