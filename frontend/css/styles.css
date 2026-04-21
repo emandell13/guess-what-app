@@ -354,6 +354,15 @@ body > .container.py-5 > .row {
     border: 0.125rem solid #E8CD5A !important;
 }
 
+/* Yellow flash fired by AnswerBox.highlight() when a correct guess maps to
+   an answer the player already solved. Must come after the .bg-success rule
+   above — both selectors have equal specificity, so source order decides the
+   winner when the revealed card briefly carries both classes. */
+#answer-boxes .card-body.already-guessed-flash {
+    background-color: #FDEFA8 !important;
+    border: 0.125rem solid #E8CD5A !important;
+}
+
 /* Incorrect answer styling */
 #answer-boxes .card-body.bg-danger,
 #answer-boxes .card-body.bg-danger.bg-opacity-25 {

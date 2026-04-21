@@ -182,24 +182,21 @@ class AnswerBox {
   }
 
   /**
-   * Highlights this answer temporarily
-   * This is used for already guessed answers
+   * Highlights this answer temporarily. Uses a dedicated class (not Bootstrap's
+   * bg-warning) because the revealed card already carries bg-success with
+   * !important — the two Bootstrap classes have equal specificity and bg-success
+   * wins by source order, so the flash never shows. A custom class placed later
+   * in styles.css overrides cleanly.
    */
   highlight() {
     if (!this.revealed) return;
 
     const cardBody = this.element.querySelector(".card-body");
+    cardBody.classList.add("already-guessed-flash");
 
-    // Store original classes to restore later
-    const originalClasses = [...cardBody.classList];
-
-    // Add highlight class
-    cardBody.classList.add("bg-warning", "bg-opacity-75");
-
-    // Remove highlight after a delay
-    setTimeout(() => {
-      // Remove highlight classes
-      cardBody.classList.remove("bg-warning", "bg-opacity-75");
+    clearTimeout(this._highlightTimer);
+    this._highlightTimer = setTimeout(() => {
+      cardBody.classList.remove("already-guessed-flash");
     }, 1000);
   }
 }
