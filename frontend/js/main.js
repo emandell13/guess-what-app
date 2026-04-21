@@ -14,6 +14,7 @@ import AuthModal from './components/modal/AuthModal.js';
 import HintButton from './components/HintButton.js';
 import CommentaryOverlay from './components/CommentaryOverlay.js';
 import ClosenessFeedback from './components/ClosenessFeedback.js';
+import AlreadyGuessedFeedback from './components/AlreadyGuessedFeedback.js';
 
 /**
  * Main application class
@@ -30,6 +31,7 @@ class App {
     this.hintButton = new HintButton();
     this.commentaryOverlay = new CommentaryOverlay();
     this.closenessFeedback = new ClosenessFeedback();
+    this.alreadyGuessedFeedback = new AlreadyGuessedFeedback();
     this.hasCelebratedPerfectGame = false; // Flag to track if perfect game celebration has occurred
 
     // Setup event listeners
@@ -219,12 +221,6 @@ class App {
 
       // Disable guess form
       if (this.guessForm) this.guessForm.disable();
-    });
-
-    // Already guessed events
-    eventService.on('game:already-guessed', (event) => {
-      const { guess } = event.detail;
-      this.showAlreadyGuessedMessage(guess);
     });
 
     // Listen for game completed event and refresh streaks
@@ -483,34 +479,6 @@ class App {
     delete document.body.dataset.gameRestoring;
   }
 
-
-  /**
-   * Shows a temporary message when an answer was already guessed
-   */
-  showAlreadyGuessedMessage(answer) {
-    // Create a temporary message
-    const messageContainer = document.createElement("div");
-    messageContainer.className = "alert alert-warning already-guessed-alert";
-    messageContainer.style.position = "fixed";
-    messageContainer.style.top = "20px";
-    messageContainer.style.left = "50%";
-    messageContainer.style.transform = "translateX(-50%)";
-    messageContainer.style.zIndex = "1050";
-    messageContainer.style.padding = "10px 20px";
-    messageContainer.style.borderRadius = "5px";
-    messageContainer.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-    messageContainer.textContent = `You've already guessed "${answer}"!`;
-
-    // Add to the body
-    document.body.appendChild(messageContainer);
-
-    // Remove after a delay
-    setTimeout(() => {
-      messageContainer.style.opacity = "0";
-      messageContainer.style.transition = "opacity 0.5s ease";
-      setTimeout(() => document.body.removeChild(messageContainer), 500);
-    }, 2000);
-  }
 
   /**
    * Reveals all remaining answers when the game is over

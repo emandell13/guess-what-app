@@ -45,6 +45,28 @@ class GuessService {
   }
   
   /**
+   * Fetches a host-voice line reacting to a duplicate correct guess. The raw
+   * guess may differ from the canonical answer (fuzzy match), so both are sent
+   * and the backend asks Claude to acknowledge the overlap. Returns null on
+   * any error — the component falls back to its local template.
+   */
+  async fetchDuplicateCommentary(userGuess, canonicalAnswer) {
+    try {
+      const response = await fetch("/guesses/duplicate-commentary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userGuess, canonicalAnswer })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.commentaryLine || null;
+    } catch (error) {
+      console.error("Error fetching duplicate commentary:", error);
+      return null;
+    }
+  }
+
+  /**
    * Fetches all answers for the current question
    * @returns {Promise<Object>} - The answers data
    */

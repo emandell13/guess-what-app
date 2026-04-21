@@ -476,6 +476,54 @@ Return ONLY the line text, no quotes, no JSON, no preamble.
 `.trim();
 }
 
+/**
+ * Prompt for a host reaction to a DUPLICATE correct guess. The player's raw
+ * text may differ from the canonical (e.g. "cell phone" → "check phone"), so
+ * the host should acknowledge the fuzzy match in their voice. Fast path —
+ * called the moment the client detects a duplicate, so Haiku-class.
+ *
+ * @param {string} questionText
+ * @param {string} userGuess - what the player typed this time
+ * @param {string} canonicalAnswer - the answer they'd already solved
+ * @returns {string}
+ */
+function createAlreadyGuessedCommentaryPrompt(questionText, userGuess, canonicalAnswer) {
+  const exact = String(userGuess || '').trim().toLowerCase() ===
+                String(canonicalAnswer || '').trim().toLowerCase();
+  return `
+You're the host of a Family Feud-style daily trivia game called "Guess What!"
+A player just submitted an answer that maps to one they already got. Write ONE short
+host line reacting to the overlap. The line appears in a bubble above the input for ~3s.
+
+VOICE: Punchy, observational, warm with a bit of edge. Think of a sharp host who's
+been watching the scoreboard and just noticed the player circling back.
+
+QUESTION: "${questionText}"
+THEIR NEW GUESS: "${userGuess}"
+ANSWER THEY ALREADY SOLVED: "${canonicalAnswer}"
+EXACT_REPEAT: ${exact ? 'yes' : 'no'}
+
+TONE:
+- If EXACT_REPEAT is yes: they literally retyped the same answer. Acknowledge it and
+  nudge them to try another, in a "you already got that one" way.
+- If EXACT_REPEAT is no: the new guess is semantically the same as the canonical —
+  call out the overlap in a fun way. Reference both phrasings so the player
+  understands why it counted. E.g. "'Cell phone' is just 'check phone' in a trench
+  coat — already on the board."
+
+HARD RULES:
+- 1 sentence, under 110 characters.
+- Reference the player's actual guess. If EXACT_REPEAT is no, reference both the
+  new guess and the canonical answer so the overlap is legible.
+- Don't roast the player — tease the guess or the crowd, not the person.
+- No emoji, no hashtags, no exclamation-mark spam.
+- Don't explain the rules. Don't say "try again" — the UI handles that.
+- Don't start with "Ooh" or "Bold." — those are closeness-feedback templates.
+
+Return ONLY the line text, no quotes, no JSON, no preamble.
+`.trim();
+}
+
 module.exports = {
   createGuessMatchingPrompt,
   createAnswerGroupingPrompt,
@@ -485,6 +533,7 @@ module.exports = {
   createAnswerSeedingPrompt,
   createQuipPrompt,
   createWrongGuessCommentaryPrompt,
+  createAlreadyGuessedCommentaryPrompt,
   ARCHETYPES,
   CATEGORIES,
   GOLD_EXAMPLES,

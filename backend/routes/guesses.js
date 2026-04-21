@@ -142,6 +142,28 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Host line for a duplicate correct guess. The client detects duplicates
+// (it tracks which ranks have been solved locally) and calls this endpoint
+// with both the raw guess and the canonical answer so Claude can riff on
+// the overlap. Always returns 200 with a commentaryLine — the service layer
+// falls back to a template on any Claude error.
+router.post('/duplicate-commentary', async (req, res) => {
+    try {
+        const { userGuess, canonicalAnswer } = req.body || {};
+        if (!canonicalAnswer) {
+            return res.status(400).json({ error: 'canonicalAnswer required' });
+        }
+        const commentaryLine = await guessService.generateAlreadyGuessedCommentary(
+            userGuess,
+            canonicalAnswer
+        );
+        res.json({ commentaryLine });
+    } catch (error) {
+        console.error('Error generating duplicate commentary:', error);
+        res.status(500).json({ error: 'Failed to generate commentary' });
+    }
+});
+
 // Record that the player revealed a hint. Increments hints_revealed on the
 // caller's game_progress row for today's question so the admin analytics view
 // can surface how much scaffolding a question needed.

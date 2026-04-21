@@ -118,9 +118,13 @@ class GameService {
 
     // If already guessed, return false (not a new correct guess)
     if (alreadyGuessed) {
-      // Emit already guessed event
+      // Emit already guessed event. Both the raw user guess and the canonical
+      // answer are included so AlreadyGuessedFeedback can have Claude riff on
+      // fuzzy matches (e.g. "cell phone" → "check phone").
       eventService.emit('game:already-guessed', {
         guess: canonicalAnswer || guess,
+        userGuess: guess,
+        canonicalAnswer: canonicalAnswer || guess,
         rank,
         voteCount
       });

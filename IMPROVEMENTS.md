@@ -20,9 +20,6 @@ Now that hints are generated via a candidate-and-rate flow, we need a way to lea
 ### 5. Automated question-quality eval + prompt iteration
 An automated process that grades generated questions against Family Feud-style criteria (specificity, punchiness, plausible answer spread, answerability) — likely LLM-as-judge plus a few heuristic checks — and feeds the grades back into the question-generation prompt so it self-tunes over time. Complements #3: that one learns from real player behavior *after* a question ships; this one is an offline eval loop that catches bad questions *before* they ship and measures whether prompt changes are actually making things better.
 
-### 6. Revisit "you already guessed that" UI
-Currently shows as a floating Bootstrap alert at the top of the page. Should feel more integrated with the guess input — inline message near the input, subtle animation, no banner.
-
 ### 8. Contextualize the guess count in the summary
 Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #13 (post-game insights).
 
@@ -115,6 +112,9 @@ Host commentary is live on both #1 reveals and wrong-guess closeness feedback, b
 ---
 
 ## Done
+
+### "You already guessed that" → host bubble with per-guess Claude line
+Duplicate correct guesses used to trigger a floating Bootstrap `alert-warning` at the top of the page — disconnected from both the input and the answer grid. Replaced with a third `.host-bubble` that shares the look of commentary + closeness feedback, plus a Claude-generated line per duplicate so the host can acknowledge fuzzy matches explicitly (e.g. "'Cell phone' is just 'check phone' in a trench coat — already on the board"). New `POST /guesses/duplicate-commentary` endpoint (Haiku-class, template fallback); `game:already-guessed` now carries both the raw user guess and the canonical answer so the backend can riff on the overlap. The yellow warning-flash on the matching answer card is untouched.
 
 ### Future-question voting in the post-completion flow
 After finishing today's game, players see 3–5 candidate questions in `PickFavoriteStep` (frontend/js/components/modal/PickFavoriteStep.js) and can thumbs-up the ones they find interesting. Votes land in the `question_picks` table; candidates are surfaced fairest-first via an impression counter in `questionPickService.js`, and `contentEngine.js` uses pick counts to promote candidates to scheduled questions. Soft-skippable — advancing without picking is allowed. Gives the content engine an explicit-preference signal at peak engagement, complementing the post-hoc engagement metrics the admin panel now tracks (see #3 for the missing feedback loop back into generation).

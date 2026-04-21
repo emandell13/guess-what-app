@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Already-Guessed UI Mockups</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body {
+    background: #FAFAFC;
+    font-family: "Libre Franklin", -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 1.5rem 1rem 8rem;
+  }
+  .page-wrap { max-width: 560px; margin: 0 auto; }
+
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #FAFAFC;
+    padding: 0.75rem 0 1rem;
+    border-bottom: 1px solid #E5E5EC;
+    margin-bottom: 1.25rem;
+  }
+  .controls h1 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .controls p { color: #666; font-size: 0.85rem; margin-bottom: 0.6rem; }
+  .control-row {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    align-items: center; margin-top: 0.4rem;
+  }
+  .control-row .row-label {
+    font-size: 0.78rem; color: #666; margin-right: 0.2rem; min-width: 4rem;
+  }
+  .control-row .btn.active {
+    background: #2C2C34; color: #FDFDFD; border-color: #2C2C34;
+  }
+  .note {
+    font-size: 0.8rem; color: #888; margin-top: 0.55rem; line-height: 1.4;
+  }
+
+  /* Simulated answer grid */
+  .mock-grid .card-body {
+    border-radius: 0.5rem;
+    border: 0.125rem solid #EAEAF2;
+    background-color: #FAFAFC;
+    min-height: 4.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    display: flex; align-items: center; padding: 1rem;
+  }
+  .mock-grid .card-body.revealed {
+    background-color: #CBE5D9 !important;
+    border: 0.125rem solid #A6CCBB !important;
+  }
+  /* Yellow warning flash — matches AnswerBox.highlight() */
+  .mock-grid .card-body.flash {
+    background-color: #FFE08A !important;
+    border-color: #E6B84B !important;
+  }
+  .mock-grid .answer-rank {
+    font-size: 1.25rem; font-weight: 700;
+    flex: 0 0 2.5rem; text-align: center;
+  }
+  .mock-grid .answer-text {
+    flex: 1; text-align: center;
+    font-size: 1.125rem; font-weight: 700; text-transform: capitalize;
+    margin: 0 0.75rem;
+  }
+  .mock-grid .points {
+    flex: 0 0 5.5rem; text-align: center;
+    font-size: 1.125rem; font-weight: 400;
+  }
+  .mock-grid .row-card { margin-bottom: 0.75rem; }
+
+  .question-text {
+    text-align: center; font-size: 1.1rem; font-weight: 600;
+    margin: 0.5rem 0 1.25rem; line-height: 1.35;
+  }
+
+  /* Sticky guess form */
+  .guess-wrap {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: #FFFFFF;
+    border-top: 1px solid #E0E0E0;
+    padding: 1rem;
+    z-index: 20;
+  }
+  .guess-mod {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    border-radius: 8px;
+  }
+  .guess-mod input {
+    flex: 1;
+    height: 3.25rem;
+    padding: 0.5rem 1.25rem;
+    border: 0.125rem solid #EAEAF2;
+    border-right: none;
+    border-radius: 0.5rem 0 0 0.5rem;
+    outline: none;
+  }
+  .guess-mod .btn-guess {
+    min-width: 100px;
+    height: 3.25rem;
+    padding: 0.5rem 1.25rem;
+    border: 0.125rem solid #000;
+    border-radius: 0 8px 8px 0;
+    background: #000; color: #FFF;
+    font-weight: 500;
+  }
+
+  /* Host bubble — lifted from .host-bubble in styles.css so the mockup
+     reads identical to the real commentary + closeness bubbles. */
+  .mock-host-bubble {
+    position: fixed;
+    left: 50%;
+    bottom: 5.25rem;
+    transform: translateX(-50%) translateY(8px);
+    width: min(520px, 92vw);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: #FFFFFF;
+    border-radius: 0.9rem;
+    padding: 0.75rem 0.9rem;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.22);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1050;
+  }
+  .mock-host-bubble.in {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .mock-host-bubble .host-avatar {
+    flex: 0 0 2rem;
+    width: 2rem; height: 2rem;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 1.5px solid #E5E5EC;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    filter: grayscale(1) contrast(1.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .mock-host-bubble .host-copy {
+    flex: 1;
+    font-size: 0.98rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #222;
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+  <div class="controls">
+    <h1>"You already guessed that" — host commentary</h1>
+    <p>
+      Duplicate guesses now trigger a host line in the same floating bubble
+      used by #1-reveal commentary and closeness feedback. The matching
+      answer card still warning-flashes yellow (existing
+      <code>AnswerBox.highlight()</code>) so it's obvious which answer.
+    </p>
+
+    <div class="control-row">
+      <span class="row-label">Scenario</span>
+      <button class="btn btn-sm btn-outline-dark active" data-scen="fuzzy" onclick="pickScenario('fuzzy')">Fuzzy match · different words</button>
+      <button class="btn btn-sm btn-outline-dark" data-scen="near" onclick="pickScenario('near')">Near-repeat · same words</button>
+      <button class="btn btn-sm btn-outline-dark" data-scen="exact" onclick="pickScenario('exact')">Exact repeat</button>
+    </div>
+
+    <div class="control-row">
+      <button class="btn btn-sm btn-dark" onclick="simulateDuplicate()">Simulate duplicate guess</button>
+    </div>
+
+    <p class="note">
+      Each press rolls a new line from a rotation. The bubble uses
+      <code>.host-bubble</code> styling so the voice feels continuous with
+      commentary and closeness feedback. Lines could eventually be generated
+      by Claude per guess (same pattern as closeness) — these templates just
+      show the tone.
+    </p>
+  </div>
+
+  <!-- Simulated game layout -->
+  <div class="mock-grid">
+    <div class="question-text">
+      What did <u>100 people</u> say they do when their Monday alarm goes off?
+    </div>
+
+    <div class="row-card card"><div class="card-body">
+      <span class="answer-rank">1</span>
+      <span class="answer-text">&nbsp;</span>
+      <span class="points">&nbsp;</span>
+    </div></div>
+    <div class="row-card card"><div class="card-body">
+      <span class="answer-rank">2</span>
+      <span class="answer-text">&nbsp;</span>
+      <span class="points">&nbsp;</span>
+    </div></div>
+    <div class="row-card card"><div class="card-body revealed" id="flash-target">
+      <span class="answer-rank">3</span>
+      <span class="answer-text">Check phone</span>
+      <span class="points">18 votes</span>
+    </div></div>
+    <div class="row-card card"><div class="card-body">
+      <span class="answer-rank">4</span>
+      <span class="answer-text">&nbsp;</span>
+      <span class="points">&nbsp;</span>
+    </div></div>
+    <div class="row-card card"><div class="card-body">
+      <span class="answer-rank">5</span>
+      <span class="answer-text">&nbsp;</span>
+      <span class="points">&nbsp;</span>
+    </div></div>
+  </div>
+</div>
+
+<!-- Host bubble -->
+<div id="mock-bubble" class="mock-host-bubble" aria-live="polite">
+  <span class="host-avatar" aria-hidden="true">🎙️</span>
+  <span class="host-copy"></span>
+</div>
+
+<!-- Sticky guess form -->
+<div class="guess-wrap">
+  <div class="guess-mod">
+    <input type="text" id="guess-input" placeholder="Type your guess here">
+    <button class="btn-guess">Guess</button>
+  </div>
+</div>
+
+<script>
+  const canonical = 'check phone';
+
+  const scenarios = {
+    fuzzy: {
+      guess: 'cell phone',
+      lines: [
+        `"Cell phone"? We're counting that as "check phone" — already yours.`,
+        `Close enough — "cell phone" landed on "check phone". You already got it.`,
+        `Same answer in our book — "check phone" is already on the board.`,
+        `"Cell phone" is just "check phone" in a trench coat. Already got it.`,
+      ],
+    },
+    near: {
+      guess: 'checking my phone',
+      lines: [
+        `"Checking my phone" — yeah, that's "check phone". Already on the board.`,
+        `Same one — "check phone" is already yours. Give me another.`,
+        `We're counting that as "check phone". Already got it.`,
+      ],
+    },
+    exact: {
+      guess: 'check phone',
+      lines: [
+        `You already got "check phone". Keep going.`,
+        `Already on the board — try another.`,
+        `"Check phone" is already yours. Next.`,
+      ],
+    },
+  };
+
+  let scenario = 'fuzzy';
+  let rotation = 0;
+  let hideTimer, flashTimer;
+
+  function pickScenario(s) {
+    scenario = s;
+    rotation = 0;
+    document.querySelectorAll('[data-scen]').forEach(b =>
+      b.classList.toggle('active', b.dataset.scen === s));
+    document.getElementById('guess-input').value = scenarios[s].guess;
+  }
+
+  function simulateDuplicate() {
+    const { guess, lines } = scenarios[scenario];
+    const line = lines[rotation % lines.length];
+    rotation++;
+
+    document.getElementById('guess-input').value = guess;
+
+    // Yellow warning flash on the matching card
+    const card = document.getElementById('flash-target');
+    card.classList.remove('flash');
+    void card.offsetWidth;
+    card.classList.add('flash');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => card.classList.remove('flash'), 1000);
+
+    // Host bubble
+    const bubble = document.getElementById('mock-bubble');
+    bubble.querySelector('.host-copy').textContent = line;
+    bubble.classList.remove('in');
+    void bubble.offsetWidth;
+    // Small delay so the card flash reads first, then the host chimes in —
+    // same beat-structure as closeness feedback.
+    setTimeout(() => bubble.classList.add('in'), 200);
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => bubble.classList.remove('in'), 3300);
+  }
+
+  // Prefill input with the first scenario's guess
+  pickScenario('fuzzy');
+</script>
+</body>
+</html>

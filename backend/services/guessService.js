@@ -5,7 +5,11 @@ const { getTodayDate } = require('../utils/dateUtils');
 const { normalizeText } = require('../utils/textUtils');
 const gameConstants = require('../config/gameConstants');
 const { callLLM } = require('./llmService');
-const { createGuessMatchingPrompt, createWrongGuessCommentaryPrompt } = require('../services/promptTemplates');
+const {
+    createGuessMatchingPrompt,
+    createWrongGuessCommentaryPrompt,
+    createAlreadyGuessedCommentaryPrompt
+} = require('../services/promptTemplates');
 const gameService = require('./gameService'); // Import gameService for streak updates
 
 // ... existing functions (getCurrentQuestion, getTopAnswers, etc.) remain the same ...
@@ -372,6 +376,52 @@ async function generateWrongGuessCommentary(questionText, guess, poolCount) {
 }
 
 /**
+ * Template fallback for duplicate-guess commentary when the Claude call
+ * errors/times out. Keeps the bubble populated even on network failure.
+ */
+function buildFallbackAlreadyGuessedCommentary(userGuess, canonicalAnswer) {
+    const u = String(userGuess || '').trim();
+    const c = String(canonicalAnswer || '').trim();
+    if (!c) return null;
+    if (!u || u.toLowerCase() === c.toLowerCase()) {
+        return `You already got "${c}" — keep going.`;
+    }
+    return `"${u}" is the same as "${c}" in our book — already on the board.`;
+}
+
+/**
+ * Generate a live host line for a duplicate correct guess via Claude. Returns
+ * a fallback template on any error so the frontend always has something to
+ * render. The userGuess may differ from canonicalAnswer (fuzzy match), in which
+ * case the prompt is instructed to acknowledge the overlap explicitly.
+ */
+async function generateAlreadyGuessedCommentary(userGuess, canonicalAnswer) {
+    const fallback = buildFallbackAlreadyGuessedCommentary(userGuess, canonicalAnswer);
+    try {
+        const question = await getCurrentQuestion();
+        const prompt = createAlreadyGuessedCommentaryPrompt(
+            question.question_text,
+            userGuess,
+            canonicalAnswer
+        );
+        const raw = await callLLM(prompt, {
+            maxTokens: 90,
+            skipCache: true,
+            retries: 1
+        });
+        const line = String(raw || '')
+            .trim()
+            .replace(/^["'`]+|["'`]+$/g, '')
+            .replace(/\n+/g, ' ')
+            .trim();
+        return line || fallback;
+    } catch (error) {
+        console.error('Already-guessed commentary generation failed:', error.message);
+        return fallback;
+    }
+}
+
+/**
  * Record that the current player revealed a hint. Increments hints_revealed
  * on their game_progress row for today's question (creating the row if this
  * is their first action of the game). Idempotency is delegated to the client
@@ -463,5 +513,6 @@ module.exports = {
     getAnswerHint,
     checkGuess,
     getHintsForQuestion,
-    recordHintReveal
+    recordHintReveal,
+    generateAlreadyGuessedCommentary
 }
