@@ -1071,16 +1071,19 @@
         transition: none !important;
     }
 
-    /* Grab handle: 24px-tall flex row containing a 40×4 pill drawn
+    /* Grab handle: 32px-tall flex row containing a 40×4 pill drawn
        via ::before. Using a pseudo-element (rather than
        padding + background-clip) sidesteps Bootstrap's global
        box-sizing: border-box, which was collapsing the 4px height
-       inside the vertical padding and leaving the pill invisible. */
+       inside the vertical padding and leaving the pill invisible.
+       The 32px height gives ~14px above and below the pill so it
+       reads as a clearly separate element from the sheet edge and
+       the progress bar below. */
     #gameCompleteModal .sheet-grab {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 1.5rem;
+        height: 2rem;
         margin: 0;
         flex: 0 0 auto;
         touch-action: none;
