@@ -1071,42 +1071,53 @@
         transition: none !important;
     }
 
-    /* Grab handle: 40×4 pill at sheet top. Wrapped in a wider
-       transparent touch area via vertical padding so the drag gesture
-       has a generous hit target without the visual changing. */
+    /* Grab handle: 24px-tall flex row containing a 40×4 pill drawn
+       via ::before. Using a pseudo-element (rather than
+       padding + background-clip) sidesteps Bootstrap's global
+       box-sizing: border-box, which was collapsing the 4px height
+       inside the vertical padding and leaving the pill invisible. */
     #gameCompleteModal .sheet-grab {
-        display: block;
-        width: 40px;
-        height: 4px;
-        background: #d4d4dc;
-        border-radius: 2px;
-        margin: 0 auto;
-        padding: 0.7rem 0;
-        background-clip: content-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 1.5rem;
+        margin: 0;
         flex: 0 0 auto;
         touch-action: none;
         cursor: grab;
+    }
+    #gameCompleteModal .sheet-grab::before {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: #c8c8d4;
+        border-radius: 2px;
     }
     #gameCompleteModal.sheet-dragging .sheet-grab {
         cursor: grabbing;
     }
 
-    /* Compact header: tighten padding, center progress segments,
-       keep close button reachable in the top-right corner. */
+    /* Compact header: the grab handle already gives top breathing
+       room, and the close button is hidden on mobile, so progress
+       segments sit tight and centered. */
     #gameCompleteModal .modal-header {
-        padding: 0.55rem 1.25rem 0.25rem !important;
+        padding: 0.15rem 1.25rem 0.4rem !important;
         justify-content: center !important;
         position: relative;
         flex: 0 0 auto;
     }
 
+    /* Close button replaced by swipe-to-dismiss on mobile. */
     #gameCompleteModal .modal-header .btn-close {
-        position: absolute;
-        top: 0.55rem;
-        right: 0.75rem;
-        margin: 0;
-        padding: 0.25rem;
-        z-index: 2;
+        display: none;
+    }
+
+    /* Reset the desktop compensation for the close button so progress
+       segments actually center. */
+    #gameCompleteModal .progress-container {
+        padding-left: 0;
+        margin-right: 0;
     }
 
     #gameCompleteModal .progress-segments {
