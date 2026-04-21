@@ -27,22 +27,27 @@ class AlreadyGuessedFeedback {
 
   async handle(userGuess, canonicalAnswer, rank) {
     const requestId = ++this.latestRequestId;
-    const line = await guessService.fetchDuplicateCommentary(userGuess, canonicalAnswer);
-    // If another duplicate fired while we were waiting, drop this response so
-    // we don't overwrite a newer line with stale copy.
-    if (requestId !== this.latestRequestId) return;
-    const finalLine = (line && line.trim()) || this.buildFallback(userGuess, canonicalAnswer);
-    this.show(finalLine, rank);
-  }
 
-  show(line, rank) {
-    this.copy.textContent = line;
-    this.element.classList.add('in');
-    // Fire the matching card's yellow flash on the same beat as the bubble
-    // appearing — AnswerGrid listens for this and calls AnswerBox.highlight().
+    // Flash the matching card immediately — it's the primary "we see you"
+    // beat. The host bubble follows after a short delay so the flash leads.
     if (rank != null) {
       eventService.emit('game:already-guessed-reveal', { rank });
     }
+
+    // Race the Claude call against a minimum delay so the bubble never
+    // appears instantly — the flash always gets a visible head start.
+    const [line] = await Promise.all([
+      guessService.fetchDuplicateCommentary(userGuess, canonicalAnswer),
+      new Promise(resolve => setTimeout(resolve, 350))
+    ]);
+    if (requestId !== this.latestRequestId) return;
+    const finalLine = (line && line.trim()) || this.buildFallback(userGuess, canonicalAnswer);
+    this.show(finalLine);
+  }
+
+  show(line) {
+    this.copy.textContent = line;
+    this.element.classList.add('in');
     clearTimeout(this.hideTimer);
     this.hideTimer = setTimeout(() => this.hide(), 3300);
   }

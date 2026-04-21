@@ -355,16 +355,32 @@ body > .container.py-5 > .row {
 }
 
 /* Yellow flash fired by AnswerBox.highlight() when a correct guess maps to
-   an answer the player already solved. Needs to beat the revealed-card rules
-   above: the bg-success variant chains two classes (.bg-success.bg-opacity-25),
-   so the flash rule chains the same two to reach equal specificity and win on
-   source order. solved-with-hint cards are already yellow — the flash is a
-   visual no-op there but still fires for consistency. */
+   an answer the player already solved. Uses a keyframe double-pulse so the
+   card reads as actually *flashing*, not holding a steady color — and leads
+   the host bubble by ~350ms so the card reacts first, then the host chimes
+   in. Specificity chains bg-success.bg-opacity-25 and solved-with-hint so
+   the animation wins over the static revealed-card rules above. */
+@keyframes already-guessed-flash-pulse {
+    0%   { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
+    15%  { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 6px rgba(232, 205, 90, 0.45); }
+    35%  { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
+    55%  { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 6px rgba(232, 205, 90, 0.45); }
+    75%  { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
+    100% { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
+}
 #answer-boxes .card-body.bg-success.bg-opacity-25.already-guessed-flash,
 #answer-boxes .card-body.solved-with-hint.already-guessed-flash,
 #answer-boxes .card-body.already-guessed-flash {
-    background-color: #FDEFA8 !important;
-    border: 0.125rem solid #E8CD5A !important;
+    animation: already-guessed-flash-pulse 0.85s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    #answer-boxes .card-body.bg-success.bg-opacity-25.already-guessed-flash,
+    #answer-boxes .card-body.solved-with-hint.already-guessed-flash,
+    #answer-boxes .card-body.already-guessed-flash {
+        animation: none;
+        background-color: #FDEFA8 !important;
+        border: 0.125rem solid #E8CD5A !important;
+    }
 }
 
 /* Incorrect answer styling */

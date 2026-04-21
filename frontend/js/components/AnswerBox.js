@@ -192,12 +192,15 @@ class AnswerBox {
     if (!this.revealed) return;
 
     const cardBody = this.element.querySelector(".card-body");
+    // Restart the CSS animation on rapid repeats: remove → reflow → add.
+    cardBody.classList.remove("already-guessed-flash");
+    void cardBody.offsetWidth;
     cardBody.classList.add("already-guessed-flash");
 
     clearTimeout(this._highlightTimer);
     this._highlightTimer = setTimeout(() => {
       cardBody.classList.remove("already-guessed-flash");
-    }, 1000);
+    }, 900);
   }
 }
 
