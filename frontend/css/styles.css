@@ -355,31 +355,32 @@ body > .container.py-5 > .row {
 }
 
 /* Yellow flash fired by AnswerBox.highlight() when a correct guess maps to
-   an answer the player already solved. Uses a keyframe double-pulse so the
-   card reads as actually *flashing*, not holding a steady color — and leads
-   the host bubble by ~350ms so the card reacts first, then the host chimes
-   in. Specificity chains bg-success.bg-opacity-25 and solved-with-hint so
-   the animation wins over the static revealed-card rules above. */
+   an answer the player already solved. Uses an inset box-shadow to fill the
+   card with yellow rather than animating background-color — the revealed
+   card's bg-success rule has !important, which beats animation values in
+   the cascade, so background-color keyframes get silently ignored. Inset
+   box-shadow renders above the background but below the text, giving a
+   clean yellow flash without fighting the !important, and it's not already
+   set on revealed cards so there's no conflict. Double-pulse with an outer
+   glow ring so the card reads as actually *flashing*. */
 @keyframes already-guessed-flash-pulse {
-    0%   { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
-    15%  { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 6px rgba(232, 205, 90, 0.45); }
-    35%  { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
-    55%  { background-color: #FDEFA8; border-color: #E8CD5A; box-shadow: 0 0 0 6px rgba(232, 205, 90, 0.45); }
-    75%  { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
-    100% { background-color: #CBE5D9; border-color: #A6CCBB; box-shadow: 0 0 0 0 rgba(232, 205, 90, 0); }
+    0%, 35%, 75%, 100% {
+        box-shadow: inset 0 0 0 0 rgba(253, 239, 168, 0),
+                    0 0 0 0 rgba(232, 205, 90, 0);
+    }
+    15%, 55% {
+        box-shadow: inset 0 0 0 999px #FDEFA8,
+                    0 0 0 6px rgba(232, 205, 90, 0.45);
+    }
 }
-#answer-boxes .card-body.bg-success.bg-opacity-25.already-guessed-flash,
-#answer-boxes .card-body.solved-with-hint.already-guessed-flash,
 #answer-boxes .card-body.already-guessed-flash {
     animation: already-guessed-flash-pulse 0.85s ease-in-out;
 }
 @media (prefers-reduced-motion: reduce) {
-    #answer-boxes .card-body.bg-success.bg-opacity-25.already-guessed-flash,
-    #answer-boxes .card-body.solved-with-hint.already-guessed-flash,
     #answer-boxes .card-body.already-guessed-flash {
         animation: none;
-        background-color: #FDEFA8 !important;
-        border: 0.125rem solid #E8CD5A !important;
+        box-shadow: inset 0 0 0 999px #FDEFA8,
+                    0 0 0 6px rgba(232, 205, 90, 0.45);
     }
 }
 
