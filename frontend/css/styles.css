@@ -364,13 +364,17 @@ body > .container.py-5 > .row {
    set on revealed cards so there's no conflict. Double-pulse with an outer
    glow ring so the card reads as actually *flashing*. */
 @keyframes already-guessed-flash-pulse {
-    0%, 35%, 75%, 100% {
+    0% {
         box-shadow: inset 0 0 0 0 rgba(253, 239, 168, 0),
                     0 0 0 0 rgba(232, 205, 90, 0);
     }
-    15%, 55% {
+    15%, 80% {
         box-shadow: inset 0 0 0 999px #FDEFA8,
                     0 0 0 6px rgba(232, 205, 90, 0.45);
+    }
+    100% {
+        box-shadow: inset 0 0 0 0 rgba(253, 239, 168, 0),
+                    0 0 0 0 rgba(232, 205, 90, 0);
     }
 }
 #answer-boxes .card-body.already-guessed-flash {
