@@ -1,93 +1,109 @@
 # Improvements Backlog
 
-Prioritization framework:
-1. **Make the game play better**
-2. **Improve retention**
-3. **Growth**
+Prioritization framework — every item scored on two axes:
+1. **Gameplay experience** (does it make the moment-to-moment game feel better?)
+2. **Growth / virality / sharing** (does it pull in or re-engage players?)
 
-Within each tier, items are ordered top-down by rough priority/impact. Monetization lives in its own section since it cuts across tiers.
+Items are bucketed into impact tiers that combine both axes. Original thematic tags (gameplay / retention / growth) appear next to each title. Monetization lives in its own section since it's a different goal.
 
 ---
 
-## 1. Game play
+## Tier 1 — Ship next
 
-### 3. Wire per-question engagement signals back into question generation
-Per-question metrics — completion rate, abandonment, avg guesses, avg hints revealed — are already computed in `backend/routes/admin/questions.js` (`computeEngagementMetrics`) and surfaced in the admin panel. But `contentEngine.js` promotes candidates to scheduled questions using `pick_count` alone (the #1 signal), ignoring whether past questions actually landed in play. This item is the missing half: feed engagement metrics into the generation/promotion prompts so Claude self-tunes based on real play behavior, not just explicit preference. Share-rate tracking is also not built — add if it turns out to be useful signal. Complements #5 (offline eval catching bad questions before ship); this one is the post-ship "did it land?" loop.
+The two highest combined-impact items. These compound on each other.
 
-### 4. Feedback mechanism on hints
-Now that hints are generated via a candidate-and-rate flow, we need a way to learn which hints actually land with players. Simplest version: a thumbs up / thumbs down on the hint card after reveal. Richer signal: infer from behavior — did the player solve after revealing? How quickly? Did they give up right after? Feeds back into the rater pass (eventually training the rater on real preferences instead of only anchor examples) and into the generation prompt itself.
+### 1. Post-game insights *(retention)*
+After finishing, show context — "You scored better than 62% of today's players", "Your first guess matched the most popular first guess", "#3 was the hardest answer today (only 18% got it)." Dual-purpose: makes the game feel meaningful (gameplay) and produces share fodder (growth). Cheap to compute, builds player identity.
 
-### 5. Automated question-quality eval + prompt iteration
-An automated process that grades generated questions against Family Feud-style criteria (specificity, punchiness, plausible answer spread, answerability) — likely LLM-as-judge plus a few heuristic checks — and feeds the grades back into the question-generation prompt so it self-tunes over time. Complements #3: that one learns from real player behavior *after* a question ships; this one is an offline eval loop that catches bad questions *before* they ship and measures whether prompt changes are actually making things better.
+### 2. Contextualize the guess count in the summary *(gameplay)*
+Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #1 — ship it as the appetizer while the fuller insights bake.
 
-### 8. Contextualize the guess count in the summary
-Add a single line next to the guess count — e.g. "4 guesses — better than 62% of today's players" — so the number has meaning instead of sitting as a raw integer. Cheap to compute from existing play data. A narrow, shippable slice of #13 (post-game insights).
+---
 
-### 9. Theatrical perfect-game moment
+## Tier 2 — Right after Tier 1
+
+Higher-impact items that don't compound quite as directly as Tier 1.
+
+### 3. Challenge-a-friend link *(growth)*
+"I got 4/5, can you beat me?" — direct 1:1 growth loop. Personal/targeted sharing hook; works standalone without a broader share-grid surface.
+
+### 4. Theatrical perfect-game moment *(gameplay)*
 Code already emits `game:perfect-game` but the modal just swaps text to "Perfect Game!". Add a celebration worthy of the achievement — confetti, distinct animation, maybe a "shareable highlight" beat. Rare event, so it should feel earned.
 
-### 10. Distinguish the give-up state from losing
+### 5. Post-completion flow refresh *(gameplay)*
+A broader pass on the post-completion module — visual hierarchy, pacing between steps, how each step opens and closes, copy, what actually earns a step of its own vs. collapsing together. Several individual items (#2, #10, #12, #13, #16, #19) touch pieces of this, plus the in-progress personality pass on completion-module headings; a refresh would zoom out and rethink the whole sequence as one experience rather than patching step-by-step.
+
+### 6. Archive of past questions *(retention)*
+Let players replay old questions. A page where someone who just discovered the game can catch up on yesterday's or last week's. Growth via onboarding — new users currently have nothing to do on day 1.
+
+---
+
+## Tier 3 — Content quality loops
+
+Ongoing / backend. These make questions and hints better over time but don't block this quarter's headline work.
+
+### 7. Wire per-question engagement signals back into question generation *(gameplay)*
+Per-question metrics — completion rate, abandonment, avg guesses, avg hints revealed — are already computed in `backend/routes/admin/questions.js` (`computeEngagementMetrics`) and surfaced in the admin panel. But `contentEngine.js` promotes candidates to scheduled questions using `pick_count` alone, ignoring whether past questions actually landed in play. This item is the missing half: feed engagement metrics into the generation/promotion prompts so Claude self-tunes based on real play behavior, not just explicit preference. Share-rate tracking is also not built — add if it turns out to be useful signal. Complements #8 (offline eval catching bad questions before ship); this one is the post-ship "did it land?" loop.
+
+### 8. Automated question-quality eval + prompt iteration *(gameplay)*
+An automated process that grades generated questions against Family Feud-style criteria (specificity, punchiness, plausible answer spread, answerability) — likely LLM-as-judge plus a few heuristic checks — and feeds the grades back into the question-generation prompt so it self-tunes over time. Complements #7: that one learns from real player behavior *after* a question ships; this one is an offline eval loop that catches bad questions *before* they ship and measures whether prompt changes are actually making things better.
+
+### 9. Feedback mechanism on hints *(gameplay)*
+Now that hints are generated via a candidate-and-rate flow, we need a way to learn which hints actually land with players. Simplest version: a thumbs up / thumbs down on the hint card after reveal. Richer signal: infer from behavior — did the player solve after revealing? How quickly? Did they give up right after? Feeds back into the rater pass (eventually training the rater on real preferences instead of only anchor examples) and into the generation prompt itself.
+
+### 10. Add context to the vote form (Step 2) *(gameplay)*
+Players get a bare input asking them to respond to tomorrow's question, with no explanation of what it does or why they should bother. One line of context ("You're helping seed the answer pool for tomorrow — your response plus others decide the top 5") and maybe a quick example would likely lift submission rates meaningfully — which in turn lifts content quality.
+
+### 11. Categories / themed verticals *(growth)*
+Branded spin-offs ("Guess What Politics!", "Guess What Pop Culture!", "Guess What Sports!"). Each category gets its own daily question and audience. Opens product surface, makes sponsorship targeting easier, gives a natural expansion path. Big swing — worth its own planning cycle.
+
+---
+
+## Tier 4 — Polish & longer bets
+
+Real improvements, but lower impact or uncertain payoff. Ship opportunistically.
+
+### 12. Distinguish the give-up state from losing *(gameplay)*
 Today both show "Better luck next time!". A give-up deserves its own acknowledgement — not punitive, not identical to running out of strikes. Something that says "no shame, see you tomorrow" without treating it as a loss.
 
-### 11. Add context to the vote form (Step 2)
-Players get a bare input asking them to respond to tomorrow's question, with no explanation of what it does or why they should bother. One line of context ("You're helping seed the answer pool for tomorrow — your response plus others decide the top 5") and maybe a quick example would likely lift submission rates meaningfully.
-
-### 12. Rebuild Step 3 around the share grid once #17 ships
-Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#17) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed).
-
-### 23. Extend the wave animation across the post-completion flow
+### 13. Extend the wave animation across the post-completion flow *(gameplay)*
 The wave reveal currently used in one spot of the post-completion module should be reused in other places in the flow so the visual language feels consistent instead of appearing once and disappearing. Candidates: step transitions, step-intro reveals, any element that currently just fades or snaps in.
 
-### 24. Post-completion flow refresh
-A broader pass on the post-completion module — visual hierarchy, pacing between steps, how each step opens and closes, copy, what actually earns a step of its own vs. collapsing together. Several individual items above (#7, #8, #10, #11, #12, #16, #23) touch pieces of this; a refresh would zoom out and rethink the whole sequence as one experience rather than patching step-by-step.
+### 14. Hide the question picker after a player has already voted today *(gameplay)*
+The future-question voting step should not re-show to a player who's already seen it and submitted votes on a given day. Today it appears every time they land back on the completion flow, which feels repetitive and risks double-voting noise. Track per-player/day vote state and skip the step on subsequent visits — collapse straight to the next step or show a brief "thanks, see you tomorrow" acknowledgement in its place.
 
-### 25. Improve the mobile experience
-General mobile polish pass. Specific pain points TBD — likely touches guess input ergonomics, modal sizing, tap targets, and post-completion flow on small screens. Worth auditing end-to-end on a phone before scoping individual tickets.
-
-### 26. Hide the question picker after a player has already voted today
-The future-question voting step (#1) should not re-show to a player who's already seen it and submitted votes on a given day. Today it appears every time they land back on the completion flow, which feels repetitive and risks double-voting noise. Track per-player/day vote state and skip the step on subsequent visits — collapse straight to the next step or show a brief "thanks, see you tomorrow" acknowledgement in its place.
-
----
-
-## 2. Retention
-
-### 13. Post-game insights
-After finishing, show context — "You scored better than 62% of today's players", "Your first guess matched the most popular first guess", "#3 was the hardest answer today (only 18% got it)." Cheap to compute, shareable, builds player identity.
-
-### 14. Streak freezes
+### 15. Streak freezes *(retention)*
 Duolingo-style. One per month so a missed day doesn't nuke a long streak. Reduces the "life got in the way and now I'm starting over" churn.
 
-### 15. Archive of past questions
-Let players replay old questions. A page where someone who just discovered the game can catch up on yesterday's or last week's.
-
-### 16. Strengthen the anon streak prompt in the completion module
+### 16. Strengthen the anon streak prompt in the completion module *(retention)*
 Today anonymous players see "Track your streak - Sign up 🔥" — vague and low-conversion. Show what they'd unlock — e.g. "You'd have a 2-day streak if you signed in" — or a richer preview of what signed-in users get. Higher-signal ask, same real estate.
+
+### 17. Player-submitted questions (with Claude as editor) *(growth)*
+Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time. Defer until #7 and #8 content loops are tight — otherwise the editor pass will be doing too much heavy lifting.
 
 ---
 
-## 3. Growth
+## Parked
 
-### 17. Wordle-style share grid
-Spoiler-free emoji result after each game (e.g. `Guess What 2026-04-16 — 4/5 ⬛🟩⬛🟩🟩`) paste-able anywhere. The single feature that made Wordle viral; near-zero cost, highest-leverage growth hook on the list.
+Items consciously deferred. Not dead — revisit when strategic priorities shift.
 
-### 18. Challenge-a-friend link
-"I got 4/5, can you beat me?" — direct 1:1 growth loop. Complements the share grid but more personal/targeted.
+### 18. Wordle-style share grid *(growth)*
+Spoiler-free emoji result after each game (e.g. `Guess What 2026-04-16 — 4/5 ⬛🟩⬛🟩🟩`) paste-able anywhere. The feature that made Wordle viral; still believe it's high-leverage eventually, but punted for now while focus stays on the core gameplay experience. Revisit when ready to push on virality.
 
-### 19. Categories / themed verticals
-Branded spin-offs ("Guess What Politics!", "Guess What Pop Culture!", "Guess What Sports!"). Each category gets its own daily question and audience. Opens product surface, makes sponsorship targeting easier, gives a natural expansion path.
-
-### 20. Player-submitted questions (with Claude as editor)
-Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time.
+### 19. Rebuild Step 3 around the share grid *(gameplay)*
+Step 3 is literally named `shareStep` but today only offers social-follow links. When the Wordle-style share grid (#18) lands, make that the core of Step 3 — the actual "share" moment — and push social follow off-stage (secondary CTA or removed). Parked behind #18.
 
 ---
 
 ## Monetization (cross-cutting)
 
-### 21. Sponsored questions
-Branded themed weeks ("Name a Netflix show everyone's watching"). Pairs naturally with categories — a sponsor owns a themed week inside a specific vertical. Use sparingly (~1/month) to avoid cheapening the experience.
+Evaluate separately from the gameplay/growth stack.
 
-### 22. Paid hints
-Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for unlimited. Simple, respects the player.
+### 20. Sponsored questions
+Branded themed weeks ("Name a Netflix show everyone's watching"). Pairs naturally with categories — a sponsor owns a themed week inside a specific vertical. Gated on #11. Use sparingly (~1/month) to avoid cheapening the experience.
+
+### 21. Paid hints
+Micro-purchases for extra hints — e.g., $0.99 for 10 hints, or $1.99/mo for unlimited. Simple, respects the player. Cheap to ship, but earn trust moments first before stacking monetization on the experience.
 
 ---
 
@@ -113,14 +129,17 @@ Host commentary is live on both #1 reveals and wrong-guess closeness feedback, b
 
 ## Done
 
+### Mobile experience pass
+Three-zone shell (sticky header + scrollable board + pinned input) keeps the question/strikes/hint on screen and the input above the keyboard on phones. Post-completion flow now renders as a proper bottom sheet on mobile: anchored to the viewport bottom, rounded top corners, grab-handle affordance, swipe-down-to-dismiss (touch events in `GameModal.setupSwipeToDismiss`), and a two-detent system driven by `.modal-content:has(input:focus)` — medium (~78% viewport) at rest, tall (fills above-keyboard space) when the vote input is focused. Step bodies scroll internally, safe-area bottom inset respected. iOS Safari autofill accessory bar suppressed, host-commentary/closeness bubbles relocated into the input zone so they anchor correctly. Design reference: `frontend/mobile-redesign-mockups.html`.
+
 ### "You already guessed that" → host bubble with per-guess Claude line
 Duplicate correct guesses used to trigger a floating Bootstrap `alert-warning` at the top of the page — disconnected from both the input and the answer grid. Replaced with a third `.host-bubble` that shares the look of commentary + closeness feedback, plus a Claude-generated line per duplicate so the host can acknowledge fuzzy matches explicitly (e.g. "'Cell phone' is just 'check phone' in a trench coat — already on the board"). New `POST /guesses/duplicate-commentary` endpoint (Haiku-class, template fallback); `game:already-guessed` now carries both the raw user guess and the canonical answer so the backend can riff on the overlap. The yellow warning-flash on the matching answer card is untouched.
 
 ### Future-question voting in the post-completion flow
-After finishing today's game, players see 3–5 candidate questions in `PickFavoriteStep` (frontend/js/components/modal/PickFavoriteStep.js) and can thumbs-up the ones they find interesting. Votes land in the `question_picks` table; candidates are surfaced fairest-first via an impression counter in `questionPickService.js`, and `contentEngine.js` uses pick counts to promote candidates to scheduled questions. Soft-skippable — advancing without picking is allowed. Gives the content engine an explicit-preference signal at peak engagement, complementing the post-hoc engagement metrics the admin panel now tracks (see #3 for the missing feedback loop back into generation).
+After finishing today's game, players see 3–5 candidate questions in `PickFavoriteStep` (frontend/js/components/modal/PickFavoriteStep.js) and can thumbs-up the ones they find interesting. Votes land in the `question_picks` table; candidates are surfaced fairest-first via an impression counter in `questionPickService.js`, and `contentEngine.js` uses pick counts to promote candidates to scheduled questions. Soft-skippable — advancing without picking is allowed. Gives the content engine an explicit-preference signal at peak engagement, complementing the post-hoc engagement metrics the admin panel now tracks (see #7 for the missing feedback loop back into generation).
 
 ### Differentiate hint-assisted answers in the completion summary
-Answer boxes in the completion modal now render yellow when solved with a hint revealed, reusing the in-game `solved-with-hint` fill color (#FDEFA8) so the signal is consistent from the game grid through to the summary. Clean solves stay green, missed answers stay red — a three-state palette that also sets up a more accurate Wordle-style share grid (#17). State already existed in `localStorage` (`gwHinted_<date>`); `SummaryStep` just reads it and adds a `hint-assisted` class alongside `correct`.
+Answer boxes in the completion modal now render yellow when solved with a hint revealed, reusing the in-game `solved-with-hint` fill color (#FDEFA8) so the signal is consistent from the game grid through to the summary. Clean solves stay green, missed answers stay red — a three-state palette that also sets up a more accurate Wordle-style share grid (#18). State already existed in `localStorage` (`gwHinted_<date>`); `SummaryStep` just reads it and adds a `hint-assisted` class alongside `correct`.
 
 ### Hint quality overhaul
 Replaced single-shot hint generation with a two-pass flow: Claude generates 3 candidates per answer, then a separate rating call picks the best using anchor "good" and "too easy" examples drawn from actual user taste feedback. Also routed hint calls specifically to Opus 4.7 (other LLM calls still use the env default) — the creative task benefits from the stronger model, cost impact is pennies per day. The rater pass is what finally prevented the direct-object-naming failures the generator alone kept falling into.

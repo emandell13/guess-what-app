@@ -33,6 +33,130 @@ class GameModal {
 
     // Listen for events
     this.setupEventListeners();
+
+    // Mobile bottom-sheet swipe-to-dismiss (no-op on desktop)
+    this.setupSwipeToDismiss();
+  }
+
+  /**
+   * Enables swipe-down-to-dismiss on the mobile bottom sheet.
+   *
+   * Only active under the @media (max-width: 767.98px) breakpoint where
+   * modal.css reshapes #gameCompleteModal into a bottom sheet. The drag
+   * zone is the grab handle + modal header — touches inside .modal-body
+   * pass through so step content can scroll normally.
+   *
+   * During a drag, the dialog's transform tracks the finger 1:1 (only
+   * downward movement is allowed). On release, if the drag exceeded
+   * DISMISS_THRESHOLD the sheet animates off-screen and the Bootstrap
+   * modal is hidden; otherwise it springs back to rest.
+   */
+  setupSwipeToDismiss() {
+    if (!window.matchMedia('(max-width: 767.98px)').matches) return;
+
+    const dialog = this.modalElement.querySelector('.modal-dialog');
+    const handle = this.modalElement.querySelector('.sheet-grab');
+    const header = this.modalElement.querySelector('.modal-header');
+    if (!dialog || !handle) return;
+
+    // Pixels past which a release dismisses instead of snapping back.
+    const DISMISS_THRESHOLD = 100;
+    // Ignore tiny jitter so taps on the close button don't feel draggy.
+    const DRAG_ACTIVATION = 4;
+
+    let startY = null;
+    let dragY = 0;
+    let dragging = false;
+
+    const resetDialogStyles = () => {
+      dialog.style.transform = '';
+      dialog.style.transition = '';
+      this.modalElement.classList.remove('sheet-dragging');
+    };
+
+    const onStart = (e) => {
+      if (startY !== null) return;
+      if (!e.touches || e.touches.length !== 1) return;
+      // Don't start a drag when the press originates from an interactive
+      // element (close button, etc.) — let the click fire cleanly.
+      const target = e.target;
+      if (target && target.closest && target.closest('button, a, input')) return;
+
+      startY = e.touches[0].clientY;
+      dragY = 0;
+      dragging = false;
+    };
+
+    const onMove = (e) => {
+      if (startY === null) return;
+      const touch = e.touches[0];
+      const delta = Math.max(0, touch.clientY - startY);
+      dragY = delta;
+
+      if (!dragging && delta > DRAG_ACTIVATION) {
+        dragging = true;
+        this.modalElement.classList.add('sheet-dragging');
+      }
+
+      if (dragging) {
+        // preventDefault stops iOS from rubber-band-scrolling the page
+        // while the user is dragging the sheet.
+        e.preventDefault();
+        dialog.style.transform = `translateY(${dragY}px)`;
+      }
+    };
+
+    const onEnd = () => {
+      if (startY === null) return;
+      const wasDragging = dragging;
+      const finalY = dragY;
+      startY = null;
+      dragY = 0;
+      dragging = false;
+
+      if (!wasDragging) {
+        // Never activated — nothing to animate back.
+        resetDialogStyles();
+        return;
+      }
+
+      if (finalY > DISMISS_THRESHOLD) {
+        // Finish the slide off-screen, then let Bootstrap hide the modal.
+        // Keep sheet-dragging off so the CSS transition applies.
+        this.modalElement.classList.remove('sheet-dragging');
+        dialog.style.transition = 'transform 0.22s ease-out';
+        dialog.style.transform = 'translateY(100%)';
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          dialog.removeEventListener('transitionend', finish);
+          resetDialogStyles();
+          this.modal.hide();
+        };
+        dialog.addEventListener('transitionend', finish);
+        // Safety fallback if transitionend doesn't fire.
+        setTimeout(finish, 280);
+      } else {
+        // Snap back to rest.
+        this.modalElement.classList.remove('sheet-dragging');
+        dialog.style.transition = 'transform 0.22s ease-out';
+        dialog.style.transform = '';
+        setTimeout(() => { dialog.style.transition = ''; }, 250);
+      }
+    };
+
+    // Attach to grab handle + header only. Touches inside .modal-body
+    // bubble up, but we bail in onStart if they start on an interactive
+    // element; vertical scroll inside the body is unaffected because
+    // we don't preventDefault unless a drag activates here.
+    [handle, header].forEach((el) => {
+      if (!el) return;
+      el.addEventListener('touchstart', onStart, { passive: true });
+      el.addEventListener('touchmove', onMove, { passive: false });
+      el.addEventListener('touchend', onEnd);
+      el.addEventListener('touchcancel', onEnd);
+    });
   }
 
   /**
@@ -181,22 +305,22 @@ class GameModal {
       this.updateProgress();
 
       console.log('GameModal.resetModal - Before calling summaryStep.show, gaveUp state:', this.gaveUp);
-  
+
       // Hide non-summary steps
       this.voteStep.hide();
       this.pickStep.hide();
       this.shareStep.hide();
-      
+
       // Show summary step with gaveUp status
       this.summaryStep.show(this.gaveUp);
       console.log('GameModal.resetModal - After calling summaryStep.show');
-  
+
       // Make sure progress bar is visible again
       const progressContainer = document.querySelector('#gameCompleteModal .progress-container');
       if (progressContainer) {
         progressContainer.style.display = '';
       }
-  
+
       // Reset close button positioning
       const closeButton = document.querySelector('#gameCompleteModal .btn-close');
       if (closeButton) {
@@ -204,6 +328,15 @@ class GameModal {
         closeButton.style.right = '';
         closeButton.style.top = '';
       }
+
+      // Clear any lingering inline transform/transition left by a
+      // swipe-to-dismiss gesture so the next open animates cleanly.
+      const dialog = this.modalElement.querySelector('.modal-dialog');
+      if (dialog) {
+        dialog.style.transform = '';
+        dialog.style.transition = '';
+      }
+      this.modalElement.classList.remove('sheet-dragging');
   
       // Emit reset event
       eventService.emit('modal:reset');

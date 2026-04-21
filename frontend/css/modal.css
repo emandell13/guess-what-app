@@ -993,3 +993,134 @@
     60% { transform: scale(1.25); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+/* ================================================================
+   Mobile bottom-sheet variant for #gameCompleteModal
+   ----------------------------------------------------------------
+   Below 768px the centered Bootstrap modal reshapes into a bottom
+   sheet: anchored to the viewport bottom, top corners rounded, slides
+   up from below. Height is capped at --viewport-h (set by main.js
+   from window.visualViewport.height) so the sheet shrinks with the
+   keyboard instead of hiding behind it. Each step body scrolls
+   internally.
+
+   Design lives in frontend/mobile-redesign-mockups.html (section 2).
+   ================================================================ */
+
+/* Grab handle: hidden on desktop; shown in mobile block below. */
+.sheet-grab {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    /* Dialog: full-width, anchored to bottom, flex column so the
+       content card can grow up to max-height. */
+    #gameCompleteModal .modal-dialog {
+        margin: 0;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        min-height: 0;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    /* Sheet card: rounded top corners only, flexible height that
+       animates between two detents. Safe-area bottom inset avoids
+       home-bar overlap; top shadow gives the edge a lift off the
+       dimmed backdrop. */
+    #gameCompleteModal .modal-content {
+        border-radius: 24px 24px 0 0;
+        /* Medium detent: ~78% of the visual viewport at rest. */
+        max-height: calc(var(--viewport-h, 100dvh) * 0.78);
+        width: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-shadow: 0 -4px 24px rgba(20, 24, 40, 0.18);
+        transition: max-height 0.3s ease-out;
+    }
+
+    /* Tall detent: when an input inside the sheet is focused (today
+       that's only the vote step). --viewport-h has already shrunk to
+       the keyboard-aware visual viewport by this point, so the sheet
+       fills the remaining space and the input + submit button ride
+       just above the keys. */
+    #gameCompleteModal .modal-content:has(input:focus) {
+        max-height: calc(var(--viewport-h, 100dvh) - 2.5rem);
+    }
+
+    /* Slide-up transition from fully below the viewport. Overrides
+       the desktop 100px translate so the sheet enters from the bottom edge. */
+    #gameCompleteModal.modal.fade .modal-dialog {
+        transform: translateY(100%);
+        transition: transform 0.3s ease-out;
+    }
+    #gameCompleteModal.modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+
+    /* While the user is actively dragging the sheet, JS sets
+       .sheet-dragging on the modal to suppress transitions so the
+       dialog tracks the finger 1:1. */
+    #gameCompleteModal.sheet-dragging .modal-dialog {
+        transition: none !important;
+    }
+
+    /* Grab handle: 40×4 pill at sheet top. Wrapped in a wider
+       transparent touch area via vertical padding so the drag gesture
+       has a generous hit target without the visual changing. */
+    #gameCompleteModal .sheet-grab {
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: #d4d4dc;
+        border-radius: 2px;
+        margin: 0 auto;
+        padding: 0.7rem 0;
+        background-clip: content-box;
+        flex: 0 0 auto;
+        touch-action: none;
+        cursor: grab;
+    }
+    #gameCompleteModal.sheet-dragging .sheet-grab {
+        cursor: grabbing;
+    }
+
+    /* Compact header: tighten padding, center progress segments,
+       keep close button reachable in the top-right corner. */
+    #gameCompleteModal .modal-header {
+        padding: 0.55rem 1.25rem 0.25rem !important;
+        justify-content: center !important;
+        position: relative;
+        flex: 0 0 auto;
+    }
+
+    #gameCompleteModal .modal-header .btn-close {
+        position: absolute;
+        top: 0.55rem;
+        right: 0.75rem;
+        margin: 0;
+        padding: 0.25rem;
+        z-index: 2;
+    }
+
+    #gameCompleteModal .progress-segments {
+        max-width: none;
+        width: 100%;
+        gap: 0.35rem;
+    }
+
+    /* Step bodies scroll internally instead of growing the sheet. */
+    #gameCompleteModal .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 1rem 1.25rem 1.25rem;
+    }
+}
