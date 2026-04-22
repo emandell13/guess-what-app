@@ -81,6 +81,12 @@ Today anonymous players see "Track your streak - Sign up 🔥" — vague and low
 ### 17. Player-submitted questions (with Claude as editor) *(growth)*
 Users submit candidate questions; Claude filters/polishes/seeds; winners get played and credited. Turns the community into the content engine over time. Defer until #7 and #8 content loops are tight — otherwise the editor pass will be doing too much heavy lifting.
 
+### 22. Move back to guesses from strikes *(gameplay)*
+Revert the 3-strike max with game-over-on-strike-out (see Done: "Strikes + dramatic wrong-guess feedback") to an unbounded guess counter. Strikes add pressure but the hard loss state feels punitive for a daily game, and it cuts off the reveal moment prematurely. Keep the dramatic wrong-guess feedback (shake, host bubble) — just drop the hard fail.
+
+### 23. Delay the end screen on a loss until all answers are revealed *(gameplay)*
+Today the completion modal fires the moment a player strikes out, while the remaining answers are still animating onto the board. It steps on the final reveal beat. Hold the modal until the full board has filled in so the resolution plays out before the summary interrupts.
+
 ---
 
 ## Parked
