@@ -87,6 +87,9 @@ Revert the 3-strike max with game-over-on-strike-out (see Done: "Strikes + drama
 ### 23. Delay the end screen on a loss until all answers are revealed *(gameplay)*
 Today the completion modal fires the moment a player strikes out, while the remaining answers are still animating onto the board. It steps on the final reveal beat. Hold the modal until the full board has filled in so the resolution plays out before the summary interrupts.
 
+### 24. Stop host commentary from leaking unguessed answers on a right guess *(gameplay)*
+Right-guess host quips are Claude-generated per-question and can reference other answers on the board — fine after the game is over, but mid-game they sometimes name an answer the player hasn't found yet, spoiling the rest of the round. Constrain the prompt (and/or post-filter generated lines) so commentary only riffs on the answer just guessed plus already-revealed answers, never the still-hidden ones. Pass the set of revealed answers into the request so the model has the guardrail explicitly.
+
 ---
 
 ## Parked
